@@ -1,0 +1,91 @@
+id: FEAT-investor-development-platform-001
+kind: feature
+title: Investor Development Platform MVP
+status: draft
+owner: Investor Development Platform Team
+version: "0.1"
+summary: >
+  Launch a structured investor development workspace for self-directed
+  investors, including decision journaling, scheduled reviews, behavioral
+  analytics, Decision Quality Score, public strategy portfolios, and public
+  investor credibility surfaces.
+problem: >
+  Self-directed investors can track portfolio outcomes, but they lack a
+  structured system for capturing decision context, separating process quality
+  from outcome quality, reviewing mistakes, and building verifiable investing
+  credibility.
+solution: >
+  Provide a learning loop for investing decisions: Decision -> Evidence ->
+  Action -> Outcome -> Review -> Learning. The product focuses on improving
+  decision quality rather than predicting trades or replacing broker execution.
+target_users:
+  primary:
+    - Self-directed investors who actively research stocks and want to improve decision quality.
+  secondary:
+    - Investment content creators who need transparent public strategy records and credibility.
+scope:
+  mvp:
+    - Structured decision records with thesis, evidence, risks, confidence, time horizon, and exit criteria.
+    - Scheduled reviews at 30 days, 90 days, 180 days, and 1 year.
+    - Decision Quality Score with explainable component metrics.
+    - Behavioral analytics for research discipline, risk discipline, FOMO, and loss aversion patterns.
+    - Strategy portfolios with tracked symbols that act like private watchlists, auditable transaction history when positions are opened, and strategy-scoped quotes, charts, and indicators.
+    - Public investor profiles that expose only user-approved reputation signals.
+  out_of_scope:
+    - Broker execution.
+    - Personalized financial advice.
+    - Guaranteed return predictions.
+    - Public exposure of private research or positions without explicit publish action.
+success_metrics:
+  - 1,000 users in the first investor workspace phase.
+  - 10,000 decisions recorded after decision journaling launches.
+  - 70% of active users create decision records.
+  - 50% review completion rate for review-triggered decisions.
+  - 25,000 public strategy portfolios by the strategy portfolio phase.
+bindings:
+  constraints:
+    - CON-private-research-default-001
+    - CON-public-strategy-auditability-001
+    - CON-decision-review-cadence-001
+    - CON-investment-non-advice-001
+    - CON-historical-data-range-001
+    - CON-technical-signals-001
+  invariants:
+    - INV-decision-record-integrity-001
+    - INV-review-schedule-integrity-001
+    - INV-private-data-visibility-001
+    - INV-public-strategy-history-001
+    - INV-dqs-explainability-001
+    - INV-strategy-market-data-scope-001
+  contracts:
+    - CONR-decision-record-api-001
+    - CONR-decision-review-api-001
+    - CONR-behavioral-analytics-api-001
+    - CONR-dqs-api-001
+    - CONR-strategy-portfolio-api-001
+    - CONR-public-profile-api-001
+    - CONR-historical-chart-api-001
+    - CONR-insights-api-001
+linked_constraints:
+  - CON-private-research-default-001
+  - CON-public-strategy-auditability-001
+  - CON-decision-review-cadence-001
+  - CON-investment-non-advice-001
+  - CON-historical-data-range-001
+  - CON-technical-signals-001
+linked_invariants:
+  - INV-decision-record-integrity-001
+  - INV-review-schedule-integrity-001
+  - INV-private-data-visibility-001
+  - INV-public-strategy-history-001
+  - INV-dqs-explainability-001
+  - INV-strategy-market-data-scope-001
+linked_contracts:
+  - CONR-decision-record-api-001
+  - CONR-decision-review-api-001
+  - CONR-behavioral-analytics-api-001
+  - CONR-dqs-api-001
+  - CONR-strategy-portfolio-api-001
+  - CONR-public-profile-api-001
+  - CONR-historical-chart-api-001
+  - CONR-insights-api-001

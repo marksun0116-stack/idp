@@ -1,0 +1,18 @@
+id: CON-decision-review-cadence-001
+kind: constraint
+title: "Decision Review Cadence"
+status: draft
+description: >
+  Investment decisions that enter an active or closed lifecycle must be eligible
+  for scheduled reviews at standard learning intervals so the platform can close
+  the decision learning loop.
+enforcement:
+  - Supported default review intervals are 30 days, 90 days, 180 days, and 1 year.
+  - Users may complete reviews manually, but the original decision context must remain available.
+  - Missed reviews must remain visible until completed, dismissed, or rescheduled.
+  - Review scheduling must use decision timestamps rather than mutable display labels.
+related_invariants:
+  - INV-review-schedule-integrity-001
+related_features:
+  - FEAT-investor-development-platform-001
+

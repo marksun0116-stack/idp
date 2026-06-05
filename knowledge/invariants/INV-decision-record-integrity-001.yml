@@ -1,0 +1,21 @@
+id: INV-decision-record-integrity-001
+kind: invariant
+title: "Decision Record Integrity"
+status: draft
+description: >
+  A decision record preserves the user's original decision context so later
+  outcomes and reviews can be compared against what was known at decision time.
+guarantees:
+  - Every decision record has an owner, decision type, thesis, confidence, time horizon, and created timestamp.
+  - Original thesis, evidence, risk factors, and exit criteria are versioned or preserved for review.
+  - Later reviews cannot silently rewrite the original decision context.
+  - Decision records remain linked to their related reviews and strategy portfolio entries when applicable.
+related_constraints:
+  - CON-private-research-default-001
+  - CON-decision-review-cadence-001
+related_features:
+  - FEAT-investor-development-platform-001
+testing:
+  - DecisionRecordIntegrityTest: updating review notes does not mutate original thesis fields.
+  - DecisionRecordOwnershipTest: users cannot access another user's private decisions.
+

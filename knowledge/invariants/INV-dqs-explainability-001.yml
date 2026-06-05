@@ -1,0 +1,20 @@
+id: INV-dqs-explainability-001
+kind: invariant
+title: "Decision Quality Score Explainability"
+status: draft
+description: >
+  Decision Quality Score must be explainable from component metrics so users can
+  understand how to improve rather than treating the score as an opaque ranking.
+guarantees:
+  - DQS displays component contributions for research quality, decision discipline, risk management, strategy consistency, and outcome quality.
+  - Outcome quality is not the dominant component of DQS.
+  - Users can inspect recent score drivers and the decision or review records behind them.
+  - DQS changes preserve enough history to show trend and period-over-period movement.
+related_constraints:
+  - CON-investment-non-advice-001
+related_features:
+  - FEAT-investor-development-platform-001
+testing:
+  - DqsComponentTest: DQS response includes component weights and component scores.
+  - DqsOutcomeWeightTest: outcome quality is capped below total decision-process weight.
+

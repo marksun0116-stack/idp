@@ -1,0 +1,71 @@
+id: CONR-decision-review-api-001
+kind: contract
+title: "Decision Review API"
+status: draft
+owner: "Investor Development Platform Team"
+version: "0.2"
+auth: "Bearer JWT required"
+summary: >
+  API boundary for scheduled decision reviews, review completion, and lessons
+  learned capture.
+endpoints:
+  list_reviews:
+    method: GET
+    path: "/api/reviews"
+    request:
+      query_params:
+        status:
+          type: string
+          required: false
+          allowed_values: ["pending", "completed", "dismissed", "rescheduled"]
+        decisionId:
+          type: string
+          required: false
+    response_200: |
+      { "reviews": [{
+        "id": string,
+        "decisionId": string,
+        "reviewType": "30d" | "90d" | "180d" | "1y",
+        "dueDate": string,
+        "status": "pending" | "completed" | "dismissed" | "rescheduled",
+        "completedAt": string | null
+      }] }
+  complete_review:
+    method: POST
+    path: "/api/reviews/{id}/complete"
+    validation:
+      thesisAccuracy: "Integer from 1 to 10 inclusive"
+      riskAssessmentAccuracy: "Integer from 1 to 10 inclusive"
+      lessonsLearned: "At least one non-blank lesson"
+    request_body: |
+      {
+        "outcomeSummary": string,
+        "thesisAccuracy": number,
+        "riskAssessmentAccuracy": number,
+        "lessonsLearned": [string],
+        "nextAction": string | null
+      }
+    response_200: |
+      { "id": string, "status": "completed", "completedAt": string }
+    errors:
+      400: "Invalid completion payload"
+      404: "Review not found or not owned by authenticated user"
+      409: "Review state does not allow completion"
+schedule_generation:
+  trigger: "First transition of a decision to active"
+  milestones:
+    - reviewType: "30d"
+      dueDate: "activatedAt UTC date + 30 days"
+    - reviewType: "90d"
+      dueDate: "activatedAt UTC date + 90 days"
+    - reviewType: "180d"
+      dueDate: "activatedAt UTC date + 180 days"
+    - reviewType: "1y"
+      dueDate: "activatedAt UTC date + 1 year"
+  idempotency: "At most one review exists per decision and reviewType"
+linked_features:
+  - FEAT-investor-development-platform-001
+related_constraints:
+  - CON-decision-review-cadence-001
+related_invariants:
+  - INV-review-schedule-integrity-001

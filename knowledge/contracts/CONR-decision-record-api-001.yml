@@ -1,0 +1,119 @@
+id: CONR-decision-record-api-001
+kind: contract
+title: "Decision Record API"
+status: draft
+owner: "Investor Development Platform Team"
+version: "0.2"
+auth: "Bearer JWT required on private endpoints"
+summary: >
+  API boundary for creating, updating, listing, and reading structured
+  investment decision records. Decision records are private by default and
+  preserve original decision context for later reviews.
+endpoints:
+  list_decisions:
+    method: GET
+    path: "/api/decisions"
+    request:
+      query_params:
+        status:
+          type: string
+          required: false
+          allowed_values: ["draft", "active", "closed", "archived"]
+        ticker:
+          type: string
+          required: false
+    response_200: |
+      { "decisions": [{
+        "id": string,
+        "ticker": string,
+        "decisionType": "buy" | "sell" | "hold" | "watch" | "avoid",
+        "title": string,
+        "confidence": number,
+        "status": "draft" | "active" | "closed" | "archived",
+        "createdAt": string
+      }] }
+  create_decision:
+    method: POST
+    path: "/api/decisions"
+    validation:
+      confidence: "Integer from 1 to 10 inclusive"
+      visibility: "Phase 1 supports private visibility only"
+      decision_type: "buy, sell, hold, watch, or avoid"
+    request_body: |
+      {
+        "ticker": string,
+        "decisionType": "buy" | "sell" | "hold" | "watch" | "avoid",
+        "title": string,
+        "thesis": string,
+        "evidence": [string],
+        "riskFactors": [string],
+        "confidence": number,
+        "timeHorizon": string,
+        "exitCriteria": [string],
+        "visibility": "private"
+      }
+    response_201: |
+      { "id": string, "status": "draft" | "active", "createdAt": string }
+  get_decision:
+    method: GET
+    path: "/api/decisions/{id}"
+    response_200: |
+      {
+        "id": string,
+        "ticker": string,
+        "decisionType": string,
+        "title": string,
+        "thesis": string,
+        "evidence": [string],
+        "riskFactors": [string],
+        "confidence": number,
+        "timeHorizon": string,
+        "exitCriteria": [string],
+        "visibility": "private" | "public",
+        "createdAt": string,
+        "updatedAt": string
+      }
+  update_decision:
+    method: PUT
+    path: "/api/decisions/{id}"
+    description: >
+      Updates mutable draft or active decision fields while preserving original
+      decision context needed for future review comparisons.
+    validation:
+      confidence: "Integer from 1 to 10 inclusive"
+    request_body: |
+      {
+        "title": string,
+        "thesis": string,
+        "evidence": [string],
+        "riskFactors": [string],
+        "confidence": number,
+        "timeHorizon": string,
+        "exitCriteria": [string]
+      }
+    response_200: |
+      { "id": string, "updatedAt": string, "revision": number }
+    errors:
+      404: "Decision not found or not owned by authenticated user"
+      409: "Decision state does not allow this update"
+  transition_decision:
+    method: POST
+    path: "/api/decisions/{id}/transition"
+    description: "Moves a decision through draft, active, closed, or archived lifecycle states."
+    request_body: |
+      {
+        "status": "draft" | "active" | "closed" | "archived",
+        "reason": string | null
+      }
+    response_200: |
+      { "id": string, "status": string, "transitionedAt": string }
+    errors:
+      404: "Decision not found or not owned by authenticated user"
+      409: "Invalid lifecycle transition"
+linked_features:
+  - FEAT-investor-development-platform-001
+related_constraints:
+  - CON-private-research-default-001
+related_invariants:
+  - INV-decision-record-integrity-001
+  - INV-private-data-visibility-001

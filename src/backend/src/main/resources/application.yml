@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/idp}
+    username: ${SPRING_DATASOURCE_USERNAME:idp}
+    password: ${SPRING_DATASOURCE_PASSWORD:idp}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+

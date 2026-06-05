@@ -1,0 +1,43 @@
+id: CONR-behavioral-analytics-api-001
+kind: contract
+title: "Behavioral Analytics API"
+status: draft
+owner: "Investor Development Platform Team"
+version: "0.2"
+auth: "Bearer JWT required"
+summary: >
+  API boundary for investor behavior scores, coaching insights, and trend
+  history derived from user decisions and reviews.
+endpoints:
+  scorecard:
+    method: GET
+    path: "/api/analytics/behavior"
+    response_200: |
+      {
+        "behavioralScore": number,
+        "fomoScore": number,
+        "lossAversionScore": number,
+        "researchDisciplineScore": number,
+        "riskDisciplineScore": number,
+        "insights": [{
+          "type": "positive" | "warning" | "neutral",
+          "title": string,
+          "detail": string,
+          "relatedDecisionIds": [string]
+        }]
+      }
+analytics:
+  scale: "0 to 100 integer scores"
+  inputs:
+    fomoScore: "Low-confidence active decisions and sparse evidence lower the score"
+    lossAversionScore: "Closed reviews with weak lessons learned or weak outcome notes lower the score"
+    researchDisciplineScore: "Evidence coverage across decisions"
+    riskDisciplineScore: "Risk factor and exit criteria coverage across decisions"
+  non_advice_boundary: "Insights are coaching observations and must not tell users to buy, sell, hold, or avoid a security"
+linked_features:
+  - FEAT-investor-development-platform-001
+related_constraints:
+  - CON-private-research-default-001
+  - CON-investment-non-advice-001
+related_invariants:
+  - INV-private-data-visibility-001

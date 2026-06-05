@@ -1,0 +1,18 @@
+id: CON-private-research-default-001
+kind: constraint
+title: "Private Research by Default"
+status: draft
+description: >
+  User research notes, decision records, private portfolio data, review notes,
+  behavioral analytics, and draft strategy work must remain private unless the
+  user explicitly publishes a specific strategy, decision, or profile field.
+enforcement:
+  - Default visibility for user-generated research and decision records is private.
+  - Publish actions must be explicit and scoped to a named artifact.
+  - Public views must never infer or expose private positions, notes, or scores.
+  - API responses must separate private owner views from public profile or strategy views.
+related_invariants:
+  - INV-private-data-visibility-001
+related_features:
+  - FEAT-investor-development-platform-001
+

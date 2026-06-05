@@ -124,3 +124,37 @@
   path: knowledge/specs/FEAT-stock-reference-data-001.yml
 - id: CON-reference-data-seeding-001
   path: knowledge/constraints/CON-reference-data-seeding-001.yml
+- id: FEAT-investor-development-platform-001
+  path: knowledge/specs/FEAT-investor-development-platform-001.yml
+- id: CON-private-research-default-001
+  path: knowledge/constraints/CON-private-research-default-001.yml
+- id: CON-public-strategy-auditability-001
+  path: knowledge/constraints/CON-public-strategy-auditability-001.yml
+- id: CON-decision-review-cadence-001
+  path: knowledge/constraints/CON-decision-review-cadence-001.yml
+- id: CON-investment-non-advice-001
+  path: knowledge/constraints/CON-investment-non-advice-001.yml
+- id: INV-decision-record-integrity-001
+  path: knowledge/invariants/INV-decision-record-integrity-001.yml
+- id: INV-review-schedule-integrity-001
+  path: knowledge/invariants/INV-review-schedule-integrity-001.yml
+- id: INV-private-data-visibility-001
+  path: knowledge/invariants/INV-private-data-visibility-001.yml
+- id: INV-public-strategy-history-001
+  path: knowledge/invariants/INV-public-strategy-history-001.yml
+- id: INV-dqs-explainability-001
+  path: knowledge/invariants/INV-dqs-explainability-001.yml
+- id: INV-strategy-market-data-scope-001
+  path: knowledge/invariants/INV-strategy-market-data-scope-001.yml
+- id: CONR-decision-record-api-001
+  path: knowledge/contracts/CONR-decision-record-api-001.yml
+- id: CONR-decision-review-api-001
+  path: knowledge/contracts/CONR-decision-review-api-001.yml
+- id: CONR-behavioral-analytics-api-001
+  path: knowledge/contracts/CONR-behavioral-analytics-api-001.yml
+- id: CONR-dqs-api-001
+  path: knowledge/contracts/CONR-dqs-api-001.yml
+- id: CONR-strategy-portfolio-api-001
+  path: knowledge/contracts/CONR-strategy-portfolio-api-001.yml
+- id: CONR-public-profile-api-001
+  path: knowledge/contracts/CONR-public-profile-api-001.yml

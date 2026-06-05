@@ -1,0 +1,27 @@
+id: INV-strategy-market-data-scope-001
+kind: invariant
+title: "Strategy Portfolio Market Data Scope"
+status: draft
+description: >
+  Quote, chart, and indicator surfaces for a strategy portfolio may only use
+  symbols that belong to that strategy portfolio's tracked symbol set,
+  current holdings, or historical transactions, and must respect the strategy's
+  visibility.
+guarantees:
+  - Private strategy market-data endpoints are owner-scoped.
+  - Public strategy market-data endpoints are available only for published strategies.
+  - Returned quote, chart, and indicator data is limited to symbols in the requested strategy.
+  - A strategy may track a symbol without creating a buy/sell transaction or position.
+  - Adding or removing a tracked-only symbol does not affect immutable transaction history or strategy performance.
+  - Live quotes, charts, and indicators are contextual research surfaces and do not rewrite immutable strategy transaction history.
+related_constraints:
+  - CON-private-research-default-001
+  - CON-public-strategy-auditability-001
+  - CON-technical-signals-001
+  - CON-historical-data-range-001
+related_features:
+  - FEAT-investor-development-platform-001
+testing:
+  - StrategyMarketDataScopeTest: user cannot request quote/chart/indicator data for symbols outside the strategy.
+  - StrategyTrackedSymbolTest: adding a tracked-only symbol enables quote/chart/indicator access without creating a transaction.
+  - PublicStrategyMarketDataVisibilityTest: unpublished strategies do not expose market data publicly.

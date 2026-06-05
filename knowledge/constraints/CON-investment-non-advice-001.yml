@@ -1,0 +1,17 @@
+id: CON-investment-non-advice-001
+kind: constraint
+title: "Investment Non-Advice Boundary"
+status: draft
+description: >
+  The platform may help users structure research, compare evidence, review
+  outcomes, and understand behavior, but it must not present generated insights,
+  scores, or community decisions as personalized financial advice or trading
+  instructions.
+enforcement:
+  - Generated insights must use coaching and evidence language, not order instructions.
+  - Public community decisions must be framed as another user's thesis, not a recommendation.
+  - DQS, behavioral scores, and strategy rankings must not guarantee future returns.
+  - AI research assistant outputs must identify uncertainty and require user judgment.
+related_features:
+  - FEAT-investor-development-platform-001
+

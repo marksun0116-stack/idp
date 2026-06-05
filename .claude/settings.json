@@ -1,0 +1,52 @@
+{
+  "rules_file": "AGENTS.md",
+  "kfs_enabled": true,
+  "project_name": "Investor Development Platform (IDP)",
+  "description": "Knowledge-First System enabled Investor Development Platform project",
+  "knowledge_base": {
+    "catalog": "knowledge/catalog.yml",
+    "specs_dir": "knowledge/specs",
+    "constraints_dir": "knowledge/constraints",
+    "invariants_dir": "knowledge/invariants",
+    "contracts_dir": "knowledge/contracts",
+    "decisions_dir": "knowledge/decisions"
+  },
+  "documentation": {
+    "prd_dir": "docs/prd",
+    "architecture_dir": "docs/architecture",
+    "design_dir": "docs/design",
+    "implementation_dir": "docs/implementation",
+    "test_dir": "docs/test"
+  },
+  "kfs_system": {
+    "rules_path": ".knowledge-first-system/rules",
+    "skills_path": ".knowledge-first-system/skills",
+    "specs_path": ".knowledge-first-system/specs",
+    "validation_script": "python3 .knowledge-first-system/scripts/validate_knowledge.py"
+  },
+  "permissions": {
+    "read": ["**/*.md", "**/*.yml", "**/*.yaml", ".knowledge-first-system/**/*"],
+    "write": ["knowledge/**/*", "docs/**/*", ".claude/settings.json"]
+  },
+  "hooks": {
+    "before_knowledge_commit": "python3 .knowledge-first-system/scripts/validate_knowledge.py",
+    "after_merge": "python3 .knowledge-first-system/scripts/validate_knowledge.py"
+  },
+  "tech_stack": {
+    "frontend": "React",
+    "backend": "Spring Boot (Java)",
+    "database": "PostgreSQL",
+    "infrastructure": "Docker Compose",
+    "platforms": ["WSL2"]
+  },
+  "key_features": [
+    "Investment decision record tracking",
+    "Strategy portfolio management",
+    "Decision review scheduling",
+    "Behavioral analytics",
+    "Decision quality scoring",
+    "Public strategy auditing"
+  ],
+  "last_updated": "2026-06-05",
+  "kfs_version": "1.1"
+}

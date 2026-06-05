@@ -19,6 +19,8 @@ Applies when writing or reviewing code under **`src/`** (create these paths when
 
 **Operations guide:** **`.knowledge-first-system/use_guide.md`**. **Testing detail:** **`.knowledge-first-system/specs/test_strategy_spec.md`**. **Trace model:** **`.knowledge-first-system/specs/knowledge_model_spec.md`** §8 — **Constraint / Invariant → Spec → HLD → code → tests**; keep implementation and tests on that trace, not side-channel rules in chat only.
 
+**Implementation planning:** For multi-phase or multi-story work, use **`.knowledge-first-system/skills/manage-implementation-plan/SKILL.md`** before broad implementation and keep the relevant **`docs/implementation/*_implementation_plan.md`** status current as stories start, finish, block, defer, or change order.
+
 **TDD default:** For behavior changes, add or update **tests first** (failing or extended), then **`src/`**; for legacy areas, add **characterization** tests before refactors when the use guide's modernization flow applies.
 
 ## 0. Knowledge-first (RULE-001)
@@ -28,6 +30,7 @@ Before changing behavior under `src/`:
 - **RULE-013 (new project):** If the change is **net-new product behavior** (not slice-only legacy per **`.knowledge-first-system/use_guide.md`** Scenarios 2–3) and conventional **`docs/prd/`** or **`docs/architecture/`** is **missing or has no** `*.md` files yet, **stop** and **ask the user** to **create those folders** and add at least one PRD and one architecture intent document (see **`.knowledge-first-system/specs/prd_spec.md`** and **`.knowledge-first-system/specs/architecture_intent_spec.md`**), or offer to draft them from stated goals. See **`.knowledge-first-system/rules/new-project-intent-gate.mdc`**.
 - Identify the driving **FEAT-*** (or add one in a Knowledge PR) and load linked **CON**, **INV**, **DEC**, **CONR** via **`knowledge/catalog.yml`** and the spec's trace sections.
 - Do not implement net-new requirements that exist only in free-form chat or unlinked docs without updating **`knowledge/`** first.
+- For multi-story work, create or update the relevant **`docs/implementation/`** plan with phase/story order, dependencies, parallelization notes, and the active story status before broad **`src/`** edits.
 
 ## 1. Constrained generation
 
@@ -66,3 +69,4 @@ Standing constraints also live in **`.knowledge-first-system/rules/implementatio
 | --- | --- | --- | --- | --- |
 | 1.1 | 2026-05-06 | approved | — | Prior release (Document version footer). |
 | 1.2 | 2026-05-12 | approved | — | RULE-013 / conventional **`docs/`** wording; terminal change log. |
+| 1.3 | 2026-06-05 | approved | 1.2 | Added RULE-014 implementation-plan coordination before multi-story implementation. |

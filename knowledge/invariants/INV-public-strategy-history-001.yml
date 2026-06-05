@@ -1,0 +1,20 @@
+id: INV-public-strategy-history-001
+kind: invariant
+title: "Public Strategy History Integrity"
+status: draft
+description: >
+  A public strategy portfolio has an auditable historical record that cannot be
+  silently rewritten after publication.
+guarantees:
+  - Published strategy transactions and decisions are append-only.
+  - Amendments preserve the original event and record the correction reason.
+  - Strategy performance can be recomputed from the stored event history.
+  - Public strategy rankings use computed metrics, not manually entered return claims.
+related_constraints:
+  - CON-public-strategy-auditability-001
+related_features:
+  - FEAT-investor-development-platform-001
+testing:
+  - StrategyHistoryAppendOnlyTest: published transactions cannot be overwritten in place.
+  - StrategyPerformanceRecomputeTest: displayed returns match stored event history.
+

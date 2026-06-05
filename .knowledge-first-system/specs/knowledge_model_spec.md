@@ -41,6 +41,7 @@ This specification defines:
 | `docs/prd/` | Product narrative | PRD, scope, journeys; links to **`FEAT-*`** |
 | `docs/architecture/` | Architecture intent (narrative) | Principles, topology, NFRs in prose; links **`DEC-*`**, **`CON-*`** — **see `architecture_intent_spec.md`** for how to write these documents |
 | `docs/design/` | High-level design | Components, flows, boundaries; aligns with **`CONR-*`** and HLD narrative — **see `design_spec.md`** for how to write these documents |
+| `docs/implementation/` | Implementation plans | Lightweight phase/story execution plans; order, dependencies, parallelization, status, progress updates; links **`FEAT-*`**, **`CON-*`**, **`INV-*`**, **`CONR-*`** — **see `implementation_plan_spec.md`** |
 | `docs/test/` | Test plans | Release or product test plans; links **`INV-*`**, **`CONR-*`** |
 | `.knowledge-first-system/` | Shared guide specs | **This file** (knowledge model), **architecture intent**, **HLD**, PRD / test / infra / CI templates (`*_spec.md` under `specs/`) |
 | `knowledge/constraints/` | **`CON-*`** | Must / must-not rules |
@@ -92,6 +93,7 @@ Concrete YAML shapes are defined by existing files under `knowledge/` and by **`
 
 - **Architecture intent** (conventional **`docs/architecture/`**) — *Human* architecture direction for the product or program: principles, context, NFRs, boundaries. **How to structure** those documents: **`architecture_intent_spec.md`**. This knowledge-model spec only places that folder in the **layer table** (§3) and in the **graph** (§7–8).
 - **High-level design** (conventional **`docs/design/`**) — Services or modules, responsibilities, main data flows, how **constraints** and **invariants** show up in the design. **How to structure** those documents: **`design_spec.md`**.
+- **Implementation plan** (conventional **`docs/implementation/`**) — How approved scope will be sequenced into phases and user stories; maps to **`FEAT-*`**, **`CON-*`**, **`INV-*`**, **`CONR-*`**, and **`implementation_plan_spec.md`**.
 - **Test plan** (conventional **`docs/test/`**) — What you will verify for a release or epic; maps to **`INV-*`**, **`CONR-*`**, and **`test_strategy_spec.md`**.
 
 ---
@@ -100,7 +102,7 @@ Concrete YAML shapes are defined by existing files under `knowledge/` and by **`
 
 ### Node types (conceptual)
 
-Architecture intent (narrative in conventional **`docs/architecture/`** when present), **Constraint**, **Invariant**, **Decision**, **Contract**, **Feature spec** (`FEAT-*`), high-level design narrative, test plan narrative.
+Architecture intent (narrative in conventional **`docs/architecture/`** when present), **Constraint**, **Invariant**, **Decision**, **Contract**, **Feature spec** (`FEAT-*`), high-level design narrative, implementation plan, test plan narrative.
 
 ### Edge types (use in reviews and tooling)
 
@@ -121,16 +123,16 @@ Architecture intent (narrative in conventional **`docs/architecture/`** when pre
 
 ```text
 Architecture intent → Decision → HLD
-Constraint / Invariant → Feature spec → HLD → Code → Tests
+Constraint / Invariant → Feature spec → HLD → Implementation plan → Code → Tests
 ```
 
 Alternate shorthand used in reviews:
 
 ```text
-Constraint / Invariant → Spec → HLD → code → tests
+Constraint / Invariant → Spec → HLD → plan → code → tests
 ```
 
-**Meaning:** Product and architecture direction inform **decisions** and **design**. **Primitives** bind **features**; implementation and tests must remain traceable to **`FEAT-*`**, **`INV-*`**, **`CON-*`**, and **`CONR-*`**.
+**Meaning:** Product and architecture direction inform **decisions** and **design**. **Primitives** bind **features**; implementation plans sequence work into ordered and parallelizable slices; implementation and tests must remain traceable to **`FEAT-*`**, **`INV-*`**, **`CON-*`**, and **`CONR-*`**.
 
 ---
 
@@ -188,3 +190,4 @@ Specifications under **`.knowledge-first-system/specs/`** (including this file) 
 | 1.1 | 2026-05-06 | approved | — | Prior release (separate Document version footer). |
 | 1.2 | 2026-05-11 | approved | — | Terminal change log; removed duplicate Document version footer. |
 | 1.3 | 2026-05-12 | approved | — | **`docs/`** paths documented as conventional; guides-only template may omit empty tree (**README**). |
+| 1.4 | 2026-06-05 | approved | 1.3 | Added **`docs/implementation/`** as the lightweight phase/story implementation planning layer. |

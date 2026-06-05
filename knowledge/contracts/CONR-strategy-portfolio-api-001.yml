@@ -1,0 +1,204 @@
+id: CONR-strategy-portfolio-api-001
+kind: contract
+title: "Strategy Portfolio API"
+status: draft
+owner: "Investor Development Platform Team"
+version: "0.5"
+auth: "Bearer JWT required for owner writes; public reads allowed for published strategies"
+summary: >
+  API boundary for public virtual strategy portfolios, immutable transaction
+  history, performance reports, public strategy discovery, and strategy-level
+  research surfaces for tracked symbols, quotes, charts, and indicators.
+endpoints:
+  create_strategy:
+    method: POST
+    path: "/api/strategies"
+    request_body: |
+      {
+        "name": string,
+        "description": string,
+        "startingCapital": number,
+        "visibility": "private" | "public"
+      }
+    response_201: |
+      { "id": string, "name": string, "visibility": string, "createdAt": string }
+    validation:
+      startingCapital: "Positive decimal value"
+      visibility: "private or public"
+  append_transaction:
+    method: POST
+    path: "/api/strategies/{id}/transactions"
+    request_body: |
+      {
+        "ticker": string,
+        "side": "buy" | "sell",
+        "quantity": number,
+        "price": number,
+        "decisionId": string | null,
+        "executedAt": string
+      }
+    response_201: |
+      { "id": string, "strategyId": string, "createdAt": string }
+    validation:
+      quantity: "Positive decimal value"
+      price: "Positive decimal value"
+      decisionId: "Optional; when supplied, decision must be owned by authenticated user"
+    errors:
+      404: "Strategy or linked decision not found for authenticated user"
+  add_tracked_symbol:
+    method: POST
+    path: "/api/strategies/{id}/symbols"
+    description: >
+      Adds a symbol to the strategy's private tracked symbol set without creating
+      a buy/sell transaction, position, or performance event. This is the
+      portfolio-native replacement for a private watchlist item.
+    request_body: |
+      {
+        "symbol": string,
+        "note": string | null,
+        "tags": [string],
+        "visibility": "private" | "public"
+      }
+    response_201: |
+      {
+        "strategyId": string,
+        "symbol": string,
+        "trackingStatus": "tracked",
+        "createdAt": string
+      }
+    validation:
+      symbol: "Required; normalized uppercase"
+      visibility: "private or public"
+    errors:
+      409: "Symbol already tracked in this strategy"
+  remove_tracked_symbol:
+    method: DELETE
+    path: "/api/strategies/{id}/symbols/{symbol}"
+    description: >
+      Removes a tracked-only symbol from the strategy research set. If the symbol
+      has historical transactions or an open position, transaction history is not
+      deleted and the symbol remains available where required for auditability.
+    errors:
+      409: "Symbol has transaction history or open position and cannot be removed from historical strategy scope"
+  public_strategy:
+    method: GET
+    path: "/api/public/strategies/{id}"
+    response_200: |
+      {
+        "id": string,
+        "name": string,
+        "performance": object,
+        "trackedSymbols": [object],
+        "transactions": [object],
+        "linkedDecisions": [object],
+        "dataFreshness": string
+      }
+  strategy_quotes:
+    method: GET
+    path: "/api/strategies/{id}/quotes"
+    description: "Returns current quote rows for tracked symbols and position symbols in a strategy portfolio. Owner-scoped for private strategies."
+    response_200: |
+      {
+        "strategyId": string,
+        "symbols": [{
+          "symbol": string,
+          "lastPrice": number | null,
+          "change": number | null,
+          "percentChange": number | null,
+          "marketTime": number | null,
+          "marketState": string | null,
+          "volume": number | null,
+          "positionWeight": number | null,
+          "trackingStatus": "tracked" | "position" | "historical"
+        }],
+        "dataFreshness": string
+      }
+    phase_7_update: "Attempts Yahoo Finance chart-backed quote data and returns nullable market fields with market_data_unavailable freshness when the provider is unavailable."
+  public_strategy_quotes:
+    method: GET
+    path: "/api/public/strategies/{id}/quotes"
+    description: "Returns current quote rows for published strategy symbols only, including public tracked-only symbols when the strategy owner has made them visible."
+    response_200: |
+      {
+        "strategyId": string,
+        "symbols": [object],
+        "dataFreshness": string
+      }
+  strategy_history:
+    method: GET
+    path: "/api/strategies/{id}/history?range="
+    description: "Returns normalized historical chart series for tracked symbols and position symbols in a strategy portfolio. Owner-scoped for private strategies."
+    request:
+      query_params:
+        range:
+          type: string
+          required: true
+          allowed_values: ["1w", "1mo", "3mo", "6mo", "1y", "2y", "3y", "4y", "5y"]
+    response_200: |
+      {
+        "strategyId": string,
+        "range": string,
+        "series": [{
+          "symbol": string,
+          "data": [{ "timestamp": number, "close": number }]
+        }]
+      }
+    phase_7_update: "Attempts Yahoo Finance chart-backed daily close series and returns empty symbol series when the provider is unavailable."
+  public_strategy_history:
+    method: GET
+    path: "/api/public/strategies/{id}/history?range="
+    description: "Returns normalized historical chart series for published strategy symbols only, including public tracked-only symbols when the strategy owner has made them visible."
+    response_200: |
+      {
+        "strategyId": string,
+        "range": string,
+        "series": [object]
+      }
+  strategy_indicators:
+    method: GET
+    path: "/api/strategies/{id}/indicators?symbol=&range="
+    description: >
+      Returns technical indicator inputs and/or validated trend verdict context for
+      one symbol in the strategy. The symbol must belong to the requested strategy.
+      Tracked-only symbols are eligible; no buy transaction is required.
+      Indicator language must remain non-advisory.
+    request:
+      query_params:
+        symbol:
+          type: string
+          required: true
+        range:
+          type: string
+          required: true
+          allowed_values: ["1mo", "3mo", "6mo", "1y", "2y", "3y", "4y", "5y"]
+    response_200: |
+      {
+        "strategyId": string,
+        "symbol": string,
+        "range": string,
+        "rsi14": number | null,
+        "trendVerdict": "Bullish Trend" | "Bearish Trend" | "Mixed Trend" | "No Validated Edge" | null,
+        "confidence": "Low" | "Medium" | "High" | null,
+        "sampleSize": number | null,
+        "medianForwardReturn": number | null,
+        "inputs": object
+      }
+    phase_7_update: "Computes RSI and a non-advisory trend verdict from Yahoo-backed historical closes when available; otherwise returns No Validated Edge with market_data_unavailable freshness."
+visibility_rules:
+  private_endpoints: "Authenticated owner only"
+  public_endpoints: "Public strategies only; private tracked symbols are excluded"
+  symbol_scope: "Market-data endpoints may only return symbols from tracked symbols or appended transaction symbols"
+linked_features:
+  - FEAT-investor-development-platform-001
+related_constraints:
+  - CON-public-strategy-auditability-001
+  - CON-private-research-default-001
+  - CON-historical-data-range-001
+  - CON-technical-signals-001
+related_invariants:
+  - INV-public-strategy-history-001
+  - INV-private-data-visibility-001
+  - INV-strategy-market-data-scope-001
+related_contracts:
+  - CONR-historical-chart-api-001
+  - CONR-insights-api-001

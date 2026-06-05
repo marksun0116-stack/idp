@@ -1,0 +1,20 @@
+id: INV-review-schedule-integrity-001
+kind: invariant
+title: "Review Schedule Integrity"
+status: draft
+description: >
+  Review tasks are derived from durable decision lifecycle data and remain
+  traceable to the decision they evaluate.
+guarantees:
+  - Every scheduled review references exactly one decision record.
+  - Review due dates are derived from the decision event date and configured interval.
+  - Completing a review records completion time, reviewer, outcome notes, and lessons learned.
+  - Overdue reviews remain visible until a recorded lifecycle event changes their state.
+related_constraints:
+  - CON-decision-review-cadence-001
+related_features:
+  - FEAT-investor-development-platform-001
+testing:
+  - ReviewScheduleTest: creating an active decision creates expected review milestones.
+  - ReviewCompletionTest: completed reviews remain linked to their source decision.
+

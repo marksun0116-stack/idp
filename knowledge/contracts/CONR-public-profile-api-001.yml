@@ -1,0 +1,57 @@
+id: CONR-public-profile-api-001
+kind: contract
+title: "Public Investor Profile API"
+status: draft
+owner: "Investor Development Platform Team"
+version: "0.2"
+auth: "Public read for published profiles; Bearer JWT required for owner writes"
+summary: >
+  API boundary for public investor profiles, reputation metrics, and public
+  strategy credibility signals.
+endpoints:
+  public_profile:
+    method: GET
+    path: "/api/public/investors/{handle}"
+    response_200: |
+      {
+        "handle": string,
+        "displayName": string,
+        "bio": string | null,
+        "reputation": {
+          "decisionQualityScore": number | null,
+          "researchDiscipline": number | null,
+          "riskManagement": number | null,
+          "strategyConsistency": number | null
+        },
+        "publishedStrategies": [object]
+      }
+  owner_public_profile:
+    method: GET
+    path: "/api/profile/public"
+    response_200: "Same shape as public_profile response for the authenticated owner"
+    response_404: "Authenticated owner has not created a public profile"
+  update_public_profile:
+    method: PUT
+    path: "/api/profile/public"
+    request_body: |
+      {
+        "handle": string,
+        "displayName": string,
+        "bio": string | null,
+        "publishedMetricIds": [string]
+      }
+    response_200: |
+      { "handle": string, "updatedAt": string }
+privacy_rules:
+  - "Profile responses include only owner-approved metric ids."
+  - "Profile responses include only strategy portfolios with visibility=public."
+  - "Profile strategy summaries count only tracked symbols with visibility=public."
+  - "Private decisions, reviews, private strategy portfolios, and private tracked symbols must not be returned."
+linked_features:
+  - FEAT-investor-development-platform-001
+related_constraints:
+  - CON-private-research-default-001
+  - CON-investment-non-advice-001
+related_invariants:
+  - INV-private-data-visibility-001
+  - INV-dqs-explainability-001

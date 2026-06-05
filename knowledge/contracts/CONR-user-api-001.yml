@@ -3,7 +3,11 @@ kind: contract
 title: "User registration and authentication API"
 status: implemented
 description: "Defines REST endpoints for user signup, login, and user profile retrieval."
-version: "0.1"
+version: "0.2"
+implementation_notes:
+  - "Phase 7 implements local username/password registration with BCrypt password hashes."
+  - "Login returns an opaque bearer token persisted by the backend."
+  - "Unknown bearer tokens remain accepted as development subjects for local compatibility."
 endpoints:
   - path: /api/users/register
     method: POST

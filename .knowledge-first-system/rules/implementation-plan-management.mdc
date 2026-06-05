@@ -1,0 +1,28 @@
+---
+description: RULE-014 — maintain a lightweight implementation plan with phases, user stories, dependencies, parallelization, and progress
+globs:
+  - docs/implementation/**/*
+  - knowledge/**/*
+  - src/**/*
+alwaysApply: false
+---
+
+# Implementation Plan Management — RULE-014
+
+When product implementation spans more than one meaningful user story, phase, or workstream, maintain a lightweight implementation plan under **`docs/implementation/`**.
+
+The implementation plan must:
+
+- Identify phases and user-story-sized slices in intended execution order.
+- Start each implementation phase with a requirements-review gate/story before phase implementation stories.
+- Mark dependencies and whether slices can proceed in parallel.
+- Trace each slice to driving **FEAT / CON / INV / CONR** IDs where applicable.
+- Track status with a small vocabulary: `planned`, `ready`, `in_progress`, `blocked`, `done`, `deferred`.
+- Be updated when work starts, finishes, is blocked, is split, or changes order.
+- Keep a concise update log so future agents can understand why the plan changed.
+
+The requirements-review gate must confirm the phase's user stories, acceptance details, trace IDs, dependencies, open questions, and parallelization boundaries before implementation work in that phase moves to `in_progress`.
+
+For net-new implementation, create or update the plan after knowledge/doc alignment and before broad **`src/`** changes. For small single-slice fixes, a plan is optional unless the user asks for one.
+
+Procedure and document shape: **`.knowledge-first-system/skills/manage-implementation-plan/SKILL.md`** and **`.knowledge-first-system/specs/implementation_plan_spec.md`**.

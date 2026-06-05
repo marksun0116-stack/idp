@@ -11,8 +11,8 @@ alwaysApply: false
 
 ## Product docs and HLD
 
-- Keep PRD, architecture intent, and HLD under the **conventional** paths **`docs/prd/`**, **`docs/architecture/`**, and **`docs/design/`** when your program uses a `docs/` tree (filenames are project-specific). See **`.knowledge-first-system/use_guide.md`** and **`.knowledge-first-system/README.md`**; HLD **structure and trace** expectations: **`.knowledge-first-system/specs/design_spec.md`**.
-- **Change log or version history (end of file):** When those folders exist, every **`*.md`** under **`docs/prd/`**, **`docs/architecture/`**, **`docs/design/`**, and **`docs/test/`** must **end** with **`## Change log`** or **`## Version history`** (table: **revision**, **date** (`last_updated`), **status**, **supersedes**, **what changed**) per **`.knowledge-first-system/use_guide.md`** (*Releases and documentation lifecycle*). Agents creating or editing these files must **add or refresh** that section on merge.
+- Keep PRD, architecture intent, HLD, and implementation plans under the **conventional** paths **`docs/prd/`**, **`docs/architecture/`**, **`docs/design/`**, and **`docs/implementation/`** when your program uses a `docs/` tree (filenames are project-specific). See **`.knowledge-first-system/README.md`**; HLD **structure and trace** expectations: **`.knowledge-first-system/specs/design_spec.md`**. Implementation plan structure: **`.knowledge-first-system/specs/implementation_plan_spec.md`**.
+- **Change log or version history (end of file):** When those folders exist, every **`*.md`** under **`docs/prd/`**, **`docs/architecture/`**, **`docs/design/`**, **`docs/implementation/`**, and **`docs/test/`** must **end** with **`## Change log`** or **`## Version history`** (table: **revision**, **date** (`last_updated`), **status**, **supersedes**, **what changed**) per **`.knowledge-first-system/use_guide.md`** (*Releases and documentation lifecycle*). Agents creating or editing these files must **add or refresh** that section on merge.
 - Optional **operational** depth: test strategy, infrastructure, and CI/CD in **`.knowledge-first-system/specs/test_strategy_spec.md`**, **`.knowledge-first-system/specs/infrastructure_spec.md`**, **`.knowledge-first-system/specs/cicd_spec.md`**; architecture intent and HLD should **link** to these instead of duplicating long runbooks.
 - They MUST remain **consistent** with indexed primitives under `knowledge/` (no contradictory “source of truth” in prose).
 - **Release-by-release** — When PRD, HLD, or **`docs/test/`** plans change across trains, keep **trace links** current: driving **`FEAT-*`**, accurate **`CONR-*`** versioning for published surfaces, and doc **metadata** (`status`, **`superseded`**, `last_updated`) per **`.knowledge-first-system/use_guide.md`** (*Releases and documentation lifecycle*).
@@ -25,6 +25,7 @@ Sequencing when architecture or scope changes (knowledge vs docs PRs): **`.knowl
 
 - **Spec → primitives** — FEAT files reference real CON/INV/DEC/CONR IDs in `catalog.yml`.
 - **HLD/PRD → primitives** — Major sections trace to FEAT and/or specific CON/INV as the team has established.
+- **Implementation plan → spec** — Phase/story rows reference driving FEAT and relevant CON/INV/CONR IDs.
 - **Code → spec** — Features and behavioral changes should be attributable to a FEAT (or an explicit tech task that still respects CON/INV/CONR).
 - **Tests → invariants (and constraints)** — Tests should be nameable or comment-linked to INV/CON IDs where practical.
 

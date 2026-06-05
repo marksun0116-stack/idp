@@ -1,0 +1,19 @@
+id: CON-public-strategy-auditability-001
+kind: constraint
+title: "Public Strategy Auditability"
+status: draft
+description: >
+  Public strategy portfolios must preserve a trustworthy record of published
+  strategy decisions, transactions, review milestones, and performance history.
+  Public credibility must be based on auditable history, not editable screenshots
+  or manually curated performance claims.
+enforcement:
+  - Public strategy transactions must be append-only after publication.
+  - Corrections must be represented as explicit amendment events.
+  - Strategy performance must be computed from stored strategy history and market data.
+  - Public strategy pages must identify the strategy time window and data freshness.
+related_invariants:
+  - INV-public-strategy-history-001
+related_features:
+  - FEAT-investor-development-platform-001
+

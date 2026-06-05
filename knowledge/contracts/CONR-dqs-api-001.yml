@@ -1,0 +1,47 @@
+id: CONR-dqs-api-001
+kind: contract
+title: "Decision Quality Score API"
+status: draft
+owner: "Investor Development Platform Team"
+version: "0.2"
+auth: "Bearer JWT required"
+summary: >
+  API boundary for Decision Quality Score, score components, historical trend,
+  and explainability drivers.
+endpoints:
+  current_score:
+    method: GET
+    path: "/api/analytics/dqs"
+    response_200: |
+      {
+        "score": number,
+        "trend": number,
+        "components": {
+          "researchQuality": { "weight": 0.25, "score": number },
+          "decisionDiscipline": { "weight": 0.25, "score": number },
+          "riskManagement": { "weight": 0.20, "score": number },
+          "strategyConsistency": { "weight": 0.15, "score": number },
+          "outcomeQuality": { "weight": 0.15, "score": number }
+        },
+        "drivers": [{
+          "label": string,
+          "impact": number,
+          "relatedDecisionIds": [string]
+        }]
+      }
+scoring:
+  scale: "0 to 100 integer scores"
+  trend: "Phase 3 v0.1 returns 0 until persisted score history exists"
+  components:
+    researchQuality: "Evidence documentation completeness, capped at 3 evidence items per decision"
+    decisionDiscipline: "Scheduled review completion rate"
+    riskManagement: "Risk factors and exit criteria documented before review"
+    strategyConsistency: "Active or closed decisions as an early process-following proxy"
+    outcomeQuality: "Completed review thesis/risk accuracy ratings; not a dominant component"
+  non_advice_boundary: "Drivers must be coaching/explainability language, not trading instructions"
+linked_features:
+  - FEAT-investor-development-platform-001
+related_constraints:
+  - CON-investment-non-advice-001
+related_invariants:
+  - INV-dqs-explainability-001

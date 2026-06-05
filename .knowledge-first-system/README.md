@@ -7,7 +7,7 @@ This package ships the **knowledge-first enforcement layer** for Cursor-based de
 ```
 .knowledge-first-system/
   rules/          ← Cursor rules (RULE-001 – RULE-013, LEGACY-001)
-  skills/         ← Workflow skills (implement, merge, validate, modernize)
+  skills/         ← Workflow skills (implement, plan, merge, validate, modernize)
   README.md       ← This file
   specs/          ← Official specs for every artifact layer
 
@@ -27,6 +27,7 @@ docs/
   prd/            ← Product requirements (prd_spec.md)
   architecture/   ← Architecture intent (architecture_intent_spec.md)
   design/         ← High-level design / HLD (design_spec.md)
+  implementation/ ← Lightweight phase/story implementation plans (implementation_plan_spec.md)
   test/           ← Test plans (test_strategy_spec.md)
 ```
 
@@ -41,6 +42,7 @@ These folders are **not** created here — add them when your program captures p
 | Knowledge model (layers, primitives, graph, validation) | `.knowledge-first-system/specs/knowledge_model_spec.md` |
 | Architecture intent documents | `.knowledge-first-system/specs/architecture_intent_spec.md` |
 | High-level design documents | `.knowledge-first-system/specs/design_spec.md` |
+| Lightweight implementation plans | `.knowledge-first-system/specs/implementation_plan_spec.md` |
 | PRD documents | `.knowledge-first-system/specs/prd_spec.md` |
 | Test strategy | `.knowledge-first-system/specs/test_strategy_spec.md` |
 | Infrastructure | `.knowledge-first-system/specs/infrastructure_spec.md` |
@@ -59,6 +61,7 @@ These folders are **not** created here — add them when your program captures p
 | RULE-011 | official knowledge model spec | `official-knowledge-architecture.mdc` |
 | RULE-012 | no authoritative rules only in docs | `docs-knowledge-boundary.mdc` |
 | RULE-013 | new project PRD + architecture intent gate | `new-project-intent-gate.mdc` |
+| RULE-014 | lightweight implementation plan management | `implementation-plan-management.mdc` |
 | LEGACY-001 | slice-first legacy modernization | `legacy-modernization-slices.mdc` |
 
 ## Change log
@@ -66,3 +69,4 @@ These folders are **not** created here — add them when your program captures p
 | Revision | Date | Status | Supersedes | Notes |
 | --- | --- | --- | --- | --- |
 | 1.0 | 2026-05-14 | approved | — | Initial transfer package. |
+| 1.1 | 2026-06-05 | approved | 1.0 | Added RULE-014 lightweight implementation-plan management entry points. |

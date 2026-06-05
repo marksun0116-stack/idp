@@ -1,0 +1,19 @@
+id: INV-private-data-visibility-001
+kind: invariant
+title: "Private Data Visibility"
+status: draft
+description: >
+  Private investor data is visible only to the owning user unless the user has
+  explicitly published a scoped artifact.
+guarantees:
+  - Private decision records, research notes, review notes, and behavioral analytics are owner-scoped.
+  - Public profile and strategy endpoints return only fields marked public or derived for public display.
+  - Unpublishing a public artifact prevents new public reads without deleting the owner's private record.
+related_constraints:
+  - CON-private-research-default-001
+related_features:
+  - FEAT-investor-development-platform-001
+testing:
+  - PrivateVisibilityTest: public profile responses exclude private notes and draft decisions.
+  - PublishScopeTest: publishing a strategy does not publish unrelated private records.
+
