@@ -1,0 +1,100 @@
+id: CONR-segment-momentum-api-001
+kind: contract
+title: "Segment Momentum APIs (Sectors & Industries)"
+status: shipped
+
+endpoints:
+  - path: "GET /api/market-movers/segment-analysis"
+    auth: "Public (no auth required)"
+    description: >
+      Real-time sector and industry momentum analysis based on today's top gainers/losers.
+      Groups current market movers by sector and industry, calculates momentum metrics,
+      and returns top 3 bullish + top 3 bearish for each segment type.
+    response_200:
+      content_type: "application/json"
+      schema: |
+        {
+          "timestamp": number,        // Unix epoch (seconds, when analysis was run)
+          "segments": [
+            {
+              "sector":               string,    // e.g., "Technology", "Healthcare"
+              "gainersCount":         number,    // Stocks in top gainers for this sector
+              "losersCount":          number,    // Stocks in top losers for this sector
+              "momentumDirection":    string,    // "bullish" | "bearish" | "neutral"
+              "momentumStrength":     string,    // "very_strong" | "strong" | "moderate" | "weak"
+              "ratio":                number,    // gainers/losers (e.g., 8.0 = 8:1)
+              "avgChange":            number,    // Avg % change (gainers avg for bullish, losers avg for bearish)
+              "topStocks":            [          // Top 3 stocks by absolute change
+                { "symbol": string, "change": number, "type": "gainer"|"loser" }
+              ]
+            }
+          ],
+          "industrySegments": [
+            {
+              "sector":               string,    // Industry name (uses sector field for consistency)
+              "gainersCount":         number,
+              "losersCount":          number,
+              "momentumDirection":    string,
+              "momentumStrength":     string,
+              "ratio":                number,
+              "avgChange":            number,
+              "topStocks":            []
+            }
+          ],
+          "summary": {
+            "mostBullishSector":      string,    // e.g., "Technology"
+            "mostBearishSector":      string,    // e.g., "Utilities"
+            "totalGainers":           number,
+            "totalLosers":            number
+          }
+        }
+    errors:
+      502: "Market data unavailable"
+
+  - path: "GET /api/market-movers/segment-history?days=30"
+    auth: "Public (no auth required)"
+    description: >
+      Historical sector momentum over past N trading days. Shows which sectors
+      were trending, how long trends lasted, and rotation patterns.
+    params:
+      days: "Optional, default 30. Range 1-60 trading days"
+    response_200:
+      content_type: "application/json"
+      schema: |
+        {
+          "period_days": number,      // 30
+          "data": [
+            {
+              "date":           string,  // "2026-06-01"
+              "segments": [
+                {
+                  "sector":           string,    // "Technology"
+                  "gainers_count":    number,    // 8
+                  "losers_count":     number,    // 2
+                  "momentum_score":   number,    // -1 to 1 (bullish=+, bearish=-)
+                  "avg_change":       number
+                }
+              ]
+            }
+          ],
+          "trends": {
+            "most_consistent_bullish": string,   // Sector that's been bullish most days
+            "most_consistent_bearish": string,   // Sector that's been bearish most days
+            "rotations": [                       // Sector changes over period
+              {
+                "from_sector": string,
+                "to_sector": string,
+                "date": string,
+                "days_duration": number
+              }
+            ]
+          }
+        }
+    errors:
+      400: "Invalid days parameter"
+      500: "Historical data unavailable"
+
+linked_features:
+  - FEAT-segment-momentum-001
+linked_constraints:
+  - CON-segment-data-freshness-001

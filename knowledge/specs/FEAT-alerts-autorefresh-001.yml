@@ -1,0 +1,44 @@
+id: FEAT-alerts-autorefresh-001
+kind: feature
+title: "Stock Alerts, Auto-Refresh, Earnings Calendar, and Volume Insights"
+status: planned
+summary: >
+  Extends the watchlist Quotes tab with: (1) 30-second auto-refresh with a
+  live countdown indicator; (2) per-symbol alerts for price crosses, RSI
+  overbought/oversold, and volume spikes — stored in localStorage, checked
+  on every refresh, surfaced as in-app badges and browser notifications;
+  (3) optional earnings date badges, 30-day average-volume context, and
+  significant technical trend verdict badges sourced from the backend insights endpoint.
+  Analyst target price is intentionally excluded because the provider module is
+  not reliable enough for the app.
+linked_decisions:
+  - DEC-tech-stack-001
+linked_contracts:
+  - CONR-watchlist-api-001
+  - CONR-insights-api-001
+acceptance_criteria:
+  # Auto-refresh
+  - Quotes tab auto-refreshes every 30 seconds while selected and at least one row is in PRE, REGULAR, POST, or POSTPOST market state; a "Live · Ns" countdown is shown in the tab bar only while auto-refresh is active.
+  - Auto-refresh pauses when all loaded quote rows are CLOSED. The frontend must not call the quotes endpoint on the timer while closed-market data is displayed.
+  - Auto-refresh pauses when the browser tab is hidden (document.hidden) and resumes on focus.
+  - A toggle button suspends and resumes auto-refresh.
+  # Insights (optional earnings + avg volume + RSI14)
+  - On watchlist selection, GET /api/watchlists/{id}/insights is called once per load.
+  - Each stock row shows an earnings date badge ("Earnings Jun 24") when an earnings date is available and within 60 days.
+  - The backend must not call Yahoo quoteSummary for earnings or average volume because unauthenticated access can fail with crumb/cookie authorization errors.
+  - 30-day average volume is derived from local stock_price_history volume data.
+  - Volume spike badge (🔥) shown when today's volume exceeds 2× the 30-day average.
+  - Quote rows show a technical trend verdict badge only when the backend detects a significant bullish or bearish multi-indicator trend with Medium or High confidence; raw RSI threshold labels are not shown as the primary signal.
+  # Alerts
+  - Bell icon on each stock row opens a per-symbol alert configuration modal.
+  - Alert types: Price (above/below a target), RSI (overbought >70 or oversold <30), Volume spike (≥2× average).
+  - Alerts persisted in localStorage; survive page refresh.
+  - On each active 30s refresh, active alerts are checked against live data; triggered alerts show a red badge on the bell and a toast notification. Alerts are not re-evaluated by the auto-refresh timer while all quote rows are CLOSED.
+  - Browser Notification API used when permission is granted; falls back to in-app toast.
+  - Active alert count badge shown on the watchlist name in the sidebar.
+  - Alerts can be deleted from the modal.
+insights_data_sources:
+  avgVolume30d: "Computed from the last 30 non-zero stock_price_history.volume values"
+  rsi14: "Computed from stock_price_history (last 15 daily closes)"
+  trendVerdict: "Computed from stock_price_history technical inputs and historical validation"
+  earningsDate: "Nullable until a key-based earnings calendar provider is configured"

@@ -1,0 +1,18 @@
+id: INV-historical-data-ownership-001
+kind: invariant
+title: "Historical chart data may only be fetched for watchlists owned by the authenticated user"
+status: implemented
+statement: >
+  The historical chart endpoint must verify that the requested watchlistId belongs to the
+  authenticated user before fetching any data. A valid JWT that belongs to user A must not
+  be usable to retrieve historical data for user B's watchlist.
+rationale: >
+  Consistent with INV-watchlist-ownership-001. The historical chart endpoint is a new
+  data-access surface that must inherit the same ownership invariant as all other
+  watchlist-scoped endpoints.
+linked_features:
+  - FEAT-historical-chart-widget-001
+linked_constraints:
+  - CON-historical-data-range-001
+linked_invariants:
+  - INV-watchlist-ownership-001

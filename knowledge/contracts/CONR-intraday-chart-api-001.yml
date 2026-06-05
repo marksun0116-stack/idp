@@ -1,0 +1,58 @@
+id: CONR-intraday-chart-api-001
+kind: contract
+title: "Intraday Chart API — GET /api/watchlists/{watchlistId}/intraday"
+status: implemented
+endpoint: "GET /api/watchlists/{watchlistId}/intraday"
+auth: "Bearer JWT required"
+description: >
+  Returns 5-minute bar data for every symbol in the specified watchlist for the current
+  (or most recent) trading day. Data is served from a local PostgreSQL cache
+  (stock_intraday_cache table). On a cold start (no data for a symbol) or cache staleness
+  (>5 min old during market hours), the backend fetches from Yahoo Finance v8 chart API
+  using interval=5m&range=1d and stores results locally. Ownership of the watchlist is
+  validated before any data is fetched. Market-aware: when the market is closed, cached
+  data is served regardless of age; when the market is open, fresh data is fetched only
+  if the cache is older than 5 minutes.
+request:
+  headers:
+    Authorization: "Bearer {token}"
+  path_params:
+    watchlistId: "long — ID of the watchlist to chart"
+response_200:
+  content_type: "application/json"
+  schema: |
+    {
+      "watchlistId":  string,
+      "interval":     "5m",
+      "range":        "1d",
+      "previousCloses": {
+        // Map of symbol to previous trading day's closing price
+        // Used as the 0% baseline for intraday percentage calculations
+        "AAPL": 310.00,
+        "MSFT": 425.50
+      },
+      "series": [
+        {
+          "symbol": string,
+          "data": [
+            {
+              "timestamp": number,   // Unix epoch seconds (raw from Yahoo, e.g. 1780320600)
+              "close":     number,   // 5-minute bar close price
+              "high":      number,   // 5-minute bar high (nullable)
+              "low":       number,   // 5-minute bar low (nullable)
+              "volume":    number    // 5-minute bar volume (nullable)
+            }
+          ]
+        }
+      ]
+    }
+errors:
+  401: "Missing or invalid JWT"
+  404: "Watchlist not found or not owned by the authenticated user"
+linked_features:
+  - FEAT-intraday-chart-001
+linked_constraints:
+  - CON-intraday-cache-001
+linked_invariants:
+  - INV-intraday-data-ownership-001
+  - INV-watchlist-ownership-001

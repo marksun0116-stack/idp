@@ -1,0 +1,42 @@
+id: CONR-insights-api-001
+kind: contract
+title: "Insights API — GET /api/watchlists/{id}/insights"
+status: implemented
+endpoint: "GET /api/watchlists/{id}/insights"
+auth: "Bearer JWT required"
+description: >
+  Returns per-symbol insights for all stocks in a watchlist: 30-day average
+  volume, optional next earnings date, RSI(14), and a compact technical trend verdict
+  computed from local stock_price_history.
+  Average volume, RSI, and trend verdicts are derived from local cached history.
+  Earnings date is nullable because the previous unauthenticated Yahoo
+  quoteSummary source is crumb-protected and must not be called from the app.
+  Analyst target price and recommendation are intentionally excluded because the
+  Yahoo quoteSummary financialData module is not reliable enough for this app.
+  Called once on watchlist load (not on every 30s auto-refresh).
+response_200:
+  content_type: "application/json"
+  schema: |
+    {
+      "watchlistId": number,
+      "insights": {
+        "{symbol}": {
+          "avgVolume30d":     number | null,   // 30-day average daily volume
+          "earningsDate":     string | null,   // ISO date, e.g. "2026-07-24"
+          "rsi14":            number | null,   // RSI(14) from local price history
+          "trendVerdict":     string | null,   // e.g. "Historically Bearish Trend"
+          "trendDirection":   string | null,   // bullish | bearish | mixed | none
+          "trendConfidence":  string | null,   // High | Medium | Low
+          "trendSignificant": boolean          // true when backend found a notable trend; quote rows display it only when confidence is Medium or High
+        }
+      }
+    }
+errors:
+  401: "Missing or invalid JWT"
+  403: "Watchlist does not belong to authenticated user"
+  404: "Watchlist not found"
+data_sources:
+  local_db: "stock_price_history for avgVolume30d, RSI(14), trend inputs, and historical trend validation"
+  earnings_calendar: "not currently configured; earningsDate remains null until a key-based provider is added"
+linked_features:
+  - FEAT-alerts-autorefresh-001

@@ -1,0 +1,37 @@
+id: FEAT-market-movers-widget-001
+kind: feature
+title: "Widget 4 — Market Movers panel"
+status: shipped
+summary: >
+  Display a live two-panel view of market movers sourced from the Yahoo Finance screener API.
+  Uses the shared wl-layout (2/3 list + 1/3 news). Five tabs: Most Active, Gainers, Losers
+  (Yahoo default order), Small Cap, and Aggressive (both sorted by percentChange desc on the
+  backend). Up to 25 stocks per tab. Each row shows symbol, company name, last price, change %,
+  and volume. A "+" action adds the stock to a watchlist; shows ✓ badge when already in all
+  watchlists. On load and tab switch, news for all visible stocks is fetched in parallel and
+  merged by publish time. Clicking a row filters the news pane to that symbol.
+linked_constraints:
+  - CON-watchlist-access-001
+  - CON-market-movers-public-001
+linked_invariants:
+  - INV-watchlist-ownership-001
+linked_decisions:
+  - DEC-tech-stack-001
+linked_contracts:
+  - CONR-market-movers-api-001
+  - CONR-watchlist-api-001
+  - CONR-news-api-001
+acceptance_criteria:
+  - "Panel uses the shared wl-layout: left pane (flex 2, ~2/3) holds stock list; right pane (flex 1, ~1/3) holds news."
+  - "Left pane has five tabs: Most Active, Gainers, Losers, Small Cap, Aggressive. Default is Most Active."
+  - Most Active, Gainers, Losers return results in Yahoo's default order. Small Cap and Aggressive are sorted by percentChange descending on the backend.
+  - Each tab displays up to 25 stocks with symbol, company name, last price, change %, and volume.
+  - Change and change % are color-coded green/red.
+  - "On view load and tab switch, news for all visible stocks is fetched in parallel (Promise.all) and merged, sorted by publishedAt desc; right pane shows All stocks."
+  - "Clicking a stock row filters the right pane to that symbol's news; header shows a colored symbol badge with a clear button."
+  - "Clear button restores all-symbol news view."
+  - "+ button on each row is shown only when the stock is not already in all of the user's watchlists; opens a dropdown listing only watchlists that do NOT already contain the symbol."
+  - "When the stock is already in all watchlists, a check badge is shown instead of the + button."
+  - "A refresh button re-fetches the current tab's data and refreshes news (filtered or all-symbol)."
+  - If the Yahoo Finance screener API is unavailable, the panel shows an error state rather than crashing.
+  - The add-to-watchlist action uses POST /api/watchlists/{id}/stocks and requires authentication.

@@ -1,0 +1,28 @@
+id: INV-sector-momentum-calculation-001
+kind: invariant
+title: "Sector Momentum Calculation Integrity"
+status: planned
+statement: >
+  Sector momentum is calculated by grouping gainers and losers by their
+  sector (from stock_metadata). A sector's momentum is determined by:
+
+  - Gainers count (stocks gaining today in that sector)
+  - Losers count (stocks losing today in that sector)
+  - Momentum direction: gainers > losers = bullish; losers > gainers = bearish
+  - Momentum strength: ratio of gainers/losers (e.g., 8:1 = very bullish)
+
+  The calculation must:
+  1. Only include stocks that have sector data in stock_metadata
+  2. Count actual gainers/losers from the market movers data (top 100)
+  3. Calculate percentChange-based momentum (not absolute change)
+  4. Group by sector, not by industry (normalize to sector level)
+  5. Handle null sectors gracefully (show as "Unknown Sector")
+
+rationale: >
+  Consistent calculation ensures reliable trend detection. Using sector (not
+  granular industry) reduces noise and shows macro patterns. Gainers/losers
+  ratio is more meaningful than absolute count (e.g., 8 gainers in a sector
+  of 50 = different momentum than 8 gainers in a sector of 10).
+
+linked_features:
+  - FEAT-segment-momentum-001

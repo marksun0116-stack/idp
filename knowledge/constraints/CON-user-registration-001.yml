@@ -1,0 +1,9 @@
+id: CON-user-registration-001
+kind: constraint
+title: "User registration and authentication"
+status: implemented
+description: "The system must allow account registration and secure authentication for all users who create watchlists."
+enforcement: "Backend must validate unique user credentials and protect authentication endpoints."
+validation:
+  - "API tests for registration and login"
+  - "Backend validation of duplicate accounts"

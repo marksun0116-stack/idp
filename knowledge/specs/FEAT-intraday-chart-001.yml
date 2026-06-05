@@ -1,0 +1,32 @@
+id: FEAT-intraday-chart-001
+kind: feature
+title: "1D Intraday Chart with Cached 5-Minute Bars"
+status: implemented
+summary: >
+  Displays a 1D (one trading day) intraday chart with 5-minute bars for stocks in a selected
+  watchlist. Bars are fetched from Yahoo Finance and cached in PostgreSQL. Cache is
+  market-aware: when the market is closed, the endpoint serves the previous trading day's
+  bars directly from cache with no API call. When the market is open, a fresh API call is
+  made only if the cached bars are older than 5 minutes. This minimizes redundant API calls
+  while keeping intraday data reasonably current during trading hours.
+linked_constraints:
+  - CON-intraday-cache-001
+linked_invariants:
+  - INV-intraday-data-ownership-001
+  - INV-watchlist-ownership-001
+linked_decisions:
+  - DEC-tech-stack-001
+  - DEC-chart-library-001
+linked_contracts:
+  - CONR-intraday-chart-api-001
+acceptance_criteria:
+  - A "1D" button appears in the chart range selector (before 1W).
+  - Clicking 1D fetches and displays 5-minute bars for all symbols in the watchlist.
+  - All series are normalized to 0% using the **previous trading day's close** as the baseline (not the first intraday bar).
+  - Tooltip shows: symbol, previous trading day's close price (for debugging), and percentage change from that close.
+  - X-axis shows hourly tick marks formatted in ET local time (e.g., "10:30 AM").
+  - Tooltip displays date and time in ET format (e.g., "Jun 1, 10:30 AM").
+  - During market hours (9:30–16:00 ET Mon–Fri), if the cached bars are ≤5 minutes old, no API call is made.
+  - During closed hours (before 9:30 AM ET, after 4 PM ET, weekends), the last trading day's bars are served from cache with no API call.
+  - Only symbols belonging to the authenticated user's watchlist may be queried (ownership checked before fetch).
+  - Stale rows from prior trading dates are cleaned up on each request (keep 2 trading days maximum).

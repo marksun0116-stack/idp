@@ -1,0 +1,21 @@
+---
+description: RULE-012 — docs explain and link; authoritative rules live in knowledge primitives
+globs: ["docs/**/*", ".knowledge-first-system/**/*"]
+alwaysApply: false
+---
+
+# Docs vs knowledge separation (RULE-012)
+
+**`docs/`** (when your program creates it: conventional **`docs/prd/`**, **`docs/architecture/`**, **`docs/design/`**, **`docs/test/`**, and other product narrative) is for **human-readable** product and program documentation, diagrams, and **pointers** to `knowledge/catalog.yml` and primitive IDs. **This knowledge-first-system package** may ship **without** a `docs/` tree until you add product prose—see **`.knowledge-first-system/README.md`**. **Official** knowledge-first **guides and specs** live in **`.knowledge-first-system/`** (index **`README.md`**, formal **`_spec`** files under **`specs/`**). Strategy-level KFS narrative: **`.knowledge-first-system/executive_overview.md`**. Enforceable “must” rules belong in **`knowledge/`**, not only in prose (see **`.knowledge-first-system/specs/knowledge_model_spec.md`** for artifact layer names; **`.knowledge-first-system/specs/architecture_intent_spec.md`** for architecture intent *documents*; **`.knowledge-first-system/specs/design_spec.md`** for HLD *documents*).
+
+## Do not in product `docs/` (when present)
+
+- Define **new authoritative constraints or invariants** that are not reflected as **CON-*** / **INV-*** under `knowledge/` with catalog entries.
+- Treat prose as a shadow **contract** for APIs or payloads — **CONR-*** belongs in `knowledge/contracts/`.
+
+## Do in product `docs/` (when present)
+
+- Summarize intent, link **FEAT-***, **CON-***, **INV-***, **DEC-***, **CONR-*** by ID.
+- Keep PRD/HLD aligned with merged knowledge; when prose and YAML disagree after a Knowledge PR, **fix the docs** in a follow-up rather than leaving drift.
+
+If a reviewer or PM states a new “must” in a doc comment, translate it into the appropriate **primitive** and **catalog** update (Knowledge PR), then reference it from the doc.

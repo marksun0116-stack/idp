@@ -1,0 +1,70 @@
+id: CON-technical-signals-001
+kind: constraint
+title: "Technical Indicator Signals: Historically Validated Trend Recommendations"
+status: active
+statement: >
+  Technical indicator recommendations must be based on sustained trends, multiple confirmations,
+  and historical self-validation, not volatile single-point snapshots. A directional verdict is
+  only generated when:
+
+  1. **Rolling Trend Requirement**: Signal inputs evaluate multi-bar trend state, not only
+     the latest bar
+     - SMA 20/50: Evaluate price alignment plus moving-average slope over several bars
+     - EMA/MACD: Evaluate EMA alignment, MACD signal alignment, and histogram direction
+     - Bollinger Bands: Treat band position as context, not a standalone last-point trigger
+     - RSI/MFI/OBV: Evaluate multi-bar momentum direction instead of absolute snapshot levels
+
+  2. **Momentum Focus**: Evaluate trend direction and strength, not absolute values
+     - RSI: Instead of "RSI > 70 = overbought", look at RSI momentum (is it rising/falling?)
+       * Rising RSI = increasing buying pressure (bullish momentum)
+       * Falling RSI = decreasing buying pressure (bearish momentum)
+     - OBV: Instead of snapshot, track accumulation trend (OBV rising = accumulation; falling = distribution)
+     - Volume: Rising volume on up days = strength; falling volume on up days = weakness
+
+  3. **Multi-Indicator Confirmation**: A trend setup requires agreement from 2+ independent indicators
+     - Buy signals need at least 2 of: SMA bullish + EMA bullish + RSI momentum up + OBV accumulating +
+       Bollinger trend context + Volume strength + MA slope up + MFI rising
+     - Sell signals need at least 2 of: SMA bearish + EMA bearish + RSI momentum down + OBV distributing +
+       Bollinger trend context + Volume weakness + MA slope down + MFI falling
+     - Conflicting 2+ buy and 2+ sell confirmations must display as mixed/conflicted, not default to buy
+
+  4. **Historical Self-Validation**: The current setup must be compared with prior similar
+     setups in the selected historical series
+     - Score every eligible historical bar using the same trend formula as the current bar
+     - Compare current setup to prior bars with overlapping directional indicator inputs
+     - Measure forward returns over a declared horizon, defaulting to 20 trading days
+     - Display sample size, win rate, average/median forward return, and confidence
+     - If sample size or outcomes are weak, show "No Validated Edge" instead of buy/sell
+
+rationale: >
+  Previous single-point snapshot approaches generated too many false signals as indicators
+  fluctuated with every new bar. Even crossover-only signals can over-focus on the latest
+  transition and ignore whether similar setups historically worked for this symbol. Rolling
+  trend scoring reduces noise, and forward-return validation makes the recommendation auditable.
+
+enforcement:
+  - Score every eligible bar in the selected range with the same formula used for the current bar
+  - SMA/EMA/MACD/Stochastic: Use trend alignment, slopes, and crossovers where available
+  - RSI/OBV/MFI: Calculate multi-bar momentum direction instead of static thresholds
+  - Bollinger Bands: Use band position as trend/volatility context, not a standalone trigger
+  - Volume Confirmation: Rising volume on up days (bullish), rising volume on down days (bearish)
+  - Moving Avg Slope: Both SMA 20 and EMA 12 should trend same direction for trend confirmation
+  - Historical validation: Similar prior setups must report sample size, win rate, median return, and confidence
+  - Display: Show which indicators contributed to the current setup and whether historical validation supports it
+  - MFI: Money Flow Index calculated from typical price × volume, momentum-based confirmation
+
+example: >
+  OLD (snapshot-based): "RSI=65 (rising trend), close=$310 > SMA20=$308" → BUY
+  Problem: If next bar closes $309, below SMA20, signal changes to SELL
+
+  NEW (validated trend):
+  - Current setup: SMA 20 rising above SMA 50, EMA/MACD aligned bullish, RSI and OBV rising
+  - Historical validation: 24 similar setups over the selected range, 62% positive over 20 trading days,
+    median forward return +2.8%
+  - Result: "Bullish Trend, Medium Confidence"
+  - If only 3 similar setups exist or median return is negative, show "No Validated Edge"
+
+linked_features:
+  - FEAT-technical-indicators-001
+linked_decisions:
+  - DEC-forecast-tech-001

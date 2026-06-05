@@ -1,0 +1,19 @@
+id: CON-portfolio-access-001
+kind: constraint
+title: "Portfolio Ownership Enforcement"
+status: implemented
+description: >
+  Each investment account belongs to exactly one user. The backend must
+  enforce that authenticated users can only view, create, modify, and
+  delete accounts and holdings they own. Cross-user access attempts must
+  be rejected with HTTP 403 or 404.
+enforcement:
+  - All portfolio endpoints require JWT authentication (Bearer token).
+  - Query filters use authenticated user ID: WHERE user_id = ?
+  - Delete operations cascade holdings when account is deleted.
+  - Account uniqueness per user: UNIQUE(user_id, name)
+related_invariants:
+  - INV-portfolio-ownership-001
+related_features:
+  - FEAT-account-management-001
+  - FEAT-holding-management-001

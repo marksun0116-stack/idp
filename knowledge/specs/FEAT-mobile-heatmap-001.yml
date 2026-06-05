@@ -1,0 +1,31 @@
+id: FEAT-mobile-heatmap-001
+kind: feature
+title: "Mobile — Heatmap"
+status: deferred
+summary: >
+  The Heatmap tab renders a squarified treemap using SwiftUI Canvas. Cell size
+  is proportional to |percentChange|. Color scale matches the web app (sqrt
+  saturation curve, green/red). A period picker (Today / This Week / This Month)
+  sits above the canvas. Tapping a cell shows a bottom sheet with the symbol's
+  price, change, change %, and watchlist membership.
+linked_decisions:
+  - DEC-mobile-tech-stack-001
+  - DEC-mobile-pause-swiftui-001
+linked_contracts:
+  - CONR-heatmap-api-001
+acceptance_criteria:
+  - Tab displays a full-screen squarified treemap using the same Bruls-Huizing-van Wijk algorithm as the web app.
+  - Cell color uses the same heatColor function (sqrt saturation, green/red, grey for null).
+  - Period picker (Today / This Week / This Month) at the top switches the data source.
+  - Cells display symbol text; larger cells also show company name and percentChange.
+  - Font sizes scale with cell size (minimum thresholds same as web).
+  - Tapping a cell presents a bottom sheet (.sheet) with: symbol, company name, last price, change, change %, and watchlist names.
+  - Canvas redraws on device rotation (GeometryReader provides updated dimensions).
+  - Pull-to-refresh or a refresh button reloads the current period's data.
+  - Empty state shown when the user has no watchlists or no stocks.
+mobile_ux_notes:
+  - Use SwiftUI Canvas inside a GeometryReader to obtain the available frame.
+  - The squarify algorithm is ported from JS to Swift and runs on a background Task.
+  - Tap detection: use a Canvas .onTapGesture with location; hit-test against computed cell rects.
+  - Bottom sheet uses .sheet(item:) with a SelectedCell binding.
+  - Period picker uses a Picker with .segmented style.

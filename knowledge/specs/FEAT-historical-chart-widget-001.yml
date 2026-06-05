@@ -1,0 +1,32 @@
+id: FEAT-historical-chart-widget-001
+kind: feature
+title: "Widget 3 — Watchlist comparison historical chart"
+status: implemented
+summary: >
+  Display a multi-line historical price chart for all stocks in a selected watchlist, allowing
+  users to visually compare relative performance over a chosen time range. All series are
+  normalized to 0% at the first close of the selected range so stocks at different price levels
+  can be compared fairly. The Y-axis shows percentage change with a dashed reference line at 0%.
+  Users can toggle individual series via the legend and select a range (1W, 1M, 3M, 6M, 1Y,
+  2Y, 3Y, 4Y, 5Y). Historical close data is fetched from a local PostgreSQL cache (up to 5
+  years) backed by Yahoo Finance.
+linked_constraints:
+  - CON-historical-data-range-001
+linked_invariants:
+  - INV-historical-data-ownership-001
+  - INV-watchlist-ownership-001
+linked_decisions:
+  - DEC-tech-stack-001
+  - DEC-chart-library-001
+linked_contracts:
+  - CONR-historical-chart-api-001
+acceptance_criteria:
+  - Chart renders one line per symbol in the selected watchlist.
+  - All series are normalized to 0% at the first data point of the selected range; Y-axis shows percentage with sign (e.g. +12%, -5%).
+  - A dashed reference line is drawn at y=0 as the performance baseline.
+  - User can switch range via 1W / 1M / 3M / 6M / 1Y / 2Y / 3Y / 4Y / 5Y toggle; chart re-fetches on change.
+  - X-axis labels show the year on the first tick of each new calendar year; tick density is reduced for longer ranges.
+  - Hovering the chart shows a tooltip with the percent change value for each visible symbol.
+  - Individual series can be toggled on/off via a legend.
+  - Only symbols belonging to the authenticated user's watchlist may be queried.
+  - Historical data is served from local DB cache; backend fetches from Yahoo Finance only when cache is absent or missing dates after the last stored date.

@@ -1,0 +1,31 @@
+---
+description: Apply knowledge-first to legacy systems through slice inventory, regression-first modernization, and migration primitives
+alwaysApply: true
+---
+
+# Legacy modernization with knowledge-first
+
+When applying this system to a legacy repository, especially one with little or no documentation, do **not** require a complete knowledge graph before useful work starts. Govern modernization by **slices**.
+
+## Slice-first adoption
+
+- Treat existing code as the current behavioral baseline until primitives say otherwise.
+- Inventory the system into business or technical slices that change together: routes, screens, modules, jobs, tables, integrations, or workflows.
+- Rank slices by change frequency, roadmap pressure, defect history, coupling, and risk.
+- Apply strict knowledge-first enforcement first to high-change or high-risk slices; leave untouched legacy areas in baseline mode until selected.
+
+## Current vs target state
+
+- Keep **current-state** observations separate from **target-state** intent.
+- Current-state docs describe observed behavior from code and tests; mark uncertainty and human questions explicitly.
+- Target-state docs and primitives define the modernization goal: architecture intent, HLD boundaries, contracts, constraints, invariants, and migration decisions.
+- Do not silently blend legacy compromises into target architecture. Capture them as **DEC-*** or open questions.
+
+## Regression-first modernization
+
+- Before replacing a slice, add slice-scoped characterization, contract, and invariant tests.
+- Preserve legacy behavior only when it is required; classify behavior as **preserve**, **fix**, **clarify**, or **drop**.
+- Use **CONR-*** contracts as migration boundaries so old and new implementations can be compared or routed independently.
+- Retire legacy paths deliberately after the target slice satisfies contracts and invariants.
+
+**Human-readable procedure:** **`.knowledge-first-system/use_guide.md`** (Scenario 3: modernize a legacy codebase). **Strategy summary:** **`.knowledge-first-system/executive_overview.md`**. **Agent workflow:** `.knowledge-first-system/skills/modernize-legacy-with-knowledge/SKILL.md`.

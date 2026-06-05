@@ -1,0 +1,48 @@
+id: CONR-heatmap-api-001
+kind: contract
+title: "Heatmap API — GET /api/heatmap"
+status: implemented
+endpoint: "GET /api/heatmap"
+auth: "Bearer JWT required"
+description: >
+  Returns all unique stock symbols across all watchlists owned by the authenticated user,
+  with percent-change data for the requested period and the list of watchlist names each
+  symbol belongs to. Symbols that appear in multiple watchlists are deduplicated; each
+  appears exactly once.
+  - period=today: percentChange is the live day's change from StockQuoteService.
+  - period=week: percentChange is (lastClose - firstClose) / firstClose * 100 over 1W history.
+  - period=month: same computation over 1M history.
+request:
+  headers:
+    Authorization: "Bearer {token}"
+  query_params:
+    period:
+      type: string
+      required: false
+      default: "today"
+      allowed_values: ["today", "week", "month"]
+response_200:
+  content_type: "application/json"
+  schema: |
+    {
+      "stocks": [
+        {
+          "symbol":        string,
+          "lastPrice":     number | null,
+          "change":        number | null,
+          "percentChange": number | null,
+          "marketState":   string | null,  // null for week/month periods
+          "watchlists":    string[]         // names of all watchlists containing this symbol
+        }
+      ]
+    }
+errors:
+  400: "Invalid period value"
+  401: "Missing or invalid JWT"
+linked_features:
+  - FEAT-heatmap-widget-001
+linked_constraints:
+  - CON-heatmap-scope-001
+linked_invariants:
+  - INV-heatmap-dedup-001
+  - INV-watchlist-ownership-001

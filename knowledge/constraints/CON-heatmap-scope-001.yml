@@ -1,0 +1,19 @@
+id: CON-heatmap-scope-001
+kind: constraint
+title: "Heatmap must only include the authenticated user's stocks"
+status: implemented
+statement: >
+  The heatmap endpoint must aggregate stocks exclusively from watchlists owned by the
+  authenticated user. It must not surface symbols from other users' watchlists, even if
+  those symbols are identical.
+rationale: >
+  User watchlist data is private. The heatmap is a cross-watchlist view, making it a
+  higher-risk surface for accidental cross-user data exposure if ownership is not
+  enforced at the query level.
+enforcement:
+  - Backend must filter watchlists by authenticated user before collecting symbols.
+  - No global symbol table may be used as the heatmap data source.
+linked_features:
+  - FEAT-heatmap-widget-001
+linked_invariants:
+  - INV-watchlist-ownership-001

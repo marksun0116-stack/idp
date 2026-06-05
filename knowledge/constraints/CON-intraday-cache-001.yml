@@ -1,0 +1,37 @@
+id: CON-intraday-cache-001
+kind: constraint
+title: "Intraday Cache Staleness Policy"
+status: implemented
+statement: >
+  The intraday endpoint (GET /api/watchlists/{id}/intraday) must implement market-aware
+  caching with a staleness threshold of 5 minutes.
+
+  During market hours (9:30–16:00 ET, Monday–Friday):
+    • If the latest cached bar is ≤5 minutes old, serve from cache without calling Yahoo Finance.
+    • If the latest cached bar is >5 minutes old or no cache exists, fetch from Yahoo Finance
+      and upsert all returned bars. Bars already in cache are skipped (ON CONFLICT DO NOTHING).
+
+  During closed hours (before 9:30 AM ET, after 4 PM ET, weekends):
+    • Always serve from cache, regardless of age. Do not call Yahoo Finance.
+    • If no cache exists for the trading date, return an empty result (graceful degradation).
+
+  On every intraday fetch request, delete all rows where trading_date < lastTradingDate.
+  lastTradingDate is the most recent trading date (today if open, yesterday/Friday if closed).
+  This keeps the cache to a single day and prevents stale multi-day accumulation.
+
+  Holiday handling: The constraint does not explicitly handle US market holidays; trading dates
+  are determined by ET timezone logic only (weekday detection, 9:30–16:00 window).
+rationale: >
+  Staleness threshold of 5 minutes balances API cost (avoiding redundant calls for every page
+  reload within 5 min) against data freshness (5-minute bars are still useful for intraday
+  analysis). Market-closed detection ensures zero API overhead when the market is not trading.
+  Daily cleanup prevents the cache from becoming a multi-day history table and keeps storage
+  predictable and queries fast.
+enforcement:
+  - StockHistoryServiceImpl.CACHE_STALENESS_MINUTES = 5
+  - StockHistoryServiceImpl.isMarketOpen() determines market state; true if 9:30 ≤ now < 16:00 ET, Mon–Fri
+  - StockHistoryServiceImpl.lastTradingDate() computes the most recent trading date
+  - StockIntradayCacheRepository.deleteByTradingDateBefore() called on each getIntraday() request
+  - Batch upsert uses ON CONFLICT (symbol, bar_time) DO NOTHING to drop already-cached bars
+linked_features:
+  - FEAT-intraday-chart-001

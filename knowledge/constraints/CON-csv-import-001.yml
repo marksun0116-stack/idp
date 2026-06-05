@@ -1,0 +1,26 @@
+id: CON-csv-import-001
+kind: constraint
+title: "CSV Bulk Import with Conflict Resolution"
+status: implemented
+description: >
+  CSV import is client-side parsed and validated before sending to backend.
+  Column names are flexible (case-insensitive, punctuation-stripped aliases).
+  When a symbol already exists in the target account, the user is prompted
+  to choose Update or Skip per symbol before bulk insert. Import is atomic
+  per row (row-level errors don't block other rows).
+enforcement:
+  - Frontend: parseCSV() accepts aliases (symbol/ticker, shares/qty, cost/price, date/acquiredDate, etc.)
+  - Quoted fields supported; escaped quotes ("") within fields allowed
+  - Comments starting with # are ignored
+  - Conflict detection: symbol UNIQUE(account_id, symbol) triggers conflict UI
+  - User chooses Update (overwrite) or Skip per row; bulk POST applies all decisions
+  - Server validates symbol format (non-empty) and numeric shares/cost
+  - Error messages returned per-row, don't block other rows
+column_aliases:
+  symbol: ["symbol", "ticker", "stock", "sym"]
+  shares: ["shares", "quantity", "qty", "units", "numshares"]
+  cost: ["costbasis", "avgcost", "averagecost", "cost", "price", "avgprice", "purchaseprice", "buyprice"]
+  date: ["purchasedate", "date", "tradedate", "acquireddate", "opendate"]
+  manual_price: ["manualprice", "price_override", "overrideprice"]
+related_features:
+  - FEAT-holding-management-001

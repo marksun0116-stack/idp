@@ -1,0 +1,16 @@
+# Maven / Java build
+src/backend/target/
+*.class
+*.jar
+
+# Node / frontend build
+src/frontend/node_modules/
+src/frontend/dist/
+
+# Logs
+*.log
+
+# IDE / OS
+.idea/
+*.iml
+.DS_Store

@@ -1,0 +1,28 @@
+id: INV-sector-cache-001
+kind: invariant
+title: "Sector Cache Graceful Degradation"
+status: implemented
+description: >
+  Sector data is cached in stock_metadata with 30-day stale threshold.
+  If Yahoo Finance returns 401 "Invalid Crumb" (authentication refresh
+  needed), the error is logged as a warning and the request continues
+  with cached data or null sector. Allocation dashboard continues to render
+  with partial sector data rather than failing.
+guarantees:
+  - GET /api/portfolio/sectors: returns cache if available; logs warning on 401
+  - Null sector treated as "Unknown" in allocation donut
+  - 401 errors are not surfaced to frontend as errors (silent graceful fallback)
+  - Allocation tab with missing sector data still renders all holdings
+  - User can manually refresh sectors with POST /api/portfolio/sectors/refresh
+edge_cases:
+  - All sectors fail to fetch (multiple 401 errors): allocation shows all sectors as "Unknown"
+  - Some sectors stale, some fresh: mixed response (fresh from Yahoo, stale from cache, null for failures)
+  - User clicks refresh: forces re-fetch; if still fails, retains cached data
+  - Sector data unavailable for new symbol: holdings table shows sector as "—", allocation groups as "Unknown"
+rationale: >
+  Yahoo Finance API occasionally requires re-authentication (401 with "Invalid Crumb").
+  Rather than crash or require user intervention, graceful degradation provides
+  best-effort sector display. User can manually refresh if they want fresh data.
+violations: >
+  If violated: 401 response crashes allocation view or blocks portfolio display.
+  Fix: catch 401 in StockMetadataService.fetchSectorInfo(), log warning, return null.

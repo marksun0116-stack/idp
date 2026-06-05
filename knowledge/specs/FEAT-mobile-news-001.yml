@@ -1,0 +1,31 @@
+id: FEAT-mobile-news-001
+kind: feature
+title: "Mobile — News Panel"
+status: deferred
+summary: >
+  News is surfaced in two places: a collapsible section at the bottom of the
+  watchlist detail screen, and a dedicated push screen in the Movers tab.
+  All news items link out to the original article via SFSafariViewController.
+  The watchlist news section loads all-symbol news on entry and filters to a
+  single symbol when the user taps a stock row in the Quotes tab.
+linked_decisions:
+  - DEC-mobile-tech-stack-001
+  - DEC-mobile-pause-swiftui-001
+linked_contracts:
+  - CONR-news-api-001
+  - CONR-market-movers-api-001
+acceptance_criteria:
+  - "Watchlist detail: News section below Quotes/Chart content loads all-symbol news on watchlist open."
+  - Tapping a symbol row in Quotes filters the news section to that symbol; a chip/badge above the news list shows the active symbol filter with an ✕ clear button.
+  - Clearing the filter reloads all-symbol news.
+  - "Movers: tapping a stock row pushes a MoversNewsView with news for that symbol."
+  - "Each news item shows: colored symbol badge, headline (bold), source, relative time (e.g. 2h ago)."
+  - Tapping a news item opens the article URL in SFSafariViewController (in-app browser).
+  - "Empty state: No news available with an icon."
+  - Error per symbol is silently swallowed; partial results are shown.
+mobile_ux_notes:
+  - "Watchlist news: DisclosureGroup with a custom label showing News + article count badge."
+  - "Symbol filter chip: a small HStack with a colored rounded-rect badge and an X Button."
+  - "News rows: VStack(alignment: .leading) with headline in body font, source + time in caption."
+  - "Use .sheet or push NavigationLink for SFSafariViewController wrapper."
+  - "Relative time formatting mirrors the web timeAgo() function."

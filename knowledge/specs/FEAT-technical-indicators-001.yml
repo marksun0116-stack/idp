@@ -1,0 +1,122 @@
+id: FEAT-technical-indicators-001
+kind: feature
+title: "Technical Indicators — Indicators Tab (Widget 3 extension)"
+status: active
+summary: >
+  A new "Indicators" tab alongside Quotes and Chart in the watchlist detail
+  view. Focuses on a single stock at a time (symbol picker). Renders two
+  panels using Recharts and a technical recommendation panel. The recommendation
+  is based on rolling trend formulas and historical forward-return validation,
+  not only the last data point. All indicators are computed client-side from
+  the existing historical price data (GET /api/watchlists/{id}/history). No new
+  backend endpoints are required for this feature.
+linked_constraints:
+  - CON-technical-signals-001
+linked_decisions:
+  - DEC-tech-stack-001
+  - DEC-chart-library-001
+linked_contracts:
+  - CONR-historical-chart-api-001
+indicators:
+  sma_20:
+    description: "20-period simple moving average of daily close prices."
+    usage: "Short-term trend direction. Crossover with SMA 50 signals momentum shift."
+  sma_50:
+    description: "50-period simple moving average of daily close prices."
+    usage: "Medium-term trend baseline."
+  bollinger_bands:
+    period: 20
+    std_dev: 2
+    description: >
+      Upper band = SMA 20 + 2σ; Lower band = SMA 20 - 2σ.
+      Bands widen with volatility. Price touching upper band = potentially
+      overbought; lower band = potentially oversold.
+  rsi:
+    period: 14
+    description: >
+      Relative Strength Index. Ranges 0–100. Above 70 = overbought zone
+      (red shading); below 30 = oversold zone (green shading).
+    formula: "RSI = 100 - (100 / (1 + RS)), where RS = avg_gain / avg_loss over 14 periods."
+validated_recommendation:
+  lookback_mode: "Score every eligible historical bar in the selected range, then compare the current setup to prior similar setups."
+  forward_windows:
+    - 5
+    - 10
+    - 20
+  default_forward_window: 20
+  minimum_sample_size: 5
+  trend_inputs:
+    - "Price relative to SMA 20 and SMA 50 plus their multi-bar slopes."
+    - "EMA 12/26 alignment, MACD signal alignment, and MACD histogram direction."
+    - "RSI multi-bar momentum, not a single overbought/oversold threshold."
+    - "OBV and MFI multi-bar momentum when volume data is available."
+    - "Bollinger Band position as a context input rather than a standalone last-point trigger."
+  validation_metrics:
+    - "sample size of similar historical setups"
+    - "win rate over the default forward window"
+    - "average and median forward return"
+    - "confidence level derived from sample size and outcome consistency"
+  similar_setup_matching:
+    - "Prior setup must match current setup template and direction."
+    - "Prior setup must have an exact or compatible market regime."
+    - "Prior setup must share at least two directional signal IDs, or at least 50% of current directional signal IDs when higher."
+    - "Prior setup must share at least two signal families across trend, momentum, volume, volatility, and support/resistance context."
+    - "Prior setup net score must be within three points of the current setup."
+    - "Prior setup indicator-state bucket distance must be six or less across RSI, Bollinger position, SMA distance, and MACD histogram direction."
+  verdicts:
+    - "Bullish Trend"
+    - "Bearish Trend"
+    - "Mixed Trend"
+    - "No Validated Edge"
+recommendation_strategy_templates:
+  description: >
+    Recommendation logic should classify the current market setup into named,
+    auditable technical-analysis strategy templates before validating historical
+    outcomes. Each template combines independent signal families such as trend,
+    momentum, volatility, volume, and support/resistance context.
+  initial_templates:
+    - "Trend Continuation"
+    - "Pullback in Uptrend"
+    - "Breakout Confirmation"
+    - "Mean Reversion"
+    - "Bearish Breakdown"
+    - "Divergence Warning"
+    - "Multi-Timeframe Alignment"
+  scoring_dimensions:
+    - "market regime fit"
+    - "trend confirmation"
+    - "momentum confirmation"
+    - "volume confirmation"
+    - "volatility context"
+    - "support/resistance context"
+    - "symbol-specific historical validation"
+  design_reference: "docs/design/technical_indicator_strategy_recommendations.md"
+acceptance_criteria:
+  - Indicators tab appears as a third option alongside Quotes and Chart in the watchlist detail.
+  - A symbol picker (dropdown or segmented control) allows selecting one stock from the watchlist.
+  - Upper chart renders: price line (black), SMA 20 (blue dashed), SMA 50 (orange dashed), Bollinger Band upper and lower (grey), shaded band area between upper and lower.
+  - Lower RSI chart renders: RSI line (purple), horizontal reference lines at 70 (red dashed) and 30 (green dashed), shaded overbought (> 70) and oversold (< 30) zones.
+  - Range selector (same 1W–5Y chips as Chart tab) controls the data window.
+  - Indicators are computed entirely client-side from the fetched price series; no extra API calls.
+  - Recommendation panel scores the full historical series and validates the current setup against similar prior setups.
+  - Recommendation panel classifies the current chart pattern as a detected setup template when the current indicators match a supported strategy family.
+  - Price chart marks the historical bars that counted as similar setups for the current recommendation.
+  - Price chart tooltips display actual hovered data point values with user-facing labels rather than internal field names.
+  - Recommendation panel displays verdict, confidence, historical sample size, win rate, and median forward return.
+  - Recommendation panel clearly separates the detected setup from the historical validation verdict.
+  - When historical validation is missing, recommendation verdict still names the current bullish or bearish trend direction before stating that it is not historically validated.
+  - Recommendation panel allows the current trend input details to be collapsed or expanded.
+  - Recommendation panel explains that invalidation is the condition that would weaken or cancel the current technical thesis, not a trade instruction.
+  - Similar-setups metric includes an inline information tooltip explaining historical setup matching, forward-return validation, and the symbol-specific backtest meaning.
+  - If sample size is too small or historical outcomes do not support the current setup, the panel shows "No Validated Edge" instead of a buy/sell recommendation.
+  - Loading and empty states are handled gracefully.
+  - A legend below the upper chart labels each line (Price, SMA 20, SMA 50, BB Upper, BB Lower).
+implementation_notes:
+  - Reuse loadHistory() already present in App.jsx; pass range to fetch the price series.
+  - SMA: sliding window average over N closes.
+  - Bollinger: compute population std dev over same N-period window as SMA 20.
+  - RSI: seed with simple averages for first 14 periods, then use Wilder smoothing.
+  - Trend recommendation: compute per-bar trend inputs across the full selected range; compare the current setup with prior bars that share the same directional inputs; validate using 20-trading-day forward returns by default.
+  - Confidence should be conservative when historical sample size is small or win rate/median return are mixed.
+  - Use Recharts ComposedChart (Line + Area for bands) for the upper panel.
+  - Use separate LineChart for RSI panel.

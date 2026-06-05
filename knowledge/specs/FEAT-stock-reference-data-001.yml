@@ -1,0 +1,28 @@
+id: FEAT-stock-reference-data-001
+kind: feature
+title: "Stock Exchange Reference Data Seeding"
+status: shipped
+summary: >
+  Seed the stock_metadata table from bundled CSV files covering NASDAQ, NYSE, and AMEX
+  listings (~6,000+ symbols). Adds exchange and ipo_year columns to stock_metadata.
+  A startup loader reads three classpath CSV resources and bulk-upserts all rows once.
+  CSV data bootstraps company_name, sector, industry, and exchange so movers/portfolio
+  views work without requiring Yahoo Finance API calls for initial sector lookups.
+  Yahoo Finance data takes precedence when present (COALESCE semantics).
+linked_constraints:
+  - CON-sector-cache-001
+  - CON-reference-data-seeding-001
+linked_invariants:
+  - INV-sector-cache-001
+linked_decisions:
+  - DEC-tech-stack-001
+linked_contracts: []
+acceptance_criteria:
+  - "V12 migration adds exchange VARCHAR(10) and ipo_year SMALLINT NULL to stock_metadata."
+  - "CSV files (nasdaq.csv, nyse.csv, amex.csv) are present under src/main/resources/data/."
+  - "StockReferenceDataLoader runs on ApplicationReadyEvent and upserts all CSV rows in batches of 500."
+  - "Loader skips if stock_metadata already has any row with exchange IS NOT NULL (idempotent across restarts)."
+  - "Merge semantics: exchange always set from CSV; company_name, sector, industry filled from CSV only where column is currently NULL (Yahoo data wins if present)."
+  - "Startup log line confirms row count: '[StockReferenceDataLoader] Seeded N rows from exchange reference data'."
+  - "On subsequent restarts log line confirms skip: '[StockReferenceDataLoader] Reference data already seeded, skipping'."
+  - "All NASDAQ, NYSE, and AMEX symbols in the CSV gain a non-null exchange value after first boot."

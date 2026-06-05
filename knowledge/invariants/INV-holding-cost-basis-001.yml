@@ -1,0 +1,26 @@
+id: INV-holding-cost-basis-001
+kind: invariant
+title: "Optional Cost Basis Handling"
+status: implemented
+description: >
+  Cost basis (average cost per share) is optional for holdings. When null,
+  calculations must gracefully handle the missing value. UI displays "—"
+  instead of crashing. Gain/loss calculations skip rows with null cost_basis.
+guarantees:
+  - Column: holdings.cost_basis is nullable
+  - Frontend: displays "—" when cost_basis is null
+  - Backend: costBasis != null check before gain calculation
+  - Portfolio summary includes only non-null cost_basis in totalCost
+  - Allocation donut excludes null-cost holdings from cost-weighted grouping
+  - API responses include costBasis as number | null
+edge_cases:
+  - User imports CSV without cost column: holdings created with cost_basis = null
+  - User adds holding via UI without cost: field is optional, defaults to null
+  - User views portfolio with mixed null/non-null costs: summary shows partial total
+rationale: >
+  Many manual portfolio entries lack historical cost data. Null cost_basis
+  supports "holdings I didn't track cost for" use case. Alternative: require
+  cost and use default (error-prone, poor UX).
+violations: >
+  If violated: null cost_basis causes NumberFormatException or null pointer.
+  Fix: always check != null before division/gain calculation.

@@ -1,0 +1,21 @@
+id: CON-historical-data-range-001
+kind: constraint
+title: "Historical chart query range must be bounded"
+status: implemented
+statement: >
+  The historical chart API must only accept the following range values:
+  1w, 1mo, 3mo, 6mo, 1y, 2y, 3y, 4y, 5y.
+  Any other value must be rejected with HTTP 400. The interval is fixed at daily (1d).
+  The backend must not proxy unbounded date ranges to the upstream data provider.
+  The local cache stores up to 5 years of daily closes per symbol; cold-start fetches
+  are capped at MAX_HISTORY_YEARS = 5.
+rationale: >
+  Unbounded or arbitrary ranges would result in excessive upstream API calls and unpredictable
+  response sizes. Bounding to known ranges keeps the provider contract stable and UI rendering
+  predictable. The 5-year cap is enforced both at the API boundary and in the cache-fill logic.
+enforcement:
+  - Backend validates range against the ALLOWED_RANGES set before querying the cache or calling Yahoo Finance.
+  - Interval is not a user-supplied parameter; it is always 1d.
+  - StockHistoryServiceImpl.MAX_HISTORY_YEARS caps cold-start fetches at 5 years.
+linked_features:
+  - FEAT-historical-chart-widget-001

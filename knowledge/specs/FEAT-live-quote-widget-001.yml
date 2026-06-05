@@ -1,0 +1,22 @@
+id: FEAT-live-quote-widget-001
+kind: feature
+title: "Widget 1 — Live stock quote table"
+status: implemented
+summary: >
+  Display a live, sortable table of stock quotes for all symbols in a selected watchlist.
+  This is the first of three dashboard widgets. Quote data is fetched from the Yahoo Finance
+  v8 chart API on every watchlist load and on symbol add.
+linked_constraints:
+  - CON-watchlist-access-001
+linked_invariants:
+  - INV-watchlist-ownership-001
+linked_decisions:
+  - DEC-tech-stack-001
+  - DEC-chart-library-001
+linked_contracts:
+  - CONR-watchlist-api-001
+acceptance_criteria:
+  - Table displays symbol, last price, change, change %, as-of time, and extended-hours data.
+  - Columns Symbol, Change, and Change % are sortable ascending/descending.
+  - Pre-market and after-hours prices are shown when the market is not in regular session.
+  - Data is refreshed immediately when a symbol is added.

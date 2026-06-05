@@ -1,0 +1,17 @@
+id: INV-intraday-data-ownership-001
+kind: invariant
+title: "Intraday chart data may only be fetched for watchlists owned by the authenticated user"
+status: implemented
+statement: >
+  The intraday chart endpoint (GET /api/watchlists/{watchlistId}/intraday) must verify that
+  the requested watchlistId belongs to the authenticated user before fetching or returning any
+  data. A valid JWT that belongs to user A must not be usable to retrieve intraday data for
+  user B's watchlist.
+rationale: >
+  Consistent with INV-historical-data-ownership-001. The intraday endpoint is a new data-access
+  surface that must inherit the same ownership invariant as all other watchlist-scoped endpoints
+  to prevent cross-user data leakage.
+linked_features:
+  - FEAT-intraday-chart-001
+linked_invariants:
+  - INV-watchlist-ownership-001

@@ -1,0 +1,19 @@
+id: CON-holding-uniqueness-001
+kind: constraint
+title: "One Symbol Per Account"
+status: implemented
+description: >
+  Each account may hold at most one position per symbol. Duplicate
+  symbol attempts in the same account are rejected with HTTP 409 Conflict.
+  This constraint is enforced at the database level (UNIQUE constraint)
+  and business logic layer (pre-insert validation).
+enforcement:
+  - Database: UNIQUE(account_id, symbol)
+  - API: POST /accounts/{id}/holdings rejects if symbol already exists in account
+  - Bulk CSV import checks for duplicates and presents conflict resolution UI
+rationale: >
+  Simplifies position tracking per account; users must manually consolidate
+  if they wish to update quantity (use PUT endpoint).
+related_features:
+  - FEAT-holding-management-001
+  - FEAT-account-management-001

@@ -1,0 +1,27 @@
+id: FEAT-mobile-auth-001
+kind: feature
+title: "Mobile — Authentication"
+status: deferred
+summary: >
+  Full-screen login and registration flow presented as a SwiftUI sheet on app
+  launch when no stored token is found. JWT is persisted in the iOS Keychain.
+  On session expiry (401 from any API call), the token is erased and the auth
+  sheet is re-presented with an amber "Session expired" banner.
+linked_decisions:
+  - DEC-mobile-tech-stack-001
+  - DEC-mobile-pause-swiftui-001
+linked_contracts:
+  - CONR-user-api-001
+acceptance_criteria:
+  - App launches directly to the main tab view if a valid Keychain token exists.
+  - If no token, a full-screen auth sheet is shown (not dismissable).
+  - Sheet has two segmented tabs: Sign In and Create Account.
+  - Both forms validate that username and password are non-empty before enabling the submit button.
+  - Successful login stores the JWT in the Keychain and dismisses the sheet.
+  - Failed login/register shows an inline error message below the form.
+  - A global URLSession response interceptor detects 401 responses, clears the Keychain token, and re-presents the auth sheet with a "Session expired" warning.
+  - Sign Out button in Settings tab clears the Keychain token and re-presents the auth sheet.
+mobile_ux_notes:
+  - Use `.fullScreenCover` bound to a `isAuthenticated` state variable.
+  - Keyboard avoidance is handled by `.ignoresSafeArea(.keyboard)` on the outer container.
+  - Secure field for password input.

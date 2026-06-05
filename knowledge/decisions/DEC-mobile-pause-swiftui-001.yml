@@ -1,0 +1,35 @@
+id: DEC-mobile-pause-swiftui-001
+kind: decision
+title: "Pause Mobile Development Pending SwiftUI Restart"
+status: decided
+date: 2026-06-01
+context: >
+  The current mobile implementation under ios/StockMonitorMobile is a React
+  Native + Expo prototype. Product direction is to stop developing this mobile
+  app for now and eventually restart mobile work as a SwiftUI iOS application.
+decision: >
+  Do not continue developing the current ios/StockMonitorMobile app unless the
+  user explicitly asks to resume it. Future mobile product work should start by
+  refreshing the mobile PRD, architecture intent, HLD, and feature specs toward
+  a SwiftUI implementation before code changes resume.
+alternatives_considered:
+  - option: Continue Expo / React Native development
+    reason_rejected: >
+      This would increase code and documentation drift from the desired future
+      SwiftUI direction.
+  - option: Delete the current Expo prototype
+    reason_rejected: >
+      The prototype may remain useful as reference behavior when mobile work
+      restarts.
+consequences:
+  - Mobile feature specs remain deferred until an explicit mobile restart.
+  - Agents should not proactively modify ios/StockMonitorMobile for ordinary project work.
+  - Future mobile work should prefer SwiftUI planning and docs updates before implementation.
+related_primitives:
+  - DEC-mobile-tech-stack-001
+  - FEAT-mobile-auth-001
+  - FEAT-mobile-watchlist-001
+  - FEAT-mobile-heatmap-001
+  - FEAT-mobile-chart-001
+  - FEAT-mobile-movers-001
+  - FEAT-mobile-news-001

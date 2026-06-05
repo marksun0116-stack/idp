@@ -1,0 +1,16 @@
+id: INV-heatmap-dedup-001
+kind: invariant
+title: "Each symbol appears at most once in the heatmap, regardless of watchlist membership"
+status: implemented
+statement: >
+  If a symbol (e.g. AAPL) appears in multiple watchlists owned by the same user, it must
+  be deduplicated in the heatmap response. The heatmap cell for that symbol must carry the
+  names of all watchlists it belongs to, but only one quote fetch and one cell are rendered.
+rationale: >
+  Duplicate cells for the same symbol would inflate the visual heatmap and trigger redundant
+  upstream API calls. The watchlist membership list on the tooltip provides full context
+  without duplication.
+linked_features:
+  - FEAT-heatmap-widget-001
+linked_constraints:
+  - CON-heatmap-scope-001

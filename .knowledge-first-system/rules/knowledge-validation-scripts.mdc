@@ -1,0 +1,25 @@
+---
+description: Scripts and CI — validate catalog, links, and primitive shape (see guides)
+globs: .knowledge-first-system/scripts/**/*
+alwaysApply: false
+---
+
+# Validation scripts and CI (`.knowledge-first-system/scripts/`, pipelines)
+
+Aligned with **`.knowledge-first-system/specs/cicd_spec.md`** and validation expectations in **`.knowledge-first-system/specs/knowledge_model_spec.md`** (§9).
+
+## Goals
+
+- **Fail the build** when `catalog.yml` references missing files, duplicate IDs, or broken `related_primitives` / binding IDs.
+- Optionally validate YAML **shape** per `kind` (constraint, invariant, decision, contract, feature_spec) as scripts mature.
+- Run on every PR that touches **`knowledge/`** so Knowledge PRs stay mergeable and implementation does not drift from indexed primitives.
+
+## Blocking conditions (when implemented)
+
+- Missing required primitive fields or unknown IDs referenced from specs.
+- Catalog / file mismatch.
+- (With test wiring) missing or untraceable coverage for critical invariants where the team has mandated checks.
+
+Prefer small, fast checks locally; mirror them in CI.
+
+**Procedure** (when to run, local workflow, fix order): **`.knowledge-first-system/skills/validate-knowledge-graph/SKILL.md`**. **Where this fits in delivery:** **`.knowledge-first-system/specs/cicd_spec.md`**.

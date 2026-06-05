@@ -1,0 +1,31 @@
+id: FEAT-heatmap-widget-001
+kind: feature
+title: "Widget 2 — Cross-watchlist stock heatmap"
+status: implemented
+summary: >
+  Display a squarified treemap heatmap of all unique stocks across all of the authenticated
+  user's watchlists. Each cell's size is proportional to the absolute value of the stock's
+  percent change; cell color encodes direction and magnitude on a dynamic red–grey–green scale
+  calibrated to the widest spread in the current dataset. A period selector (Today / This Week /
+  This Month) controls whether the percent change reflects the live day's move, the 1W
+  historical range, or the 1M historical range. Hovering a cell shows a tooltip with last price,
+  change, change %, and which watchlists contain the symbol.
+linked_constraints:
+  - CON-heatmap-scope-001
+linked_invariants:
+  - INV-heatmap-dedup-001
+  - INV-watchlist-ownership-001
+linked_decisions:
+  - DEC-tech-stack-001
+  - DEC-chart-library-001
+linked_contracts:
+  - CONR-heatmap-api-001
+acceptance_criteria:
+  - Heatmap aggregates every symbol across all user watchlists (deduplicated).
+  - Cell size is proportional to absolute value of percentChange; minimum size prevents invisible cells.
+  - Cell color uses a dynamic scale: the stock with the largest absolute move gets full green/red saturation; all others are colored proportionally with a sqrt curve for mid-range visibility.
+  - Period selector toggles between Today (live quote), This Week (1W historical), and This Month (1M historical).
+  - Tooltip shows symbol, last price, change, change %, and watchlist membership.
+  - Heatmap is accessible from a top-level nav entry (not scoped to a single watchlist).
+  - Empty state shown when the user has no watchlists.
+  - Only the authenticated user's stocks are shown; cross-user leakage is impossible.

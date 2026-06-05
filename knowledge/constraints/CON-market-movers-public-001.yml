@@ -1,0 +1,16 @@
+id: CON-market-movers-public-001
+kind: constraint
+title: "Market movers data is market-wide, not user-scoped"
+status: active
+description: >
+  The market movers panel shows market-wide rankings (most active, top gainers, top losers)
+  sourced from the Yahoo Finance screener API. This data is not scoped to the authenticated
+  user's watchlists. However, the add-to-watchlist action from this panel MUST enforce user
+  ownership — a user can only add stocks to their own watchlists.
+rationale: >
+  Market movers rankings are public, broadcast market data — there is no per-user variant.
+  Exposing this data through the authenticated backend (rather than directly from the frontend)
+  keeps the Yahoo Finance API integration centralized and avoids exposing scraper logic in
+  browser-visible code.
+linked_invariants:
+  - INV-watchlist-ownership-001

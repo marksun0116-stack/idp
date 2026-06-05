@@ -1,0 +1,34 @@
+id: FEAT-holding-management-001
+kind: feature
+title: "Holdings Management"
+status: implemented
+epic: EPIC-investment-workspace-001
+description: >
+  Allow a user to add, update, and remove stock holdings within an account.
+  Each holding represents a single position (one symbol per account).
+  Live prices are fetched from the existing Yahoo Finance quote integration
+  to compute current market value and unrealized gain/loss. Sector data
+  is cached and can be manually overridden. Bulk CSV import with conflict
+  resolution is supported.
+holding_fields:
+  symbol:       "Stock ticker (e.g. AAPL)"
+  shares:       "Number of shares held (positive number)"
+  cost_basis:   "Average cost per share in USD (optional, nullable)"
+  purchase_date: "Optional date of purchase (for display purposes)"
+  manual_price: "Optional manual price override for securities not in Yahoo Finance"
+  sector:       "Cached sector data (nullable, inlined editable); 30-day stale threshold"
+capabilities:
+  - CRUD operations per holding
+  - Inline sector editing with 30-day cache + manual override
+  - CSV bulk import with conflict resolution (update vs skip per-symbol)
+  - Consolidation of same symbol across accounts in allocation view
+  - Manual price support for non-quoted securities (Stable Value Funds, etc)
+  - Watchlist membership badges ("OWNED" / "WATCHING" per symbol)
+constraints:
+  - One holding per symbol per account (unique constraint).
+  - Shares must be positive.
+  - Cost basis must be non-negative if provided.
+  - Cost basis is optional (omit or null to show "—" in UI).
+  - Manual price prevents live quote fetch; overrides Yahoo Finance data.
+linked_contracts:
+  - CONR-portfolio-api-001

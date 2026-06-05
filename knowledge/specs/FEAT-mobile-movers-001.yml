@@ -1,0 +1,33 @@
+id: FEAT-mobile-movers-001
+kind: feature
+title: "Mobile — Market Movers"
+status: deferred
+summary: >
+  The Movers tab shows a horizontally scrollable tab strip (Most Active,
+  Gainers, Losers, Small Cap, Aggressive) above a stock list. Small Cap and
+  Aggressive results are sorted by percentChange desc. Tapping a row pushes a
+  detail screen showing the stock's news. A "+" button on each row opens an
+  action sheet to add the stock to a watchlist; it is hidden when the stock is
+  already in all watchlists (✓ badge shown instead).
+linked_decisions:
+  - DEC-mobile-tech-stack-001
+  - DEC-mobile-pause-swiftui-001
+linked_contracts:
+  - CONR-market-movers-api-001
+  - CONR-news-api-001
+acceptance_criteria:
+  - "Tab strip is a horizontally scrollable row of pill buttons: Most Active, Gainers, Losers, Small Cap, Aggressive."
+  - Selecting a tab fetches and displays up to 25 stocks for that tab.
+  - "Each row shows: symbol (bold), company name (secondary), last price, change % (color-coded), and volume."
+  - Tapping a row navigates to a Movers News screen showing news articles for that symbol.
+  - "Movers News screen: title is the symbol; list of news items (badge, headline, source, time); tap opens SFSafariViewController."
+  - "+ button on each row opens an action sheet listing only watchlists that do not already contain the symbol; selecting one adds it."
+  - "When stock is already in all watchlists, a green check indicator replaces the + button."
+  - Pull-to-refresh reloads the current tab.
+  - Error state shown if the screener API is unavailable.
+mobile_ux_notes:
+  - "Tab strip: ScrollView(.horizontal, showsIndicators: false) + HStack of button chips."
+  - "Active chip: filled blue background. Inactive: bordered, muted text."
+  - "+ button: .confirmationDialog or .actionSheet with watchlist options."
+  - NavigationStack push to MoversNewsView on row tap.
+  - Volume formatted as K/M/B (same as web).

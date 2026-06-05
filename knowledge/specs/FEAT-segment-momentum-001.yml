@@ -1,0 +1,47 @@
+id: FEAT-segment-momentum-001
+kind: feature
+title: "Segment Momentum Analysis — Sector & Industry Trend Detection"
+status: shipped
+description: >
+  Real-time analysis of gainers/losers by sector and industry to identify
+  which segments are experiencing strong momentum. Displays top 3 bullish
+  and top 3 bearish sectors/industries with heatmap-style coloring.
+  Interactive highlighting links momentum cards to stock table rows.
+  Users can close/restore panels independently.
+
+acceptance_criteria:
+  - Real-time analysis shows sector and industry breakdown of current gainers/losers
+  - Top 3 bullish sectors/industries displayed with green heatmap colors
+  - Top 3 bearish sectors/industries displayed with red heatmap colors
+  - Displays gainers count, losers count, and average % change per segment
+  - Only shows segments with >= 3 gainers OR >= 3 losers
+  - Clicking a sector/industry card highlights matching stocks in movers table (yellow)
+  - Each momentum panel (sector, industry) has independent close (×) button
+  - Restore buttons appear below header when panels are hidden
+  - Cards are wide (200px) with readable font sizes and proper spacing
+  - Historical data captures daily segment momentum snapshots
+  - Correct calculation: gainers avg % for bullish, losers avg % for bearish
+
+user_stories:
+  - "As a trader, I want to see which sectors and industries are gaining/losing today"
+  - "As a researcher, I want to track sector and industry rotation patterns over time"
+  - "As an investor, I want to identify emerging segment trends and spot which stocks drive them"
+  - "As a user, I want to visually highlight stocks belonging to a selected sector/industry"
+
+implementation_notes:
+  - Leverages cached stock_metadata.sector and stock_metadata.industry from startup CSV seeding
+  - Uses MarketMoversService to fetch real-time gainers/losers
+  - Groups by sector and industry with momentum calculation
+  - Top 3 bullish + top 3 bearish displayed per segment type
+  - Heatmap coloring matches treemap intensity scale (Math.sqrt-based)
+  - Interactive click handlers on cards to highlight matching table rows
+  - Independent state for sector/industry/showing panels
+  - Database table StockSegmentMomentum captures daily snapshots for historical analysis
+  - Two API endpoints: /api/market-movers/segment-analysis (real-time) + /api/market-movers/segment-history
+
+linked_constraints:
+  - CON-segment-data-freshness-001
+  - CON-sector-cache-001
+linked_invariants:
+  - INV-sector-momentum-calculation-001
+  - INV-sector-cache-001

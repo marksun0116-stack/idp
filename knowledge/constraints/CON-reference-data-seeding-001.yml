@@ -1,0 +1,33 @@
+id: CON-reference-data-seeding-001
+kind: constraint
+title: "Exchange Reference Data Seeding — Idempotent Startup Load"
+status: implemented
+description: >
+  Exchange listing CSV files (NASDAQ, NYSE, AMEX) are bundled as classpath resources
+  and loaded into stock_metadata exactly once per database lifecycle. The loader
+  checks for any existing exchange-tagged row before inserting; if found it skips.
+  Sector and industry are always authoritative from the CSV — Yahoo Finance is not
+  used for sector/industry data. Company name preserves any existing non-null value.
+  Exchange and ipo_year are always set from CSV. Must complete within application
+  startup without blocking the health-check endpoint.
+enforcement:
+  - StockReferenceDataLoader checks COUNT(*) WHERE exchange IS NOT NULL before any write
+  - Upsert SQL uses COALESCE to preserve existing company_name/sector/industry values
+  - Batch size 500 rows to avoid large single transactions
+  - Runs on ApplicationReadyEvent (non-blocking; logged errors do not crash the app)
+  - CSV files located at classpath:data/nasdaq.csv, classpath:data/nyse.csv, classpath:data/amex.csv
+  - Header row skipped; blank symbol rows skipped
+idempotency:
+  check_column: exchange
+  check_condition: "COUNT(*) WHERE exchange IS NOT NULL > 0"
+  skip_on_existing: true
+merge_priority:
+  exchange: csv_always
+  ipo_year: csv_when_target_null
+  company_name: keep_existing_non_null
+  sector: csv_always
+  industry: csv_always
+related_features:
+  - FEAT-stock-reference-data-001
+related_invariants:
+  - INV-sector-cache-001

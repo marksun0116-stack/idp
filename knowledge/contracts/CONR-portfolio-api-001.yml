@@ -1,0 +1,129 @@
+id: CONR-portfolio-api-001
+kind: contract
+title: "Portfolio API"
+status: implemented
+auth: "Bearer JWT required on all endpoints"
+
+endpoints:
+
+  summary:
+    method: GET
+    path: "/api/portfolio/summary"
+    description: "Returns all accounts with enriched holdings (live prices) and aggregate totals."
+    response_200: |
+      {
+        "totalValue":    number,
+        "totalCost":     number,
+        "totalGain":     number,
+        "totalGainPct":  number,
+        "dailyGain":     number,
+        "dailyGainPct":  number,
+        "accounts": [{
+          "id":         number,
+          "name":       string,
+          "accountType": string,
+          "value":      number,
+          "cost":       number,
+          "gain":       number,
+          "gainPct":    number,
+          "holdings": [{
+            "id":           number,
+            "symbol":       string,
+            "companyName":  string | null,
+            "shares":       number,
+            "costBasis":    number,
+            "purchaseDate": string | null,
+            "price":        number | null,
+            "value":        number | null,
+            "cost":         number,
+            "gain":         number | null,
+            "gainPct":      number | null,
+            "dayChange":    number | null,
+            "dayChangePct": number | null,
+            "dayGain":      number | null
+          }]
+        }]
+      }
+
+  create_account:
+    method: POST
+    path: "/api/portfolio/accounts"
+    request_body: |
+      { "name": string, "accountType": string }
+    response_201: |
+      { "id": number, "name": string, "accountType": string }
+    errors:
+      409: "Account name already exists for this user"
+
+  delete_account:
+    method: DELETE
+    path: "/api/portfolio/accounts/{id}"
+    description: "Deletes account and all its holdings."
+    errors:
+      404: "Account not found or not owned by user"
+
+  add_holding:
+    method: POST
+    path: "/api/portfolio/accounts/{accountId}/holdings"
+    request_body: |
+      { "symbol": string, "shares": number, "costBasis": number, "purchaseDate": string | null }
+    response_201: |
+      { "id": number, "symbol": string, "shares": number, "costBasis": number, "purchaseDate": string | null }
+    errors:
+      404: "Account not found or not owned by user"
+      409: "Symbol already held in this account"
+
+  update_holding:
+    method: PUT
+    path: "/api/portfolio/accounts/{accountId}/holdings/{id}"
+    request_body: |
+      { "shares": number, "costBasis": number, "purchaseDate": string | null }
+    response_200: |
+      { "id": number, "symbol": string, "shares": number, "costBasis": number, "purchaseDate": string | null }
+    errors:
+      404: "Holding not found or not in this account"
+
+  delete_holding:
+    method: DELETE
+    path: "/api/portfolio/accounts/{accountId}/holdings/{id}"
+    errors:
+      404: "Holding not found or not in this account"
+
+  owned_symbols:
+    method: GET
+    path: "/api/portfolio/owned-symbols"
+    description: "Returns set of all symbols currently held in user's portfolio."
+    response_200: |
+      { "symbols": [string] }
+
+  sectors:
+    method: GET
+    path: "/api/portfolio/sectors"
+    description: "Returns cached sector data for all portfolio symbols. Cache-first: returns stale if available, updates in background if >30 days old."
+    response_200: |
+      { "sectors": { "[symbol]": string | null } }
+    notes: "Returns null sector for symbols with no sector data. If Yahoo Finance returns 401 (Invalid Crumb), gracefully omits that symbol."
+
+  refresh_sectors:
+    method: POST
+    path: "/api/portfolio/sectors/refresh"
+    description: "Forces re-fetch of sector data from Yahoo Finance for all portfolio symbols (bypasses cache)."
+    response_200: |
+      { "sectors": { "[symbol]": string | null } }
+
+  update_sector:
+    method: PUT
+    path: "/api/portfolio/stocks/{symbol}/sector"
+    description: "Manually override sector for a symbol (user must own the symbol)."
+    request_body: |
+      { "sector": string | null }
+    response_200: |
+      { "symbol": string, "sector": string | null }
+    errors:
+      404: "Symbol not found in user's portfolio"
+      409: "Unauthorized: symbol not owned by this user"
+
+linked_features:
+  - FEAT-account-management-001
+  - FEAT-holding-management-001
+  - FEAT-portfolio-dashboard-001

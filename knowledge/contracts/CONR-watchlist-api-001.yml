@@ -1,0 +1,50 @@
+id: CONR-watchlist-api-001
+kind: contract
+title: "Watchlist management API"
+status: implemented
+description: "Defines REST endpoints for managing watchlists and stocks within a user’s watchlists."
+version: "0.3"
+endpoints:
+  - path: /api/watchlists
+    method: GET
+    response:
+      200: { watchlists: [ { id: string, name: string, stocks: [ { id: string, symbol: string } ] } ] }
+      401: { error: string }
+  - path: /api/watchlists
+    method: POST
+    request:
+      body:
+        - name: string
+    response:
+      201: { watchlistId: string, name: string }
+      400: { error: string }
+  - path: /api/watchlists/{watchlistId}/stocks
+    method: POST
+    request:
+      body:
+        - symbol: string
+    response:
+      201: { id: string, symbol: string }
+      400: { error: string }
+      401: { error: string }
+  - path: /api/watchlists/{watchlistId}/stocks
+    method: GET
+    behavior:
+      - "Fetches current quotes from Yahoo Finance when no backend quote cache exists for a symbol, or when the current session is PRE, REGULAR, POST, or POSTPOST."
+      - "When the backend has a CLOSED quote cached for a symbol and the local US equity quote session is outside extended-hours windows, returns the cached quote instead of re-querying Yahoo Finance."
+    response:
+      200: "{ stocks: [ { id: string, symbol: string, lastPrice: number?, change: number?, percentChange: number?, marketTime: number?, marketState: string?, preMarketPrice: number?, preMarketTime: number?, postMarketPrice: number?, postMarketTime: number?, volume: number? } ] }"
+      401: { error: string }
+      404: { error: string }
+  - path: /api/watchlists/{watchlistId}/stocks/{stockId}
+    method: DELETE
+    response:
+      204: {}
+      401: { error: string }
+      404: { error: string }
+  - path: /api/watchlists/{watchlistId}
+    method: DELETE
+    response:
+      204: {}
+      401: { error: string }
+      404: { error: string }

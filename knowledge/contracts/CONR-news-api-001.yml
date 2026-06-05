@@ -1,0 +1,45 @@
+id: CONR-news-api-001
+kind: contract
+title: "News API — Yahoo Finance RSS and watchlist news endpoints"
+status: active
+linked_features:
+  - FEAT-stock-news-001
+  - FEAT-market-movers-widget-001
+
+# ── Watchlist news endpoint ────────────────────────────────────────────────
+#
+# GET /api/watchlists/{watchlistId}/news
+#   Auth: Bearer JWT required
+#   Path: watchlistId — long, owned by authenticated user
+#   Query: symbol (optional) — if provided, returns news only for that symbol
+#   Response 200:
+#     { "news": [ NewsItem, ... ] }
+#   Response 400: watchlist not found or not owned by user
+#
+# GET /api/market-movers/news?symbol={symbol}
+#   Auth: Bearer JWT required
+#   Query: symbol — stock ticker (e.g. AAPL), case-insensitive
+#   Response 200:
+#     { "symbol": "AAPL", "news": [ NewsItem, ... ] }
+#   Response 400: symbol param missing or blank
+#   Response 502: RSS feed unavailable
+
+news_item_schema:
+  symbol: string          # stock ticker
+  title: string           # article headline
+  url: string             # full article URL
+  publishedAt: long       # Unix epoch seconds (UTC)
+  source: string          # publisher name (e.g. "Reuters", "Yahoo Finance")
+  summary: string|null    # up to 220-char plain-text snippet (HTML stripped)
+
+upstream_rss:
+  url_template: "https://feeds.finance.yahoo.com/rss/2.0/headline?s={symbol}&region=US&lang=en-US"
+  requires_user_agent: true   # Chrome browser string required
+  items_per_symbol: 20        # fixed RSS limit; no count parameter available
+  date_format: "EEE, dd MMM yyyy HH:mm:ss Z"  # Locale.ENGLISH
+  concurrency: 8              # fixed thread pool; symbols fetched in parallel
+
+merge_behavior:
+  - results from all requested symbols are merged into a single list
+  - list is sorted by publishedAt descending (most recent first)
+  - symbols with no results or fetch errors are silently omitted

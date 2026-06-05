@@ -1,0 +1,15 @@
+id: FEAT-stock-monitor-001
+kind: feature
+title: "Stock monitor user watchlists"
+status: implemented
+summary: "Support user registration and named watchlists for tracking stocks."
+linked_constraints:
+  - CON-user-registration-001
+  - CON-watchlist-access-001
+linked_invariants:
+  - INV-watchlist-ownership-001
+linked_decisions:
+  - DEC-tech-stack-001
+linked_contracts:
+  - CONR-user-api-001
+  - CONR-watchlist-api-001

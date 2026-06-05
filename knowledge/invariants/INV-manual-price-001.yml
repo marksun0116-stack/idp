@@ -1,0 +1,26 @@
+id: INV-manual-price-001
+kind: invariant
+title: "Manual Price Override Priority"
+status: implemented
+description: >
+  When a holding has a manual_price set (non-null), that price is used
+  instead of fetching live data from Yahoo Finance. This supports securities
+  not available on Yahoo (Stable Value Funds, private holdings, etc.).
+  Portfolio summary shows "(M)" badge to indicate manual price is in effect.
+guarantees:
+  - If manual_price != null: use manual_price for market value, ignore live quote
+  - If manual_price == null: fetch live price from StockQuoteService
+  - UI always shows "(M)" badge next to price when manual_price is active
+  - Manual price is persistent (survives quote fetches)
+  - Manual price is nullable: can be set to null to re-enable live quotes
+edge_cases:
+  - Holding created with manual_price, later add to watchlist: OWNED badge still shows, price column shows "(M)"
+  - Manual price set for a symbol available on Yahoo: manual_price takes precedence (no auto-override)
+  - User clears manual_price by setting to null: live quotes resume on next portfolio load
+rationale: >
+  Supports asset classes not covered by Yahoo Finance (private funds, bonds,
+  crypto-like instruments with custom NAV tracking). Manual price allows
+  users to track unrealized gains for these positions.
+violations: >
+  If violated: portfolio calculation uses wrong price, misreporting gains/losses.
+  Fix: always check manual_price != null before calling StockQuoteService.

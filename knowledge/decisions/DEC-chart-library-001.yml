@@ -1,0 +1,28 @@
+id: DEC-chart-library-001
+kind: decision
+title: "Use Recharts for heatmap and historical chart visualizations"
+status: implemented
+decision: >
+  Use Recharts as the frontend charting library for the heatmap and historical comparison
+  chart widgets.
+context: >
+  The project uses React (Vite). A charting library is needed for the heatmap (custom cell
+  rendering) and the multi-line historical comparison chart. Three options were considered.
+alternatives:
+  - "Chart.js with react-chartjs-2: mature and widely used, but requires imperative
+     canvas manipulation and is less idiomatic in React than a native-React library."
+  - "Victory: React-native and composable, but smaller community and less maintained
+     than Recharts; fewer out-of-the-box primitives for financial charts."
+  - "Recharts (chosen): built on React and D3, declarative component model, responsive
+     containers, built-in Line, ComposedChart, Tooltip, Legend, and Cell primitives that
+     map directly to the heatmap and comparison chart requirements."
+consequences:
+  - Recharts is installed as a single npm dependency; no additional build config needed.
+  - The heatmap will use a custom grid layout with CSS and Recharts Tooltip for interaction.
+  - The comparison chart will use Recharts LineChart with normalized series data.
+  - Future chart types (candlestick, volume bar) may require a supplement library or
+    migration to a more full-featured financial charting library.
+linked_features:
+  - FEAT-heatmap-widget-001
+  - FEAT-historical-chart-widget-001
+  - FEAT-live-quote-widget-001

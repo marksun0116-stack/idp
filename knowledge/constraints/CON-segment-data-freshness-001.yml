@@ -1,0 +1,31 @@
+id: CON-segment-data-freshness-001
+kind: constraint
+title: "Segment Momentum Data Freshness"
+status: planned
+statement: >
+  Real-time segment analysis must use current (today's) gainers/losers from
+  the market movers endpoint. Historical segment momentum snapshots are
+  captured once per trading day at market close (4 PM ET) and stored for
+  trend analysis.
+
+  Real-time data: Refreshed every time /api/movers endpoint is called
+  Historical snapshots: One per trading day, stored at market close
+  Lookback window: Past 30 trading days available for trend analysis
+
+rationale: >
+  Real-time segment analysis should reflect current market conditions
+  immediately. Historical snapshots at market close capture the full day's
+  momentum without intraday noise, making trend analysis more reliable.
+  30-day window is sufficient to detect sector rotation patterns.
+
+enforcement:
+  - Real-time analysis groups today's gainers/losers by sector, count = current
+  - Historical snapshots recorded once daily at 4:15 PM ET
+  - Cleanup: Keep 30 trading days of historical data (delete older snapshots)
+  - API must validate dates to ensure no future data is returned
+
+related_constraints:
+  - CON-market-movers-public-001
+
+linked_features:
+  - FEAT-segment-momentum-001

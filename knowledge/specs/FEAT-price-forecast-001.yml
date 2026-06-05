@@ -1,0 +1,66 @@
+id: FEAT-price-forecast-001
+kind: feature
+title: "Price Forecasting — ARIMA Microservice with Technical Context"
+status: active
+summary: >
+  A Python FastAPI microservice running alongside Spring Boot. Uses ARIMA as
+  the baseline statistical forecast and applies a conservative technical
+  context adjustment derived from trend, momentum, volatility, volume, and
+  historical similar-setup validation. The Java backend proxies forecast
+  requests to the Python service, passing historical daily OHLCV data from
+  stock_price_history when available. The frontend overlays the forecast band on the
+  Indicators tab chart.
+linked_decisions:
+  - DEC-tech-stack-001
+  - DEC-forecast-tech-001
+linked_contracts:
+  - CONR-forecast-api-001
+architecture:
+  service_name: "stock-forecast"
+  language: Python 3.11
+  framework: FastAPI
+  port: 8001
+  ml_library: statsmodels ARIMA
+  location: "src/forecast/"
+  data_flow: >
+    Frontend → GET /api/forecast?symbol=&days= (Java, JWT-required)
+    → Java fetches price series from stock_price_history
+    → Java POST /internal/forecast (Python service, internal only)
+    → Forecast service fits ARIMA baseline, falls back to Holt if needed, and applies bounded technical context adjustment
+    → Returns {ds, yhat, yhat_lower, yhat_upper}[]
+    → Java formats and returns to frontend
+  internal_endpoint:
+    path: "POST /internal/forecast"
+    request: '{ "symbol": string, "days": integer, "prices": [{"date": "YYYY-MM-DD", "close": float, "high": float|null, "low": float|null, "volume": integer|null}] }'
+    response: '{ "symbol": string, "forecast": [{"date": "YYYY-MM-DD", "yhat": float, "yhat_lower": float, "yhat_upper": float}] }'
+  public_endpoint:
+    path: "GET /api/forecast"
+    auth: "Bearer JWT required"
+    params:
+      symbol: "Stock ticker symbol"
+      days: "Number of forecast days (default 30, max 90)"
+    response: '{ "symbol": string, "forecast": [{"date": string, "yhat": float, "yhat_lower": float, "yhat_upper": float}] }'
+forecast_model:
+  algorithm: ARIMA(1,1,1) baseline plus Holt fallback and bounded technical-context adjustment
+  input: Daily OHLCV history where available, daily close prices required (minimum 90 days of history recommended)
+  output: Point forecast (yhat) + 80% confidence interval (yhat_lower, yhat_upper)
+  baseline: "ARIMA produces the initial 30-day statistical projection from historical close prices."
+  technical_adjustment: >
+    Technical indicators should be used as bounded features and confidence
+    calibration inputs, not as direct buy/sell rules. Trend, momentum, and
+    volume can contribute a bounded directional score; historical similar-setup
+    validation contributes only when sample size and directional consistency are
+    sufficient. The final adjustment is capped by recent realized volatility and
+    never exceeds 4%.
+  design_reference: "docs/design/technical_forecast_hybrid_model.md"
+  disclaimer: >
+    Forecasts are statistical extrapolations of historical trends, not financial advice.
+    Stock prices are influenced by many factors not captured in historical data alone.
+acceptance_criteria:
+  - Python service starts and responds to POST /internal/forecast within 5 seconds for a 1-year history.
+  - Java GET /api/forecast?symbol=AAPL&days=30 returns a 30-element forecast array.
+  - Insufficient history (< 90 days) returns HTTP 422 with an explanatory error.
+  - Frontend overlays the forecast band as a shaded area on the Indicators tab price chart, extending beyond the last historical date.
+  - A disclaimer label "Statistical projection — not financial advice" appears below the chart when forecast is visible.
+  - Forecast toggle (on/off) button controls visibility.
+  - If the forecast service is unavailable, the Indicators tab still works (forecast section shows an error, indicators remain functional).

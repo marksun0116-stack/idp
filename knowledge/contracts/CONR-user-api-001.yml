@@ -1,0 +1,30 @@
+id: CONR-user-api-001
+kind: contract
+title: "User registration and authentication API"
+status: implemented
+description: "Defines REST endpoints for user signup, login, and user profile retrieval."
+version: "0.1"
+endpoints:
+  - path: /api/users/register
+    method: POST
+    request:
+      body:
+        - username: string
+        - password: string
+    response:
+      201: { message: string, userId: string }
+      400: { error: string }
+  - path: /api/users/login
+    method: POST
+    request:
+      body:
+        - username: string
+        - password: string
+    response:
+      200: { token: string }
+      401: { error: string }
+  - path: /api/users/me
+    method: GET
+    response:
+      200: { userId: string, username: string }
+      401: { error: string }

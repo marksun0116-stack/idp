@@ -1,0 +1,30 @@
+id: CON-sector-cache-001
+kind: constraint
+title: "Sector Data — Static CSV Source, Manual Override Only"
+status: superseded
+superseded_by: CON-reference-data-seeding-001
+description: >
+  Sector and industry data is sourced exclusively from the bundled exchange
+  listing CSVs (NASDAQ, NYSE, AMEX) loaded at startup by StockReferenceDataLoader.
+  Yahoo Finance is no longer queried for sector or industry — the async refresh
+  path and stale-threshold logic have been removed. The only runtime write path
+  for sector is PUT /api/portfolio/stocks/{symbol}/sector (user manual override).
+  GET /api/portfolio/sectors returns the statically-seeded cached values directly.
+enforcement:
+  - StockMetadataServiceImpl.findStaleOrMissingSectors always returns empty set
+  - PortfolioController.fetchAndCacheSectors reads cache only; no Yahoo Finance calls
+  - POST /api/portfolio/sectors/refresh returns cached values (no-op refresh)
+  - PUT /api/portfolio/stocks/{symbol}/sector still allows manual override
+  - MarketMoversController async sector-fetch block removed
+  - StockController stale-check block removed
+freshness:
+  stale_threshold_days: N/A
+  check_on_read: false
+  async_refresh: false
+  source: static_csv
+related_invariants:
+  - INV-sector-cache-001
+related_features:
+  - FEAT-portfolio-dashboard-001
+  - FEAT-holding-management-001
+  - FEAT-stock-reference-data-001

@@ -1,0 +1,44 @@
+id: FEAT-portfolio-dashboard-001
+kind: feature
+title: "Portfolio Dashboard"
+status: implemented
+epic: EPIC-investment-workspace-001
+description: >
+  Aggregate all holdings across all accounts for the authenticated user
+  and display a real-time portfolio summary enriched with live Yahoo Finance quotes.
+display:
+  summary_card:
+    - Total market value (across all accounts)
+    - Total unrealized gain/loss ($ and %)
+    - Daily gain/loss ($ and %)
+  tabs:
+    - Holdings: sortable table of all holdings per account
+    - Allocation: sector and account-type breakdowns as donut charts with top holdings
+  holdings_table:
+    - Symbol and company name
+    - Sector (inline editable, cached with 30-day stale threshold)
+    - Shares held
+    - Average cost per share (nullable)
+    - Current price (live quote)
+    - Market value (price × shares)
+    - Unrealized gain/loss ($ and %)
+    - Daily change ($ and %)
+    - Watchlist badges (shows which watchlists own this symbol; "+" button to add)
+  allocation_view:
+    - By Account Type: donut grouping holdings by account type
+    - By Sector: donut grouping holdings by sector (null sector as "Unknown")
+    - Top 5 holdings table with concentration warnings (>20%)
+    - Cash & Equivalents grouping for manual-price holdings
+data_flow: >
+  GET /api/portfolio/summary fetches all accounts + holdings for the user,
+  calls StockQuoteService.getLatestQuotes() for all distinct symbols,
+  caches sector data via StockMetadataService (30-day threshold),
+  then enriches each holding with live price and sector data.
+  Holdings with manual_price (non-Yahoo-Finance securities) show "(M)" badge.
+features:
+  - CSV bulk import with conflict resolution
+  - Sector data caching with manual override capability
+  - Account management (create, delete with cascade)
+  - Holding CRUD with optional cost basis
+linked_contracts:
+  - CONR-portfolio-api-001

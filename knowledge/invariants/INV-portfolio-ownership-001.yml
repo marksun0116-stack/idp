@@ -1,0 +1,25 @@
+id: INV-portfolio-ownership-001
+kind: invariant
+title: "Portfolio Ownership and Access Control"
+status: implemented
+description: >
+  The authenticated user can only view, create, modify, and delete accounts
+  and holdings that belong to them. At any point in time, each account and
+  holding has exactly one owner (user_id). No cross-user access or data
+  leakage is possible.
+guarantees:
+  - Every row in investment_accounts has user_id = authenticated_user
+  - Every row in holdings is reachable only through an account owned by authenticated_user
+  - GET endpoints filter by user_id; DELETE endpoints verify ownership before cascading
+  - Account names are unique per user (not globally unique)
+  - Holdings belong to exactly one account; accounts belong to exactly one user
+related_constraints:
+  - CON-portfolio-access-001
+  - CON-watchlist-access-001
+testing:
+  - PortfolioOwnershipTest: create account as user A, verify user B cannot see/modify/delete it
+  - PortfolioCascadeTest: delete account, verify all holdings are deleted
+  - PortfolioQueryTest: verify WHERE user_id = ? on all portfolio endpoints
+violations: >
+  If violated: user A can read/modify user B's holdings. Critical security bug.
+  Mitigations: JWT validation, query-level filtering, ownership checks before update/delete.

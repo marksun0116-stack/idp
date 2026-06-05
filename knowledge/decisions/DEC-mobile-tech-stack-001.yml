@@ -1,0 +1,47 @@
+id: DEC-mobile-tech-stack-001
+kind: decision
+title: "Mobile Tech Stack — React Native + Expo"
+status: superseded
+date: 2026-05-29
+superseded_by:
+  - DEC-mobile-pause-swiftui-001
+decision: >
+  The iOS app will be built with React Native and Expo. Navigation uses
+  React Navigation v6 (bottom tabs + native stacks). JWT is stored in
+  Expo SecureStore (equivalent to iOS Keychain). The heatmap treemap is
+  rendered with react-native-svg (same squarify algorithm as the web app,
+  ported to JS). Historical charts are rendered with a custom SVG line
+  chart via react-native-svg. The app targets iOS 16+ and Android 10+ but
+  is developed and previewed on PC via Expo Web (browser) and the Android
+  emulator. No third-party chart library is used.
+alternatives_considered:
+  - option: SwiftUI
+    reason_rejected: >
+      Requires macOS and Xcode. Development and simulation on Windows/WSL2
+      is not possible. Ruled out for the current development environment.
+  - option: Flutter
+    reason_rejected: >
+      Dart is an additional language with no connection to the existing
+      Java/JS codebase. Cross-platform benefit is available from React
+      Native with less friction.
+rationale: >
+  React Native + Expo lets the developer preview the app in a browser
+  (expo start --web) and on an Android emulator on Windows — no Mac
+  required. The same JavaScript knowledge from the web React frontend
+  applies directly. expo-secure-store provides Keychain-equivalent secure
+  JWT storage. react-native-svg renders the squarify heatmap with the
+  same algorithm used by the web SVG implementation. Expo's managed
+  workflow handles native builds (EAS Build) when an App Store submission
+  is needed.
+consequences:
+  - Development preview via browser (expo start --web) or Android emulator on Windows.
+  - Physical iPhone testing via Expo Go app (scan QR code).
+  - App Store submission requires EAS Build (cloud build service, free tier available) — no local Mac needed.
+  - React Native shares JS logic patterns with the web frontend but does not share components.
+  - Superseded on 2026-06-01: mobile development is paused until explicitly resumed, with future restart expected to target SwiftUI.
+linked_prds:
+  - PRD-stock-monitor-mobile-001
+linked_arch:
+  - ARCH-stock-monitor-mobile-001
+related_primitives:
+  - DEC-mobile-pause-swiftui-001

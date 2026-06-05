@@ -1,0 +1,85 @@
+---
+description: AI-native knowledge-first system — enforcement philosophy, sources of truth, PR flow, conflicts
+alwaysApply: true
+---
+
+# AI-native knowledge-first (core)
+
+> Knowledge defines, rules enforce, AI executes, humans approve.
+
+**Human-directed agents:** When docs say people **author or update** artifacts, the intended pattern is usually a **human directing a Cursor agent** (this repo's **`.knowledge-first-system/rules/`** + **`.knowledge-first-system/skills/`**) so edits are **captured in git**, coordinated across **`knowledge/`**, product narrative under **`docs/`** (conventional layout; create when adopting), **`src/`**, and **`tests/`**, and reviewed like any other PR—humans retain **approval and accountability**; agents improve **throughput and consistency** of captured change.
+
+**Official human docs (keep agent narrative aligned):** Index **`.knowledge-first-system/README.md`** (includes the **conventional `docs/`** layout for product artifacts). Primary entry points: **`.knowledge-first-system/executive_overview.md`** (strategy, adoption, impact) and **`.knowledge-first-system/use_guide.md`** (operations, layout, scenarios, checklists). **Knowledge model (layers, primitives, graph, validation):** **`.knowledge-first-system/specs/knowledge_model_spec.md`**. **Architecture intent documents** (conventionally **`docs/architecture/`**): **`.knowledge-first-system/specs/architecture_intent_spec.md`**. **High-level design (HLD)** (conventionally **`docs/design/`**): **`.knowledge-first-system/specs/design_spec.md`**. Test, infrastructure, and CI/CD depth: **`.knowledge-first-system/specs/test_strategy_spec.md`**, **`.knowledge-first-system/specs/infrastructure_spec.md`**, **`.knowledge-first-system/specs/cicd_spec.md`**.
+
+This project maps knowledge-first enforcement to **Cursor rules** (constraints) and **`.knowledge-first-system/skills/`** (workflows). **Project-specific adoption**, **knowledge model** narrative, and trace model are governed by **`.knowledge-first-system/specs/knowledge_model_spec.md`** plus product docs under the conventional **`docs/prd/`**, **`docs/architecture/`**, **`docs/design/`**, and **`docs/test/`** paths when your program adds them (see **`.knowledge-first-system/README.md`**). **What to write in architecture intent docs** is governed by **`.knowledge-first-system/specs/architecture_intent_spec.md`**. **What to write in HLD** is governed by **`.knowledge-first-system/specs/design_spec.md`**.
+
+**Knowledge model (schema and graph):** **`.knowledge-first-system/specs/knowledge_model_spec.md`** — **artifact layers**, **primitive concepts** (CON / INV / DEC / CONR / FEAT), **graph node and edge types**, **validation expectations**, and **official flow** (architecture intent → Decision → HLD; Constraint / Invariant → Spec → HLD → code → tests). Use it when aligning rules, skills, or CI with the model (RULE-011).
+
+### Document and artifact layout (knowledge model spec §3 vs this repo)
+
+| Spec layer (concept) | Location in this repo |
+| --- | --- |
+| Architecture intent | Conventional path **`docs/architecture/`** — **how to write:** **`.knowledge-first-system/specs/architecture_intent_spec.md`** (filenames team-specific, e.g. `*_architecture_intent.md`) |
+| High-level design | Conventional path **`docs/design/`** — **how to write:** **`.knowledge-first-system/specs/design_spec.md`** (filenames team-specific, e.g. `*_hld.md`) |
+| Test plan | Conventional **`docs/test/`** (product or release plans; strategy in **`.knowledge-first-system/specs/test_strategy_spec.md`**) |
+| PRD / product narrative | Conventional **`docs/prd/`** (create when your program captures product prose in-repo) |
+| Guides and shared specs | `.knowledge-first-system/` (index: **`README.md`**) |
+| Primitives + feature specs | `knowledge/` (`constraints/`, `invariants/`, `decisions/`, `contracts/`, `specs/`, `catalog.yml`) |
+| Derived knowledge graph | From primitives + docs (see **`.knowledge-first-system/specs/knowledge_model_spec.md`** §7–9) |
+
+See **`.knowledge-first-system/use_guide.md`** for the recommended tree and workflows.
+
+## Enforcement properties (non-negotiable)
+
+1. **Completeness** — No partially defined artifacts; required fields and links exist.
+2. **Consistency** — No contradictions across docs, `knowledge/`, and code; align with primitives.
+3. **Traceability** — Every artifact links upstream; downstream can be traced to CON/INV/DEC/CONR/FEAT.
+4. **Architecture compliance** — Code follows architecture intent from DEC and HLD; violations are not “papered over” in code.
+5. **Knowledge-derived validation** — Tests trace to constraints and invariants; avoid arbitrary tests with no primitive link.
+
+## Enforcement stack (developer → CI → humans)
+
+Developer (Cursor) → local checks and these rules → CI on PRs → human review as final authority.
+
+## Sources of truth
+
+- **Code** (`src/` when present) = behavior (what runs).
+- **Knowledge primitives** (`knowledge/`) = intent and enforceable design: **CON**, **INV**, **DEC**, **CONR**, **FEAT** (indexed in `knowledge/catalog.yml`).
+- **Documents** (product **`docs/`** when present, optional **`knowledge/docs/`**) = narrative and reasoning; they **reference** primitives and `catalog.yml` — they do not replace YAML primitives.
+
+When those folders exist, narrative docs under **`docs/prd/`**, **`docs/architecture/`**, and **`docs/design/`** must stay consistent with indexed primitives. Filenames are not fixed; use the structure in **`.knowledge-first-system/use_guide.md`**. Operational specs for tests, infrastructure, and CI/CD live under **`.knowledge-first-system/specs/`** (see index).
+
+## Principles
+
+1. **Knowledge before code** — Add or update primitives (and catalog) before implementation.
+2. **Unified PRs** — Knowledge changes and code changes each go through PRs; **merge knowledge first**, then implement.
+3. **Typed enforceable rules** — Security, tenancy, compliance, and API shapes live as primitives (constraints, contracts), not only prose.
+4. **Minimal, structured, validated** — Prefer small YAML edits with IDs and cross-links over long narrative-only dumps.
+5. **Documents reference primitives** — Link `catalog.yml` and primitive IDs; avoid a second source of truth.
+6. **Defects upgrade knowledge** — Bugs and incidents feed back into CON/INV/specs when the rule was wrong or missing.
+7. **Humans own strategy** — PMs approve feature intent (specs); architects approve design (DEC/CON); developers approve code quality.
+8. **Legacy adoption is slice-first** — For code-only or under-documented systems, inventory slices and govern the highest-change slices first; do not require full-system archaeology before modernization starts.
+9. **Test-driven change** — Prefer **tests before or with** production edits for new or changed behavior (red → green → refactor), with tests tracing to **INV / CON / CONR / FEAT**; for existing codebases, add or extend tests first. See **`implementation-constrain-validate-test.mdc`** and **`.knowledge-first-system/specs/test_strategy_spec.md`**.
+10. **Releases stay traceable** — PRD/HLD/test narratives evolve **release-by-release**; keep them wired to **`FEAT-*`**, keep **`CONR-*`** **versioning** accurate when published surfaces ship, and use doc **metadata** (`status`, **`superseded`**, `last_updated`) so history stays navigable. Procedure: **`.knowledge-first-system/use_guide.md`** (*Releases and documentation lifecycle*).
+
+**Workflows** (PR order, validation steps, doc alignment, legacy modernization): see **`.knowledge-first-system/skills/`** — `merge-knowledge-first`, `validate-knowledge-graph`, `implement-with-primitives`, `modernize-legacy-with-knowledge` (see **`.knowledge-first-system/README.md`**).
+
+## Conflicts
+
+**Fail loudly.** If a new primitive contradicts an existing one, stop and resolve in `knowledge/` — do not silently pick a winner or fix contradictions only in code.
+
+## Rule ID map
+
+| ID | Name | Rules (constraints) | Skills (workflows) |
+| --- | --- | --- | --- |
+| RULE-001 | knowledge-first-development | `implementation-constrain-validate-test.mdc` | `implement-with-primitives` |
+| RULE-002–005 | primitive schemas | `knowledge-primitives.mdc` | `validate-knowledge-graph` |
+| RULE-006 | spec bindings | `knowledge-primitives.mdc` | `validate-knowledge-graph` |
+| RULE-007 | HLD/design consistency | this file + `traceability-enforcement.mdc`; narrative under conventional **`docs/architecture/`** and **`docs/design/`** when present (see **`.knowledge-first-system/use_guide.md`**, **`.knowledge-first-system/specs/design_spec.md`**); **release trains** — doc metadata and **`FEAT-*` / `CONR-*`** alignment per use guide *Releases and documentation lifecycle* | `merge-knowledge-first`, `implement-with-primitives` |
+| RULE-008 | traceability | `traceability-enforcement.mdc` | `validate-knowledge-graph` |
+| RULE-009 | architecture compliance | `architecture-compliance.mdc` | — |
+| RULE-010 | invariant-oriented tests | `implementation-constrain-validate-test.mdc` | `implement-with-primitives` |
+| RULE-011 | official knowledge model spec | `official-knowledge-architecture.mdc` | — |
+| RULE-012 | no authoritative rules only in docs | `docs-knowledge-boundary.mdc` | `validate-knowledge-graph` |
+| RULE-013 | new project PRD + architecture intent gate | `new-project-intent-gate.mdc` | `merge-knowledge-first`, `implement-with-primitives` |
+| LEGACY-001 | slice-first legacy modernization | `legacy-modernization-slices.mdc` | `modernize-legacy-with-knowledge` |

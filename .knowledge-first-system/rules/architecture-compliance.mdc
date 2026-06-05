@@ -1,0 +1,25 @@
+---
+description: RULE-009 — architecture compliance from DEC + HLD (stack-agnostic for TVP)
+globs: src/**/*
+alwaysApply: false
+---
+
+# Architecture compliance (RULE-009)
+
+High-level **trace flow** (constraints / invariants → specs → design → code → tests) matches **`.knowledge-first-system/specs/knowledge_model_spec.md`** §8.
+
+Some compliance examples use **Java**-style controllers and repositories; this repository’s language and layout may differ — **derive concrete layering rules** from:
+
+- **Architecture intent** under conventional **`docs/architecture/`** (when present) — topology, scalability, roadmap — structure and review expectations: **`.knowledge-first-system/specs/architecture_intent_spec.md`** (exact filenames are project-specific).
+- **High-level design** under conventional **`docs/design/`** (when present) — modules, boundaries, interfaces, workflows; structure and review expectations: **`.knowledge-first-system/specs/design_spec.md`** (stabilize section numbering within your docs for traceability).
+- **DEC-*** and **CON-*** — e.g. tenancy, module boundaries, forbidden dependencies.
+
+See **`.knowledge-first-system/use_guide.md`** and **`.knowledge-first-system/specs/infrastructure_spec.md`** for how docs, deployment context, and primitives work together.
+
+## Agent expectations
+
+- Respect **service and module boundaries** described in the HLD (no cross-cutting shortcuts that violate documented data access or tenancy).
+- Keep **business rules** out of transport-only glue unless the HLD explicitly allows it for MLP.
+- Do **not** introduce dependencies forbidden by active constraints (e.g. extra brokers or services when CON states MLP exclusions).
+
+When the stack is chosen, maintainers may add language-specific rules; until then, use DEC + HLD as the compliance source.

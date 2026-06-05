@@ -1,0 +1,53 @@
+id: CONR-historical-chart-api-001
+kind: contract
+title: "Historical chart API — GET /api/watchlists/{watchlistId}/history"
+status: implemented
+endpoint: "GET /api/watchlists/{watchlistId}/history"
+auth: "Bearer JWT required"
+description: >
+  Returns daily close price history for every symbol in the specified watchlist over the
+  requested range. Data is served from a local PostgreSQL cache (stock_price_history table).
+  On a cold start (no data for a symbol), the backend fetches up to 5 years from Yahoo Finance
+  v8 chart API using period1/period2 Unix timestamp parameters and stores it locally.
+  Subsequent calls only fetch missing dates after the last stored date when the cache is
+  stale. Existing cached dates are not re-fetched for OHLCV backfill during normal startup
+  or history requests. Ownership of the watchlist is validated before any data is fetched.
+request:
+  headers:
+    Authorization: "Bearer {token}"
+  path_params:
+    watchlistId: "long — ID of the watchlist to chart"
+  query_params:
+    range:
+      type: string
+      required: true
+      allowed_values: ["1w", "1mo", "3mo", "6mo", "1y", "2y", "3y", "4y", "5y"]
+response_200:
+  content_type: "application/json"
+  schema: |
+    {
+      "watchlistId": string,
+      "range":       string,
+      "series": [
+        {
+          "symbol": string,
+          "data": [
+            {
+              "timestamp": number,   // Unix epoch seconds (start of day UTC)
+              "close":     number    // daily close price
+            }
+          ]
+        }
+      ]
+    }
+errors:
+  400: "Invalid or missing range parameter"
+  401: "Missing or invalid JWT"
+  404: "Watchlist not found or not owned by the authenticated user"
+linked_features:
+  - FEAT-historical-chart-widget-001
+linked_constraints:
+  - CON-historical-data-range-001
+linked_invariants:
+  - INV-historical-data-ownership-001
+  - INV-watchlist-ownership-001

@@ -1,0 +1,28 @@
+id: INV-allocation-consolidation-001
+kind: invariant
+title: "Same-Symbol Consolidation in Allocation View"
+status: implemented
+description: >
+  Holdings with the same symbol across different accounts are consolidated
+  into a single row in the allocation view. Market value, shares, and gains
+  are summed. Account names are listed in a tooltip. This consolidation
+  applies only to the allocation tab; holdings table shows per-account detail.
+guarantees:
+  - Allocation By Sector: one row per (sector, symbol) pair; sums all matching holdings
+  - Allocation By Account Type: one row per (account_type, symbol); sums all holdings of that type
+  - Top 5 Holdings: ranked by market value, consolidating same symbol across accounts
+  - Tooltip shows all accounts containing the symbol (e.g., "Brokerage, Roth IRA")
+  - Cash & Equivalents: manual-price holdings grouped and collapsed into single row (toggleable)
+  - Concentration warnings: based on consolidated market value (>20% of total)
+edge_cases:
+  - Same symbol in 3 accounts: allocation shows 1 row with 3x shares, 3x cost basis, consolidated gains
+  - Symbol with mixed manual/live prices: consolidated row uses weighted average or manual override
+  - Sector mismatch for same symbol (rare, shouldn't happen): uses first sector found
+rationale: >
+  User owns AAPL across multiple accounts (taxable, IRA, 401k). Allocation
+  dashboard should show total AAPL exposure. Consolidation provides that
+  high-level view without losing per-account detail (available in Holdings tab).
+violations: >
+  If violated: allocation shows AAPL 3 times (once per account), obscuring
+  true concentration and total gains. Fix: symbolMap to consolidate before
+  rendering donut/table.

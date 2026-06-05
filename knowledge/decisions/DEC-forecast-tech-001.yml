@@ -1,0 +1,57 @@
+id: DEC-forecast-tech-001
+kind: decision
+title: "Forecasting Tech Stack — Python FastAPI + ARIMA"
+status: decided
+date: 2026-05-29
+decision: >
+  Stock price forecasting is implemented as a separate Python FastAPI
+  microservice using statsmodels ARIMA(1,1,1). The Java backend proxies all
+  forecast requests to this internal service, keeping the REST API surface
+  unchanged from the frontend's perspective. The Python service is added to
+  docker-compose.yml as the "stock-forecast" container on port 8001 (internal
+  only; not exposed to the host).
+  Prophet was evaluated but rejected due to its CmdStan binary dependency
+  which fails to resolve correctly inside a Docker slim image; see
+  alternatives_considered.
+alternatives_considered:
+  - option: Java ML libraries (Smile, Tribuo, Deeplearning4j)
+    reason_rejected: >
+      Mature time series forecasting libraries are sparse in the Java ecosystem.
+      Prophet has no Java port. Implementing ARIMA in Java requires significant
+      custom code.
+  - option: Facebook Prophet
+    reason_rejected: >
+      Prophet requires CmdStan (a Stan binary) installed via cmdstanpy.
+      install_cmdstan(). Even after installing CmdStan during Docker build,
+      the binary path is not resolved correctly at runtime inside python:3.11-slim,
+      causing AttributeError: 'Prophet' object has no attribute 'stan_backend'.
+      ARIMA achieves equivalent results with zero binary dependencies.
+  - option: ARIMA / SARIMA with seasonal terms
+    reason_rejected: >
+      ARIMA(1,1,1) is sufficient for a 30-day horizon on daily stock closes;
+      additional seasonal terms add complexity with no meaningful accuracy gain.
+  - option: LSTM / deep learning
+    reason_rejected: >
+      Requires significantly more data and compute, adds GPU dependency, and
+      doesn't reliably outperform Prophet on daily price forecasting horizons
+      (30–90 days). Complexity not justified for this use case.
+  - option: External forecasting API
+    reason_rejected: >
+      Adds cost and an external dependency. All data is already local.
+rationale: >
+  ARIMA(1,1,1) provides a lightweight statistical baseline for short-horizon
+  daily close forecasts without requiring external services or binary runtime
+  dependencies. The Python FastAPI service can also compute technical-context
+  features from local OHLCV history and apply a bounded adjustment while
+  preserving the existing public forecast API. FastAPI adds negligible overhead
+  and integrates cleanly into the Docker Compose stack. Python is the standard
+  language for data science tooling with the best library support.
+consequences:
+  - Python 3.11 runtime added to the Docker Compose stack (stock-forecast service, port 8001 internal).
+  - Java backend makes an internal HTTP POST to the Python service on each forecast request.
+  - ARIMA model fitting happens per request; results are not cached in MVP.
+  - The forecast service uses Holt damped trend as a fallback when ARIMA fails for a given series.
+  - Technical-context adjustment is bounded by recent realized volatility and capped at 4%.
+  - The Python service is internal-only; it is not reachable from outside Docker.
+linked_features:
+  - FEAT-price-forecast-001

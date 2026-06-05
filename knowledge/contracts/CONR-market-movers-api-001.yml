@@ -1,0 +1,69 @@
+id: CONR-market-movers-api-001
+kind: contract
+title: "Market Movers API — GET /api/market-movers"
+status: shipped
+endpoint: "GET /api/market-movers"
+auth: "Bearer JWT required"
+description: >
+  Returns a ranked list of stocks for the requested market-movers tab.
+  Data is sourced from the Yahoo Finance screener API and is not persisted — it is fetched
+  on each request (the backend may add a short TTL cache to limit external calls).
+  - tab=active:      most-active stocks by volume (scrId: most_actives); Yahoo default order
+  - tab=gainers:     largest positive % change on the day (scrId: day_gainers); Yahoo default order
+  - tab=losers:      largest negative % change on the day (scrId: day_losers); Yahoo default order
+  - tab=smallcap:    small-cap gainers ~$300M–$2B market cap (scrId: small_cap_gainers); sorted by percentChange desc on the backend
+  - tab=aggressive:  aggressive small caps ~$300M–$2B market cap (scrId: aggressive_small_caps); sorted by percentChange desc on the backend
+request:
+  headers:
+    Authorization: "Bearer {token}"
+  query_params:
+    tab:
+      type: string
+      required: false
+      default: "active"
+      allowed_values: ["active", "gainers", "losers", "smallcap", "aggressive"]
+    count:
+      type: integer
+      required: false
+      default: 25
+      description: "Number of results to return. Max 25."
+response_200:
+  content_type: "application/json"
+  schema: |
+    {
+      "tab":    string,      // echoes the requested tab
+      "stocks": [
+        {
+          "symbol":        string,
+          "companyName":   string | null,
+          "lastPrice":     number | null,
+          "change":        number | null,
+          "percentChange": number | null,
+          "volume":        number | null
+        }
+      ]
+    }
+errors:
+  400: "Invalid tab value"
+  401: "Missing or invalid JWT"
+  502: "Yahoo Finance screener API unavailable"
+yahoo_finance_screener:
+  base_url: "https://query2.finance.yahoo.com/v1/finance/screener/predefined/saved"
+  scr_ids:
+    active:      "most_actives"
+    gainers:     "day_gainers"
+    losers:      "day_losers"
+    smallcap:    "small_cap_gainers"
+    aggressive:  "aggressive_small_caps"
+  required_header: "User-Agent: Chrome browser string (same as quote adapter)"
+  fields_used:
+    - "symbol"
+    - "shortName"          # → companyName
+    - "regularMarketPrice" # → lastPrice
+    - "regularMarketChange"          # → change
+    - "regularMarketChangePercent"   # → percentChange
+    - "regularMarketVolume"          # → volume
+linked_features:
+  - FEAT-market-movers-widget-001
+linked_constraints:
+  - CON-market-movers-public-001

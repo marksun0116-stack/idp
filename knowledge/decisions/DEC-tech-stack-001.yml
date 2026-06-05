@@ -1,0 +1,13 @@
+id: DEC-tech-stack-001
+kind: decision
+title: "Technology stack for Stock Monitor"
+status: implemented
+decision: "Use Java Spring Boot for the backend, PostgreSQL for persistence, and React for the frontend."
+context: "This combination offers a familiar, maintainable stack for the team and supports REST APIs, user authentication, and client-side UI flows."
+alternatives:
+  - "Node.js backend with Express"
+  - "Python backend with Flask or FastAPI"
+  - "Vue or Angular frontend"
+consequences:
+  - "Enables standard Java ecosystem tooling and Spring Security for auth."
+  - "Requires team alignment on Spring Boot and React implementation patterns."

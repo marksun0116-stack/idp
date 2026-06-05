@@ -1,0 +1,9 @@
+id: INV-watchlist-ownership-001
+kind: invariant
+title: "Watchlist ownership must be preserved"
+status: implemented
+description: "Every watchlist entry stored in the database must reference a valid user and cannot be reassigned to another user without explicit user action."
+validation:
+  - "Database integrity tests for user-watchlist relationships"
+  - "Backend assertions for watchlist ownership on update/delete"
+severity: high

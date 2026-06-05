@@ -1,0 +1,36 @@
+id: FEAT-mobile-watchlist-001
+kind: feature
+title: "Mobile — Watchlist Management and Live Quotes"
+status: deferred
+summary: >
+  The Watchlists tab presents a NavigationStack with the watchlist list at the
+  root. Tapping a watchlist pushes a detail view with a Segmented Picker
+  (Quotes / Chart) and a collapsible News section below the content. Watchlists
+  can be created inline and deleted via swipe-to-delete with a confirmation
+  alert for non-empty lists.
+linked_decisions:
+  - DEC-mobile-tech-stack-001
+  - DEC-mobile-pause-swiftui-001
+linked_contracts:
+  - CONR-watchlist-api-001
+  - CONR-news-api-001
+acceptance_criteria:
+  - Root screen: list of watchlists with name and stock count badge.
+  - Toolbar button opens an alert with a text field to create a new watchlist.
+  - Swipe-to-delete on a non-empty watchlist shows a confirmation alert naming the watchlist and its stock count; empty watchlists delete immediately.
+  - Tapping a watchlist pushes a detail screen.
+  - Detail screen has a segmented picker: Quotes / Chart.
+  - Quotes tab: List of stocks showing symbol, company name, last price, change, change % (color-coded green/red), and market state badge (Pre / AH) when applicable.
+  - Pull-to-refresh reloads quotes.
+  - Tapping a symbol row filters the news section to that symbol.
+  - An add-symbol text field + button at the top of the Quotes tab adds a new stock to the watchlist.
+  - Swipe-to-delete removes a stock from the watchlist.
+  - Chart tab: see FEAT-mobile-chart-001.
+  - Below the Quotes/Chart content, a collapsible News section shows all-watchlist news on entry; collapses/expands via a disclosure group or chevron header.
+  - Tapping a news item opens the URL in SFSafariViewController.
+mobile_ux_notes:
+  - Use NavigationStack (iOS 16+).
+  - Stock list rows use a leading large symbol label and trailing price/change stack.
+  - Color-code change values: green for positive, red for negative, grey for zero/nil.
+  - Market state badge is a small rounded-rect label (Pre / AH) in amber.
+  - News section at the bottom uses a DisclosureGroup or Section with a toggle header.

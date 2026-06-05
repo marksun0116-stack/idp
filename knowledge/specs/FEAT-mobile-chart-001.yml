@@ -1,0 +1,30 @@
+id: FEAT-mobile-chart-001
+kind: feature
+title: "Mobile — Comparison Historical Chart"
+status: deferred
+summary: >
+  The Chart tab within the watchlist detail screen renders a normalized
+  multi-line chart using Swift Charts. All series start at 0%. A horizontal
+  scrolling range selector (1W / 1M / 3M / 6M / 1Y / 2Y / 3Y / 4Y / 5Y)
+  sits below the chart. A legend lists each symbol with its color and final
+  percentage; tapping a legend item hides/shows that series.
+linked_decisions:
+  - DEC-mobile-tech-stack-001
+  - DEC-mobile-pause-swiftui-001
+linked_contracts:
+  - CONR-historical-chart-api-001
+acceptance_criteria:
+  - Chart renders a LineMark per symbol using Swift Charts.
+  - All series normalized to 0% at the first close of the range: (close / close[0] - 1) * 100.
+  - Y-axis shows percentage labels (e.g. +12%, -5%). A rule mark at y=0 serves as the baseline.
+  - X-axis tick density adapts to the selected range (same skip-factor logic as web).
+  - Range selector is a horizontally scrolling row of chips (1W through 5Y) below the chart.
+  - Colors match the web palette (same LINE_COLORS array).
+  - Legend below the chart shows each symbol with its color dot and current percentage. Tapping toggles visibility.
+  - Loading state shows a ProgressView; empty state shows an explanatory message.
+  - Chart data is fetched on range change and on first appearance of the Chart tab.
+mobile_ux_notes:
+  - "Use Swift Charts Chart { ForEach(series) { LineMark(...) } } inside a frame with fixed height (~280pt) or flexible."
+  - ".chartXAxis and .chartYAxis modifiers for custom tick formatting."
+  - "Range selector: ScrollView(.horizontal) + HStack of toggle-style buttons."
+  - "Legend: LazyVGrid or wrapping HStack with color swatches."

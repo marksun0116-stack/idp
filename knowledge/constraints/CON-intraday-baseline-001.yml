@@ -1,0 +1,35 @@
+id: CON-intraday-baseline-001
+kind: constraint
+title: "Intraday Chart Baseline: Previous Trading Day Close"
+status: implemented
+statement: >
+  For intraday (1D) charts, all percentage calculations must use the **previous trading day's closing price**
+  as the 0% baseline, NOT the first intraday bar's price.
+
+  This ensures that intraday percentage changes are calculated relative to yesterday's close, which is the
+  standard convention for intraday trading charts and makes price movements comparable across trading days.
+
+  Example:
+    - Friday close: $300.00
+    - Monday 9:30 AM (first bar): $305.00
+    - Monday 10:00 AM: $310.00
+    - Percentage at 10:00 AM: ($310 / $300 - 1) * 100 = +3.33%
+    - NOT ($310 / $305 - 1) * 100 = +1.64%
+
+  The previous close must be fetched from the daily history API and returned in the intraday
+  endpoint response so the frontend can apply this baseline consistently.
+rationale: >
+  Using the previous close as baseline is market convention because:
+  1. It makes intraday movements comparable to market-wide open/close semantics
+  2. Trading analysts expect percentage changes relative to the prior session's close
+  3. It provides continuity when the market opens (first bar at 9:30 AM is typically near previous close)
+  4. It avoids confusion when comparing intraday charts to daily charts (same baseline reference point)
+enforcement:
+  - Backend endpoint (GET /api/watchlists/{id}/intraday) fetches last daily bar from history API
+  - Response includes previousCloses map: { "AAPL": 300.00, "MSFT": 425.50, ... }
+  - Frontend mergedChartData calculation uses previousCloses for 1D range: baselineClose = previousCloses[symbol] ?? firstBar.close
+  - Frontend tooltip displays actual prices alongside percentages for user verification
+linked_features:
+  - FEAT-intraday-chart-001
+linked_constraints:
+  - CON-intraday-cache-001

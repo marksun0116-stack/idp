@@ -1,0 +1,65 @@
+id: CONR-forecast-api-001
+kind: contract
+title: "Forecast API — GET /api/forecast"
+status: implemented
+endpoint: "GET /api/forecast"
+auth: "Bearer JWT required"
+description: >
+  Returns an ARIMA-generated daily price forecast for a single symbol, with
+  bounded technical-context adjustment and Holt fallback when ARIMA fitting
+  fails for a given series. The Java backend fetches historical OHLCV data from stock_price_history,
+  posts them to the internal Python forecast service, and returns the
+  formatted forecast to the caller.
+request:
+  headers:
+    Authorization: "Bearer {token}"
+  query_params:
+    symbol:
+      type: string
+      required: true
+      description: "Stock ticker, e.g. AAPL"
+    days:
+      type: integer
+      required: false
+      default: 30
+      max: 90
+      description: "Number of calendar days to forecast ahead."
+response_200:
+  content_type: "application/json"
+  schema: |
+    {
+      "symbol":   string,
+      "forecast": [
+        {
+          "date":        string,   // ISO 8601 date, e.g. "2026-06-01"
+          "yhat":        number,   // point forecast (closing price)
+          "yhat_lower":  number,   // lower bound of 80% confidence interval
+          "yhat_upper":  number    // upper bound of 80% confidence interval
+        }
+      ]
+    }
+errors:
+  400: "Missing or invalid symbol / days parameter"
+  401: "Missing or invalid JWT"
+  422: "Insufficient price history (< 90 days) to generate a reliable forecast"
+  502: "Forecast service unavailable"
+internal_python_contract:
+  method: POST
+  path: "/internal/forecast"
+  url: "http://stock-forecast:8001/internal/forecast"
+  request_body: |
+    {
+      "symbol": string,
+      "days":   integer,
+      "prices": [{ "date": "YYYY-MM-DD", "close": float, "high": float | null, "low": float | null, "volume": integer | null }]
+    }
+  response_body: |
+    {
+      "symbol":   string,
+      "forecast": [{ "date": "YYYY-MM-DD", "yhat": float, "yhat_lower": float, "yhat_upper": float }]
+    }
+disclaimer: "Forecast values are statistical projections, not financial advice."
+linked_features:
+  - FEAT-price-forecast-001
+linked_decisions:
+  - DEC-forecast-tech-001

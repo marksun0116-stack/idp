@@ -1,0 +1,8 @@
+id: CON-watchlist-access-001
+kind: constraint
+title: "Watchlist access control"
+status: implemented
+description: "A user may only access, modify, or delete their own watchlists."
+enforcement: "Backend must enforce watchlist ownership on all watchlist APIs."
+validation:
+  - "Authorization tests covering cross-user access attempts"
