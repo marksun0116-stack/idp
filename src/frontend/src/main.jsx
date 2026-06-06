@@ -84,6 +84,8 @@ function App() {
   const [chartRange, setChartRange] = useState('1M');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showStrategyForm, setShowStrategyForm] = useState(false);
+  const [showSymbolForm, setShowSymbolForm] = useState(false);
 
   const authHeaders = useMemo(() => ({
     Authorization: `Bearer ${authToken || ownerId}`,
@@ -457,6 +459,10 @@ function App() {
               indicator={indicator}
               chartRange={chartRange}
               setChartRange={setChartRange}
+              showStrategyForm={showStrategyForm}
+              setShowStrategyForm={setShowStrategyForm}
+              showSymbolForm={showSymbolForm}
+              setShowSymbolForm={setShowSymbolForm}
             />
           )}
           {activeView === 'reviews' && <ReviewsView reviews={reviews} pendingReviews={pendingReviews} overdueReviews={overdueReviews} />}
@@ -884,7 +890,11 @@ function PortfolioView({
   strategyHistory,
   indicator,
   chartRange,
-  setChartRange
+  setChartRange,
+  showStrategyForm,
+  setShowStrategyForm,
+  showSymbolForm,
+  setShowSymbolForm
 }) {
   if (!selectedStrategy) {
     return (
@@ -915,18 +925,53 @@ function PortfolioView({
             </div>
             <span className="badge">{selectedStrategy.visibility}</span>
           </div>
-          <form className="symbolForm" onSubmit={addSymbol} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '8px', alignItems: 'flex-end' }}>
-            <Field label="Symbol" value={symbolForm.symbol} onChange={(value) => setSymbolForm({ ...symbolForm, symbol: value })} required />
-            <Field label="Note" value={symbolForm.note} onChange={(value) => setSymbolForm({ ...symbolForm, note: value })} />
-            <button className="primary" type="submit" style={{ padding: '8px 12px' }}><Search size={16} />Track</button>
-          </form>
-          <div className="strategyTabs" style={{ marginTop: '12px' }}>
+          {showSymbolForm && (
+            <form className="symbolForm" onSubmit={(e) => { addSymbol(e); setShowSymbolForm(false); }} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '8px', alignItems: 'flex-end', marginBottom: '12px', padding: '12px', background: '#f9fbfb', borderRadius: '7px', border: '1px solid #e4e7ec' }}>
+              <Field label="Symbol" value={symbolForm.symbol} onChange={(value) => setSymbolForm({ ...symbolForm, symbol: value })} required />
+              <Field label="Note" value={symbolForm.note} onChange={(value) => setSymbolForm({ ...symbolForm, note: value })} />
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button className="primary" type="submit" style={{ padding: '8px 12px' }}><Search size={16} />Track</button>
+                <button type="button" onClick={() => setShowSymbolForm(false)} style={{ padding: '8px 12px', background: '#e4e7ec', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>Cancel</button>
+              </div>
+            </form>
+          )}
+          {!showSymbolForm && (strategyQuotes?.symbols?.length || 0) >= 0 && (
+            <button type="button" onClick={() => setShowSymbolForm(true)} style={{ width: '100%', padding: '8px', marginBottom: '12px', background: '#f0f0f0', border: '1px solid #e4e7ec', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500, color: '#526071' }}><Plus size={14} style={{ marginRight: '4px' }} />Add Symbol to Portfolio</button>
+          )}
+          <div className="strategyTabs">
             {strategies.map((strategy) => (
               <button type="button" className={strategy.id === selectedStrategyId ? 'selected' : ''} key={strategy.id} onClick={() => setSelectedStrategyId(strategy.id)}>
                 {strategy.name}
               </button>
             ))}
           </div>
+        </Panel>
+        <Panel title="Create New Strategy" icon={<Plus />}>
+          {showStrategyForm ? (
+            <form className="stack" onSubmit={(e) => { createStrategy(e); setShowStrategyForm(false); }}>
+              <Field label="Strategy Name" value={strategyForm.name} onChange={(value) => setStrategyForm({ ...strategyForm, name: value })} required />
+              <TextField label="Description" value={strategyForm.description} onChange={(value) => setStrategyForm({ ...strategyForm, description: value })} required />
+              <div className="row">
+                <label>
+                  Starting Capital
+                  <input type="number" min="1" value={strategyForm.startingCapital} onChange={(event) => setStrategyForm({ ...strategyForm, startingCapital: event.target.value })} />
+                </label>
+                <label>
+                  Visibility
+                  <select value={strategyForm.visibility} onChange={(event) => setStrategyForm({ ...strategyForm, visibility: event.target.value })}>
+                    <option value="private">Private</option>
+                    <option value="public">Public</option>
+                  </select>
+                </label>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="primary" type="submit"><Plus size={17} />Create Strategy</button>
+                <button type="button" onClick={() => setShowStrategyForm(false)} style={{ padding: '8px 12px', background: '#e4e7ec', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>Cancel</button>
+              </div>
+            </form>
+          ) : (
+            <button type="button" onClick={() => setShowStrategyForm(true)} style={{ width: '100%', padding: '12px', background: '#0f766e', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}><Plus size={16} style={{ marginRight: '6px' }} />New Strategy</button>
+          )}
         </Panel>
       </section>
       <section className="workspaceGrid">
