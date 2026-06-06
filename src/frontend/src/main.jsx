@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { LineChart as RechartsLineChart, Line, BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import {
   Activity,
   BarChart3,
@@ -454,6 +455,8 @@ function App() {
               strategyQuotes={strategyQuotes}
               strategyHistory={strategyHistory}
               indicator={indicator}
+              chartRange={chartRange}
+              setChartRange={setChartRange}
             />
           )}
           {activeView === 'reviews' && <ReviewsView reviews={reviews} pendingReviews={pendingReviews} overdueReviews={overdueReviews} />}
@@ -746,6 +749,126 @@ function AllocationChart({ strategyQuotes }) {
   );
 }
 
+function PriceChart({ strategyHistory, strategyQuotes, chartRange, setChartRange }) {
+  if (!strategyHistory?.history || strategyHistory.history.length === 0 || !strategyQuotes?.symbols || strategyQuotes.symbols.length === 0) {
+    return <div style={{ fontSize: '0.85rem', color: '#667085', padding: '12px' }}>Add symbols to view price history</div>;
+  }
+
+  const ranges = ['1D', '1W', '1M', '3M', '1Y', 'ALL'];
+  const chartData = strategyHistory.history.map(point => ({
+    date: new Date(point.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    timestamp: point.timestamp,
+    price: parseFloat(point.close) || 0
+  }));
+
+  const firstSymbol = strategyQuotes.symbols[0];
+  const currentPrice = firstSymbol?.lastPrice || 0;
+  const startPrice = chartData.length > 0 ? chartData[0].price : 0;
+  const priceChange = currentPrice - startPrice;
+  const priceChangePercent = startPrice > 0 ? (priceChange / startPrice) * 100 : 0;
+  const isPositive = priceChange >= 0;
+
+  return (
+    <div style={{ padding: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '12px' }}>
+        <div>
+          <h3 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: 600 }}>
+            {firstSymbol?.symbol} Price History
+          </h3>
+          <small style={{ color: '#667085', fontSize: '0.75rem' }}>
+            {chartData.length} data points
+          </small>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#20242a' }}>
+            ${currentPrice.toFixed(2)}
+          </div>
+          <small style={{ color: isPositive ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
+            {isPositive ? '↑' : '↓'} ${Math.abs(priceChange).toFixed(2)} ({isPositive ? '+' : ''}{priceChangePercent.toFixed(2)}%)
+          </small>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '12px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+        {ranges.map(range => (
+          <button
+            key={range}
+            type="button"
+            onClick={() => setChartRange(range)}
+            style={{
+              padding: '6px 12px',
+              fontSize: '0.75rem',
+              fontWeight: chartRange === range ? 700 : 500,
+              background: chartRange === range ? '#0f766e' : '#f0f0f0',
+              color: chartRange === range ? '#fff' : '#526071',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              transition: 'all 200ms'
+            }}
+          >
+            {range}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ background: '#fff', border: '1px solid #e4e7ec', borderRadius: '7px', padding: '8px', marginBottom: '12px' }}>
+        <ResponsiveContainer width="100%" height={300}>
+          <RechartsLineChart
+            data={chartData}
+            margin={{ top: 10, right: 20, left: 0, bottom: 20 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#e4e7ec" />
+            <XAxis
+              dataKey="date"
+              stroke="#9facbd"
+              style={{ fontSize: '0.75rem' }}
+              tick={{ fill: '#9facbd' }}
+            />
+            <YAxis
+              stroke="#9facbd"
+              style={{ fontSize: '0.75rem' }}
+              tick={{ fill: '#9facbd' }}
+              domain={['dataMin - 10', 'dataMax + 10']}
+            />
+            <Tooltip
+              contentStyle={{
+                background: '#f9fbfb',
+                border: '1px solid #e4e7ec',
+                borderRadius: '6px',
+                fontSize: '0.75rem',
+                padding: '8px'
+              }}
+              formatter={(value) => [`$${value.toFixed(2)}`, 'Price']}
+              labelStyle={{ color: '#20242a' }}
+            />
+            <Line
+              type="monotone"
+              dataKey="price"
+              stroke={isPositive ? '#16a34a' : '#dc2626'}
+              strokeWidth={2}
+              dot={false}
+              isAnimationActive={false}
+            />
+          </RechartsLineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div style={{ fontSize: '0.8rem', color: '#667085', paddingTop: '8px', borderTop: '1px solid #e4e7ec' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span>Range: {chartRange}</span>
+          <span>Volatility: {Math.sqrt(chartData.reduce((sum, d, i, arr) => {
+            if (i === 0) return 0;
+            const prev = arr[i - 1].price;
+            const curr = d.price;
+            return sum + Math.pow((curr - prev) / prev, 2);
+          }, 0) / Math.max(chartData.length - 1, 1)).toFixed(2)}%</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PortfolioView({
   strategies,
   selectedStrategyId,
@@ -759,41 +882,55 @@ function PortfolioView({
   addSymbol,
   strategyQuotes,
   strategyHistory,
-  indicator
+  indicator,
+  chartRange,
+  setChartRange
 }) {
   return (
-    <section className="workspaceGrid">
-      <Panel title="Strategy Portfolios" icon={<WalletCards />}>
-        <StrategyForm strategyForm={strategyForm} setStrategyForm={setStrategyForm} createStrategy={createStrategy} />
-        <div className="strategyTabs">
-          {strategies.map((strategy) => (
-            <button type="button" className={strategy.id === selectedStrategyId ? 'selected' : ''} key={strategy.id} onClick={() => setSelectedStrategyId(strategy.id)}>
-              {strategy.name}
-            </button>
-          ))}
-          {strategies.length === 0 && <Empty text="No strategies yet." />}
-        </div>
-      </Panel>
-      <Panel title="Portfolio Research Surface" icon={<LineChart />}>
-        <ResearchSurface
-          selectedStrategy={selectedStrategy}
-          symbolForm={symbolForm}
-          setSymbolForm={setSymbolForm}
-          addSymbol={addSymbol}
-          strategyQuotes={strategyQuotes}
-          strategyHistory={strategyHistory}
-          indicator={indicator}
-        />
-      </Panel>
-    </section>
-    <section className="workspaceGrid">
-      <Panel title="Portfolio Summary" icon={<TrendingUp />}>
-        <PortfolioSummary strategyQuotes={strategyQuotes} selectedStrategy={selectedStrategy} />
-      </Panel>
-      <Panel title="Asset Allocation" icon={<BarChart3 />}>
-        <AllocationChart strategyQuotes={strategyQuotes} />
-      </Panel>
-    </section>
+    <>
+      <section className="workspaceGrid">
+        <Panel title="Strategy Portfolios" icon={<WalletCards />}>
+          <StrategyForm strategyForm={strategyForm} setStrategyForm={setStrategyForm} createStrategy={createStrategy} />
+          <div className="strategyTabs">
+            {strategies.map((strategy) => (
+              <button type="button" className={strategy.id === selectedStrategyId ? 'selected' : ''} key={strategy.id} onClick={() => setSelectedStrategyId(strategy.id)}>
+                {strategy.name}
+              </button>
+            ))}
+            {strategies.length === 0 && <Empty text="No strategies yet." />}
+          </div>
+        </Panel>
+        <Panel title="Portfolio Research Surface" icon={<LineChart />}>
+          <ResearchSurface
+            selectedStrategy={selectedStrategy}
+            symbolForm={symbolForm}
+            setSymbolForm={setSymbolForm}
+            addSymbol={addSymbol}
+            strategyQuotes={strategyQuotes}
+            strategyHistory={strategyHistory}
+            indicator={indicator}
+          />
+        </Panel>
+      </section>
+      <section className="workspaceGrid">
+        <Panel title="Portfolio Summary" icon={<TrendingUp />}>
+          <PortfolioSummary strategyQuotes={strategyQuotes} selectedStrategy={selectedStrategy} />
+        </Panel>
+        <Panel title="Asset Allocation" icon={<BarChart3 />}>
+          <AllocationChart strategyQuotes={strategyQuotes} />
+        </Panel>
+      </section>
+      <section className="workspaceGrid">
+        <Panel title="Price History" icon={<LineChart />}>
+          <PriceChart
+            strategyHistory={strategyHistory}
+            strategyQuotes={strategyQuotes}
+            chartRange={chartRange}
+            setChartRange={setChartRange}
+          />
+        </Panel>
+      </section>
+    </>
   );
 }
 
