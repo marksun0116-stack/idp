@@ -240,13 +240,15 @@ function App() {
     try {
       const detail = await api(`/api/strategies/${strategyId}`);
       setSelectedStrategy(detail);
-      const [quotes, history] = await Promise.all([
-        api(`/api/strategies/${strategyId}/quotes`),
-        api(`/api/strategies/${strategyId}/history?range=1mo`)
-      ]);
+      const quotes = await api(`/api/strategies/${strategyId}/quotes`);
+      const history = await api(`/api/strategies/${strategyId}/charts?range=1M`);
       setStrategyQuotes(quotes);
       setStrategyHistory(history);
       const firstSymbol = detail.trackedSymbols?.[0]?.symbol || quotes.symbols?.[0]?.symbol;
+      if (firstSymbol) {
+        const indicators = await api(`/api/strategies/${strategyId}/indicators?symbol=${firstSymbol}&range=1M`);
+        setIndicator(indicators);
+      }
       setIndicator(firstSymbol
         ? await api(`/api/strategies/${strategyId}/indicators?symbol=${encodeURIComponent(firstSymbol)}&range=1y`)
         : null);
@@ -897,6 +899,44 @@ function StrategyForm({ strategyForm, setStrategyForm, createStrategy }) {
   );
 }
 
+function IndicatorPanel({ symbol, indicator }) {
+  if (!indicator || !symbol) return <div style={{ fontSize: '0.85rem', color: '#667085' }}>Select a symbol for indicators</div>;
+
+  const rsi = indicator.rsi14 || 0;
+  const rsiStatus = rsi > 70 ? 'Overbought' : rsi < 30 ? 'Oversold' : 'Neutral';
+  const rsiColor = rsi > 70 ? '#dc2626' : rsi < 30 ? '#16a34a' : '#9facbd';
+
+  const trendVerdict = indicator.trendVerdict || 'No trend data';
+  const confidence = indicator.confidence || 'N/A';
+  const trendColor = trendVerdict.toLowerCase().includes('bearish') ? '#dc2626' : trendVerdict.toLowerCase().includes('bullish') ? '#16a34a' : '#9facbd';
+
+  return (
+    <div style={{ fontSize: '0.8rem' }}>
+      <div style={{ marginBottom: '8px', paddingBottom: '6px', borderBottom: '1px solid #e4e7ec' }}>
+        <strong style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span>RSI(14)</span>
+          <span style={{ color: rsiColor, fontWeight: 700 }}>{rsi.toFixed(1)}</span>
+        </strong>
+        <small style={{ color: '#667085' }}>{rsiStatus}</small>
+      </div>
+      <div style={{ marginBottom: '8px', paddingBottom: '6px', borderBottom: '1px solid #e4e7ec' }}>
+        <strong style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span>Trend</span>
+          <span style={{ color: trendColor, fontWeight: 700 }}>{trendVerdict.toUpperCase()}</span>
+        </strong>
+        <small style={{ color: '#667085' }}>Confidence: {confidence}</small>
+      </div>
+      {indicator.sampleSize && (
+        <div style={{ marginTop: '6px', padding: '6px', background: '#fafbfc', borderLeft: '3px solid #9facbd', borderRadius: '3px' }}>
+          <small style={{ color: '#4b5563' }}>
+            Based on {indicator.sampleSize} trading days (Range: {indicator.range})
+          </small>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ResearchSurface({ selectedStrategy, symbolForm, setSymbolForm, addSymbol, strategyQuotes, strategyHistory, indicator }) {
   if (!selectedStrategy) return <Empty text="Create a strategy to start tracking symbols." />;
   return (
@@ -918,19 +958,21 @@ function ResearchSurface({ selectedStrategy, symbolForm, setSymbolForm, addSymbo
           const change = quote.change || 0;
           const changePercent = quote.percentChange || 0;
           const isPositive = change >= 0;
+          const price = quote.lastPrice || quote.price || 0;
+          const volume = quote.volume || 0;
           return (
             <article className="quote" key={quote.symbol}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <strong>{quote.symbol}</strong>
-                <span style={{ color: isPositive ? '#16a34a' : '#dc2626', fontSize: '0.9rem', fontWeight: 600 }}>
-                  {isPositive ? '↑' : '↓'} {Math.abs(changePercent).toFixed(1)}%
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2px' }}>
+                <strong style={{ fontSize: '1rem' }}>{quote.symbol}</strong>
+                <span style={{ color: isPositive ? '#16a34a' : '#dc2626', fontSize: '0.85rem', fontWeight: 600 }}>
+                  {isPositive ? '↑' : '↓'} {Math.abs(changePercent).toFixed(2)}%
                 </span>
               </div>
-              <span style={{ fontSize: '1.1rem', fontWeight: 600, color: '#20242a' }}>
-                ${quote.price ? quote.price.toFixed(2) : 'N/A'}
+              <span style={{ fontSize: '1.15rem', fontWeight: 700, color: '#20242a', marginBottom: '2px', display: 'block' }}>
+                ${price.toFixed(2)}
               </span>
-              <small>
-                Vol: {quote.volume ? (quote.volume / 1e6).toFixed(1) : 'N/A'}M | 52W: {quote.week52Low ? `$${quote.week52Low}` : 'N/A'} - {quote.week52High ? `$${quote.week52High}` : 'N/A'}
+              <small style={{ color: '#667085', fontSize: '0.75rem' }}>
+                Vol: {(volume / 1e6).toFixed(1)}M | Change: ${Math.abs(change).toFixed(2)}
               </small>
             </article>
           );
@@ -938,28 +980,30 @@ function ResearchSurface({ selectedStrategy, symbolForm, setSymbolForm, addSymbo
         {(!strategyQuotes?.symbols || strategyQuotes.symbols.length === 0) && <Empty text="Add a tracked symbol to activate this surface." />}
       </div>
       <div className="researchGrid">
-        <div>
-          <h3><BarChart3 size={17} />Price History</h3>
-          {strategyHistory?.series && strategyHistory.series.length > 0 ? (
+        <div style={{ background: '#f9fbfb', border: '1px solid #e2e8f0', borderRadius: '7px', padding: '10px' }}>
+          <h3 style={{ margin: '0 0 8px 0', fontSize: '0.95rem', fontWeight: 600, display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <BarChart3 size={16} />Price Data
+          </h3>
+          {strategyQuotes?.symbols && strategyQuotes.symbols.length > 0 ? (
             <div style={{ fontSize: '0.85rem' }}>
-              <p style={{ margin: '2px 0' }}>{strategyHistory.series.length} symbols tracked</p>
-              <p style={{ margin: '2px 0', color: '#667085' }}>Range: {strategyHistory.range || '1M'}</p>
+              <p style={{ margin: '2px 0' }}><strong>{strategyQuotes.symbols.length}</strong> symbols tracked</p>
+              <p style={{ margin: '2px 0', color: '#667085' }}>Source: {strategyQuotes.dataFreshness || 'Real-time'}</p>
             </div>
           ) : (
-            <p style={{ color: '#667085', fontSize: '0.85rem' }}>Chart data loading...</p>
+            <p style={{ color: '#667085', fontSize: '0.85rem' }}>Add symbols to view data</p>
           )}
         </div>
-        <div>
-          <h3><ShieldCheck size={17} />Signals</h3>
-          {indicator ? (
-            <div style={{ fontSize: '0.85rem' }}>
-              <p style={{ margin: '2px 0' }}><strong>RSI:</strong> {indicator.rsi} {indicator.rsi > 70 ? '⚠️ Overbought' : indicator.rsi < 30 ? '⚠️ Oversold' : '✓'}</p>
-              <p style={{ margin: '2px 0', color: indicator.rsiSignal === 'overbought' || indicator.rsiSignal === 'oversold' ? '#dc2626' : '#16a34a' }}>
-                {indicator.trendVerdict || 'Analyzing...'}
-              </p>
-            </div>
+        <div style={{ background: '#f9fbfb', border: '1px solid #e2e8f0', borderRadius: '7px', padding: '10px' }}>
+          <h3 style={{ margin: '0 0 8px 0', fontSize: '0.95rem', fontWeight: 600, display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <ShieldCheck size={16} />Technical Indicators
+          </h3>
+          {strategyQuotes?.symbols && strategyQuotes.symbols.length > 0 ? (
+            <IndicatorPanel
+              symbol={strategyQuotes.symbols[0]?.symbol}
+              indicator={indicator}
+            />
           ) : (
-            <p style={{ color: '#667085', fontSize: '0.85rem' }}>Select a symbol for indicators</p>
+            <p style={{ color: '#667085', fontSize: '0.85rem' }}>Add symbols to view indicators</p>
           )}
         </div>
       </div>
