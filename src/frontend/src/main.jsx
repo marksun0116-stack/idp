@@ -467,7 +467,7 @@ function App() {
           )}
           {activeView === 'reviews' && <ReviewsView reviews={reviews} pendingReviews={pendingReviews} overdueReviews={overdueReviews} />}
           {activeView === 'analytics' && <AnalyticsView dqs={dqs} behavior={behavior} decisions={decisions} reviews={reviews} />}
-          {activeView === 'community' && <CommunityView publicProfile={publicProfile} strategies={strategies} />}
+          {activeView === 'community' && <CommunityView publicProfile={publicProfile} strategies={strategies} ownerId={ownerId} />}
           {activeView === 'profile' && (
             <ProfileView
               publicProfile={publicProfile}
@@ -1087,20 +1087,75 @@ function AnalyticsView({ dqs, behavior, decisions, reviews }) {
   );
 }
 
-function CommunityView({ publicProfile, strategies }) {
+function CommunityView({ publicProfile, strategies, ownerId }) {
   const publicStrategies = strategies.filter((strategy) => strategy.visibility === 'public');
+  const communityProfiles = generateMockCommunityProfiles(publicProfile);
+  const leaderboard = communityProfiles.slice().sort((a, b) => (b.reputation?.decisionQualityScore || 0) - (a.reputation?.decisionQualityScore || 0)).slice(0, 5);
+
   return (
-    <section className="workspaceGrid">
-      <Panel title="Community Presence" icon={<Users />}>
-        <div className="communityCard">
-          <strong>{publicProfile ? `@${publicProfile.handle}` : 'Profile not published'}</strong>
-          <span>{publicStrategies.length} public strategies available for reputation surfaces.</span>
-        </div>
-      </Panel>
-      <Panel title="Top Community Decisions" icon={<Compass />}>
-        <Empty text="Community decision feed will connect after discovery and moderation APIs are added." />
-      </Panel>
-    </section>
+    <>
+      <section className="workspaceGrid">
+        <Panel title="Your Community Presence" icon={<Users />}>
+          {publicProfile ? (
+            <div className="communityCard">
+              <strong>@{publicProfile.handle}</strong>
+              <span>{publicStrategies.length} {publicStrategies.length === 1 ? 'strategy' : 'strategies'} public</span>
+              <small style={{ marginTop: '8px', display: 'block', color: '#667085' }}>{publicProfile.bio || 'No bio yet'}</small>
+            </div>
+          ) : (
+            <div style={{ padding: '16px', background: '#f9fbfb', borderRadius: '7px', border: '1px solid #e4e7ec' }}>
+              <p style={{ margin: '0 0 12px 0', color: '#526071' }}>Publish your profile to join the community and be discovered by other investors.</p>
+              <p style={{ margin: '0', fontSize: '0.85rem', color: '#9facbd' }}>Share your public strategies, reputation scores, and investment thesis with the community.</p>
+            </div>
+          )}
+        </Panel>
+
+        <Panel title="Top Investors by DQS" icon={<TrendingUp />}>
+          <div className="list compact">
+            {leaderboard.map((profile, idx) => (
+              <article className="listItem" key={profile.handle} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: '12px', alignItems: 'center' }}>
+                <strong style={{ fontSize: '1.2rem', color: '#9facbd', minWidth: '24px' }}>#{idx + 1}</strong>
+                <div>
+                  <strong>{profile.displayName}</strong>
+                  <span style={{ display: 'block', fontSize: '0.8rem', color: '#667085' }}>@{profile.handle}</span>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <strong style={{ display: 'block', fontSize: '1.1rem', color: '#20242a' }}>{profile.reputation?.decisionQualityScore ?? 'N/A'}</strong>
+                  <small style={{ color: '#9facbd' }}>DQS</small>
+                </div>
+              </article>
+            ))}
+          </div>
+        </Panel>
+      </section>
+
+      <section className="workspaceGrid">
+        <Panel title="Featured Public Strategies" icon={<WalletCards />}>
+          <div className="strategyCards">
+            {publicStrategies.slice(0, 3).map((strategy) => (
+              <article className="miniCard" key={strategy.id}>
+                <strong>{strategy.name}</strong>
+                <span>{currency(strategy.startingCapital)}</span>
+                <small>public research surface</small>
+              </article>
+            ))}
+            {publicStrategies.length === 0 && <Empty text="No public strategies yet in the community." />}
+          </div>
+        </Panel>
+
+        <Panel title="Browse Investors" icon={<Compass />}>
+          <div className="list compact">
+            {communityProfiles.slice(0, 4).map((profile) => (
+              <article className="listItem" key={profile.handle}>
+                <strong>{profile.displayName}</strong>
+                <span style={{ fontSize: '0.85rem', color: '#667085' }}>{profile.bio}</span>
+                <small>{profile.publishedStrategies.length} public {profile.publishedStrategies.length === 1 ? 'strategy' : 'strategies'}</small>
+              </article>
+            ))}
+          </div>
+        </Panel>
+      </section>
+    </>
   );
 }
 
@@ -1514,6 +1569,31 @@ function currency(value) {
 function formatDate(value) {
   if (!value) return 'not dated';
   return new Date(value).toLocaleDateString();
+}
+
+function generateMockCommunityProfiles(currentProfile) {
+  const baseProfiles = [
+    { handle: 'alex_trader', displayName: 'Alex Chen', bio: 'Tech sector focus. 5+ years experience.', dqs: 82, research: 78, risk: 85, consistency: 80 },
+    { handle: 'jordan_growth', displayName: 'Jordan Silva', bio: 'Growth stock analyst. Contrarian thesis thinker.', dqs: 75, research: 88, risk: 72, consistency: 76 },
+    { handle: 'morgan_value', displayName: 'Morgan Park', bio: 'Value investing disciplined approach', dqs: 88, research: 85, risk: 92, consistency: 87 },
+    { handle: 'casey_quant', displayName: 'Casey Johnson', bio: 'Quantitative models + fundamental analysis', dqs: 79, research: 91, risk: 83, consistency: 85 },
+    { handle: 'sam_dividend', displayName: 'Sam Rodriguez', bio: 'Income-focused portfolio builder', dqs: 71, research: 73, risk: 76, consistency: 72 }
+  ];
+
+  return baseProfiles
+    .filter(p => !currentProfile || p.handle !== currentProfile.handle)
+    .map(p => ({
+      handle: p.handle,
+      displayName: p.displayName,
+      bio: p.bio,
+      reputation: {
+        decisionQualityScore: p.dqs,
+        researchDiscipline: p.research,
+        riskManagement: p.risk,
+        strategyConsistency: p.consistency
+      },
+      publishedStrategies: { length: Math.floor(Math.random() * 4) + 1 }
+    }));
 }
 
 createRoot(document.getElementById('root')).render(<App />);
