@@ -686,7 +686,7 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
         </Panel>
       </section>
 
-      <section className="workspaceGrid">
+      <section style={{ padding: '0 clamp(12px, 2vw, 28px) 28px' }}>
         <Panel title="Decision Journal" icon={<BookOpen />}>
           <div style={{ marginBottom: '16px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
             <div style={{ background: '#f9fbfb', padding: '10px', borderRadius: '6px', border: '1px solid #e4e7ec' }}>
@@ -1316,27 +1316,31 @@ function DecisionForm({ decisionForm, setDecisionForm, createDecision }) {
     <form className="stack" onSubmit={createDecision}>
       <div className="row">
         <Field label="Ticker" value={decisionForm.ticker} onChange={(value) => setDecisionForm({ ...decisionForm, ticker: value })} placeholder="e.g., AAPL, MSFT" required />
-        <label>
-          Type
-          <select value={decisionForm.decisionType} onChange={(event) => setDecisionForm({ ...decisionForm, decisionType: event.target.value })}>
-            <option value="watch">Watch</option>
-            <option value="buy">Buy</option>
-            <option value="sell">Sell</option>
-            <option value="avoid">Avoid</option>
-          </select>
-          <small style={{ display: 'block', marginTop: '4px', color: '#667085' }}>{typeDescriptions[decisionForm.decisionType]}</small>
-        </label>
+        <div>
+          <label style={{ display: 'grid', gap: '6px' }}>
+            Type
+            <select value={decisionForm.decisionType} onChange={(event) => setDecisionForm({ ...decisionForm, decisionType: event.target.value })} style={{ width: '100%' }}>
+              <option value="watch">Watch</option>
+              <option value="buy">Buy</option>
+              <option value="sell">Sell</option>
+              <option value="avoid">Avoid</option>
+            </select>
+          </label>
+          <small style={{ display: 'block', marginTop: '4px', color: '#667085', paddingLeft: '2px' }}>{typeDescriptions[decisionForm.decisionType]}</small>
+        </div>
       </div>
       <Field label="Title" value={decisionForm.title} onChange={(value) => setDecisionForm({ ...decisionForm, title: value })} placeholder="Brief decision summary" required />
       <TextField label="Thesis" value={decisionForm.thesis} onChange={(value) => setDecisionForm({ ...decisionForm, thesis: value })} placeholder="Why are you making this decision? What's your investment case?" required />
       <TextField label="Evidence" value={decisionForm.evidence} onChange={(value) => setDecisionForm({ ...decisionForm, evidence: value })} placeholder="Supporting facts, metrics, or research. One per line." required />
       <TextField label="Risks" value={decisionForm.riskFactors} onChange={(value) => setDecisionForm({ ...decisionForm, riskFactors: value })} placeholder="What could go wrong? List key downside scenarios. One per line." required />
       <div className="row">
-        <label>
-          Confidence (1-10)
-          <input type="number" min="1" max="10" value={decisionForm.confidence} onChange={(event) => setDecisionForm({ ...decisionForm, confidence: event.target.value })} />
-          <small style={{ display: 'block', marginTop: '4px', color: '#667085' }}>How confident are you in this decision?</small>
-        </label>
+        <div>
+          <label style={{ display: 'grid', gap: '6px' }}>
+            Confidence (1-10)
+            <input type="number" min="1" max="10" value={decisionForm.confidence} onChange={(event) => setDecisionForm({ ...decisionForm, confidence: event.target.value })} style={{ width: '100%' }} />
+          </label>
+          <small style={{ display: 'block', marginTop: '4px', color: '#667085', paddingLeft: '2px' }}>How confident are you in this decision?</small>
+        </div>
         <Field label="Time Horizon" value={decisionForm.timeHorizon} onChange={(value) => setDecisionForm({ ...decisionForm, timeHorizon: value })} placeholder="e.g., 3 months, 1 year" required />
       </div>
       <TextField label="Exit Criteria" value={decisionForm.exitCriteria} onChange={(value) => setDecisionForm({ ...decisionForm, exitCriteria: value })} placeholder="When will you exit? What conditions trigger sale or review? One per line." required />
