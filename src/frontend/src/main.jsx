@@ -663,6 +663,89 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
   );
 }
 
+function PortfolioSummary({ strategyQuotes, selectedStrategy }) {
+  if (!strategyQuotes?.symbols || strategyQuotes.symbols.length === 0) {
+    return <div style={{ fontSize: '0.9rem', color: '#667085', padding: '12px' }}>Add symbols to see portfolio metrics</div>;
+  }
+
+  const totalValue = strategyQuotes.symbols.reduce((sum, q) => sum + (q.lastPrice || 0), 0);
+  const investedCapital = selectedStrategy?.startingCapital || 0;
+  const gainLoss = totalValue - investedCapital;
+  const gainLossPercent = investedCapital > 0 ? (gainLoss / investedCapital) * 100 : 0;
+  const isPositive = gainLoss >= 0;
+
+  return (
+    <div style={{ padding: '12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '12px' }}>
+        <div style={{ background: '#f9fbfb', padding: '10px', borderRadius: '7px', border: '1px solid #e2e8f0' }}>
+          <small style={{ color: '#667085', fontSize: '0.75rem' }}>Total Value</small>
+          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#20242a' }}>
+            ${totalValue.toFixed(0)}
+          </div>
+        </div>
+        <div style={{ background: '#f9fbfb', padding: '10px', borderRadius: '7px', border: '1px solid #e2e8f0' }}>
+          <small style={{ color: '#667085', fontSize: '0.75rem' }}>Invested</small>
+          <div style={{ fontSize: '1rem', fontWeight: 600, color: '#526071' }}>
+            ${investedCapital.toLocaleString()}
+          </div>
+        </div>
+      </div>
+      <div style={{ background: isPositive ? '#f0fdf4' : '#fef2f2', padding: '10px', borderRadius: '7px', border: `1px solid ${isPositive ? '#dcfce7' : '#fee2e2'}` }}>
+        <small style={{ color: '#667085', fontSize: '0.75rem' }}>Unrealized P&L</small>
+        <div style={{ fontSize: '1.2rem', fontWeight: 700, color: isPositive ? '#16a34a' : '#dc2626', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+          <span>${Math.abs(gainLoss).toFixed(0)}</span>
+          <span style={{ fontSize: '0.9rem' }}>{isPositive ? '↑' : '↓'} {Math.abs(gainLossPercent).toFixed(1)}%</span>
+        </div>
+      </div>
+      <div style={{ marginTop: '10px', fontSize: '0.8rem', color: '#667085', paddingTop: '10px', borderTop: '1px solid #e4e7ec' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+          <span>{strategyQuotes.symbols.length} symbols tracked</span>
+          <span>{strategyQuotes.symbols.filter(s => s.change > 0).length} gainers</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AllocationChart({ strategyQuotes }) {
+  if (!strategyQuotes?.symbols || strategyQuotes.symbols.length === 0) return null;
+
+  const totalValue = strategyQuotes.symbols.reduce((sum, q) => sum + (q.lastPrice || 0), 0);
+  const allocations = strategyQuotes.symbols.map(s => ({
+    symbol: s.symbol,
+    value: s.lastPrice || 0,
+    percent: totalValue > 0 ? ((s.lastPrice || 0) / totalValue) * 100 : 0
+  })).sort((a, b) => b.value - a.value);
+
+  const colors = ['#1f6f61', '#0d9488', '#14b8a6', '#2dd4bf', '#67e8f9', '#a5f3fc'];
+
+  return (
+    <div style={{ padding: '12px' }}>
+      <h3 style={{ margin: '0 0 10px 0', fontSize: '0.95rem', fontWeight: 600 }}>Symbol Allocation</h3>
+      <div style={{ display: 'grid', gap: '6px' }}>
+        {allocations.map((alloc, idx) => (
+          <div key={alloc.symbol} style={{ display: 'grid', gridTemplateColumns: '1fr 3fr 1fr', gap: '8px', alignItems: 'center' }}>
+            <strong style={{ fontSize: '0.85rem', color: '#20242a' }}>{alloc.symbol}</strong>
+            <div style={{ background: '#e4e7ec', borderRadius: '4px', height: '20px', position: 'relative', overflow: 'hidden' }}>
+              <div
+                style={{
+                  background: colors[idx % colors.length],
+                  height: '100%',
+                  width: `${alloc.percent}%`,
+                  borderRadius: '4px'
+                }}
+              />
+            </div>
+            <small style={{ fontSize: '0.75rem', color: '#667085', textAlign: 'right' }}>
+              {alloc.percent.toFixed(0)}%
+            </small>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function PortfolioView({
   strategies,
   selectedStrategyId,
@@ -701,6 +784,14 @@ function PortfolioView({
           strategyHistory={strategyHistory}
           indicator={indicator}
         />
+      </Panel>
+    </section>
+    <section className="workspaceGrid">
+      <Panel title="Portfolio Summary" icon={<TrendingUp />}>
+        <PortfolioSummary strategyQuotes={strategyQuotes} selectedStrategy={selectedStrategy} />
+      </Panel>
+      <Panel title="Asset Allocation" icon={<BarChart3 />}>
+        <AllocationChart strategyQuotes={strategyQuotes} />
       </Panel>
     </section>
   );
