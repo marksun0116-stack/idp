@@ -886,8 +886,8 @@ function PortfolioView({
   chartRange,
   setChartRange
 }) {
-  return (
-    <>
+  if (!selectedStrategy) {
+    return (
       <section className="workspaceGrid">
         <Panel title="Strategies" icon={<WalletCards />}>
           <StrategyForm strategyForm={strategyForm} setStrategyForm={setStrategyForm} createStrategy={createStrategy} />
@@ -898,6 +898,34 @@ function PortfolioView({
               </button>
             ))}
             {strategies.length === 0 && <Empty text="No strategies yet." />}
+          </div>
+        </Panel>
+      </section>
+    );
+  }
+
+  return (
+    <>
+      <section className="workspaceGrid">
+        <Panel title="Strategies" icon={<WalletCards />}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
+            <div style={{ flex: 1 }}>
+              <strong style={{ fontSize: '0.95rem' }}>{selectedStrategy.name}</strong>
+              <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem', color: '#667085' }}>{selectedStrategy.description}</p>
+            </div>
+            <span className="badge">{selectedStrategy.visibility}</span>
+          </div>
+          <form className="symbolForm" onSubmit={addSymbol} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '8px', alignItems: 'flex-end' }}>
+            <Field label="Symbol" value={symbolForm.symbol} onChange={(value) => setSymbolForm({ ...symbolForm, symbol: value })} required />
+            <Field label="Note" value={symbolForm.note} onChange={(value) => setSymbolForm({ ...symbolForm, note: value })} />
+            <button className="primary" type="submit" style={{ padding: '8px 12px' }}><Search size={16} />Track</button>
+          </form>
+          <div className="strategyTabs" style={{ marginTop: '12px' }}>
+            {strategies.map((strategy) => (
+              <button type="button" className={strategy.id === selectedStrategyId ? 'selected' : ''} key={strategy.id} onClick={() => setSelectedStrategyId(strategy.id)}>
+                {strategy.name}
+              </button>
+            ))}
           </div>
         </Panel>
       </section>
@@ -912,16 +940,33 @@ function PortfolioView({
         </Panel>
       </section>
       <section className="workspaceGrid">
-        <Panel title="Symbols & Indicators" icon={<Compass />}>
-          <ResearchSurface
-            selectedStrategy={selectedStrategy}
-            symbolForm={symbolForm}
-            setSymbolForm={setSymbolForm}
-            addSymbol={addSymbol}
-            strategyQuotes={strategyQuotes}
-            strategyHistory={strategyHistory}
-            indicator={indicator}
-          />
+        <Panel title="Tracked Symbols" icon={<Compass />}>
+          <div className="quoteGrid">
+            {(strategyQuotes?.symbols || []).map((quote) => {
+              const change = quote.change || 0;
+              const changePercent = quote.percentChange || 0;
+              const isPositive = change >= 0;
+              const price = quote.lastPrice || quote.price || 0;
+              const volume = quote.volume || 0;
+              return (
+                <article className="quote" key={quote.symbol}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2px' }}>
+                    <strong style={{ fontSize: '1rem' }}>{quote.symbol}</strong>
+                    <span style={{ color: isPositive ? '#16a34a' : '#dc2626', fontSize: '0.85rem', fontWeight: 600 }}>
+                      {isPositive ? '↑' : '↓'} {Math.abs(changePercent).toFixed(2)}%
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '1.15rem', fontWeight: 700, color: '#20242a', marginBottom: '2px', display: 'block' }}>
+                    ${price.toFixed(2)}
+                  </span>
+                  <small style={{ color: '#667085', fontSize: '0.75rem' }}>
+                    Vol: {(volume / 1e6).toFixed(1)}M | Change: ${Math.abs(change).toFixed(2)}
+                  </small>
+                </article>
+              );
+            })}
+            {(!strategyQuotes?.symbols || strategyQuotes.symbols.length === 0) && <Empty text="Add a tracked symbol to view prices." />}
+          </div>
         </Panel>
         <Panel title="Portfolio Summary" icon={<TrendingUp />}>
           <PortfolioSummary strategyQuotes={strategyQuotes} selectedStrategy={selectedStrategy} />
@@ -930,6 +975,9 @@ function PortfolioView({
       <section className="workspaceGrid">
         <Panel title="Asset Allocation" icon={<BarChart3 />}>
           <AllocationChart strategyQuotes={strategyQuotes} />
+        </Panel>
+        <Panel title="Technical Indicators" icon={<ShieldCheck />}>
+          <IndicatorPanel symbol={strategyQuotes?.symbols[0]?.symbol} indicator={indicator} />
         </Panel>
       </section>
     </>
