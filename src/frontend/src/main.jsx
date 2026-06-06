@@ -889,7 +889,7 @@ function PortfolioView({
   return (
     <>
       <section className="workspaceGrid">
-        <Panel title="Strategy Portfolios" icon={<WalletCards />}>
+        <Panel title="Strategies" icon={<WalletCards />}>
           <StrategyForm strategyForm={strategyForm} setStrategyForm={setStrategyForm} createStrategy={createStrategy} />
           <div className="strategyTabs">
             {strategies.map((strategy) => (
@@ -900,7 +900,19 @@ function PortfolioView({
             {strategies.length === 0 && <Empty text="No strategies yet." />}
           </div>
         </Panel>
-        <Panel title="Portfolio Research Surface" icon={<LineChart />}>
+      </section>
+      <section className="workspaceGrid">
+        <Panel title="Price History" icon={<LineChart />}>
+          <PriceChart
+            strategyHistory={strategyHistory}
+            strategyQuotes={strategyQuotes}
+            chartRange={chartRange}
+            setChartRange={setChartRange}
+          />
+        </Panel>
+      </section>
+      <section className="workspaceGrid">
+        <Panel title="Symbols & Indicators" icon={<Compass />}>
           <ResearchSurface
             selectedStrategy={selectedStrategy}
             symbolForm={symbolForm}
@@ -911,23 +923,13 @@ function PortfolioView({
             indicator={indicator}
           />
         </Panel>
-      </section>
-      <section className="workspaceGrid">
         <Panel title="Portfolio Summary" icon={<TrendingUp />}>
           <PortfolioSummary strategyQuotes={strategyQuotes} selectedStrategy={selectedStrategy} />
         </Panel>
-        <Panel title="Asset Allocation" icon={<BarChart3 />}>
-          <AllocationChart strategyQuotes={strategyQuotes} />
-        </Panel>
       </section>
       <section className="workspaceGrid">
-        <Panel title="Price History" icon={<LineChart />}>
-          <PriceChart
-            strategyHistory={strategyHistory}
-            strategyQuotes={strategyQuotes}
-            chartRange={chartRange}
-            setChartRange={setChartRange}
-          />
+        <Panel title="Asset Allocation" icon={<BarChart3 />}>
+          <AllocationChart strategyQuotes={strategyQuotes} />
         </Panel>
       </section>
     </>
