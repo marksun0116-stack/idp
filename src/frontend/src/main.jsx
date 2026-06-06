@@ -983,10 +983,8 @@ function PortfolioView({
             setChartRange={setChartRange}
           />
         </Panel>
-      </section>
-      <section className="workspaceGrid">
         <Panel title="Tracked Symbols" icon={<Compass />}>
-          <div className="quoteGrid">
+          <div className="quoteGrid" style={{ gridTemplateColumns: '1fr' }}>
             {(strategyQuotes?.symbols || []).map((quote) => {
               const change = quote.change || 0;
               const changePercent = quote.percentChange || 0;
@@ -1013,14 +1011,16 @@ function PortfolioView({
             {(!strategyQuotes?.symbols || strategyQuotes.symbols.length === 0) && <Empty text="Add a tracked symbol to view prices." />}
           </div>
         </Panel>
+      </section>
+      <section className="workspaceGrid">
         <Panel title="Portfolio Summary" icon={<TrendingUp />}>
           <PortfolioSummary strategyQuotes={strategyQuotes} selectedStrategy={selectedStrategy} />
         </Panel>
-      </section>
-      <section className="workspaceGrid">
         <Panel title="Asset Allocation" icon={<BarChart3 />}>
           <AllocationChart strategyQuotes={strategyQuotes} />
         </Panel>
+      </section>
+      <section className="workspaceGrid">
         <Panel title="Technical Indicators" icon={<ShieldCheck />}>
           <IndicatorPanel symbol={strategyQuotes?.symbols[0]?.symbol} indicator={indicator} />
         </Panel>
