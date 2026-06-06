@@ -660,15 +660,97 @@ function Dashboard({
 }
 
 function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecision }) {
+  const [searchTicker, setSearchTicker] = React.useState('');
+  const [filterType, setFilterType] = React.useState('all');
+  const [filterStatus, setFilterStatus] = React.useState('all');
+
+  const filteredDecisions = decisions.filter(d => {
+    const matchesTicker = searchTicker === '' || d.ticker.toUpperCase().includes(searchTicker.toUpperCase());
+    const matchesType = filterType === 'all' || d.decisionType === filterType;
+    const matchesStatus = filterStatus === 'all' || d.status === filterStatus;
+    return matchesTicker && matchesType && matchesStatus;
+  });
+
+  const decisionStats = {
+    total: decisions.length,
+    active: decisions.filter(d => d.status === 'active').length,
+    closed: decisions.filter(d => d.status === 'closed').length,
+    watch: decisions.filter(d => d.decisionType === 'watch').length
+  };
+
   return (
-    <section className="workspaceGrid">
-      <Panel title="Create Decision" icon={<Plus />}>
-        <DecisionForm decisionForm={decisionForm} setDecisionForm={setDecisionForm} createDecision={createDecision} />
-      </Panel>
-      <Panel title="Decision Journal" icon={<BookOpen />}>
-        <DecisionTable decisions={decisions} />
-      </Panel>
-    </section>
+    <>
+      <section className="workspaceGrid">
+        <Panel title="Create Decision" icon={<Plus />}>
+          <DecisionForm decisionForm={decisionForm} setDecisionForm={setDecisionForm} createDecision={createDecision} />
+        </Panel>
+      </section>
+
+      <section className="workspaceGrid">
+        <Panel title="Decision Journal" icon={<BookOpen />}>
+          <div style={{ marginBottom: '16px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+            <div style={{ background: '#f9fbfb', padding: '10px', borderRadius: '6px', border: '1px solid #e4e7ec' }}>
+              <small style={{ color: '#667085' }}>Total</small>
+              <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#20242a' }}>{decisionStats.total}</div>
+            </div>
+            <div style={{ background: '#f0fdf4', padding: '10px', borderRadius: '6px', border: '1px solid #dcfce7' }}>
+              <small style={{ color: '#667085' }}>Active</small>
+              <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#16a34a' }}>{decisionStats.active}</div>
+            </div>
+            <div style={{ background: '#f9fbfb', padding: '10px', borderRadius: '6px', border: '1px solid #e4e7ec' }}>
+              <small style={{ color: '#667085' }}>Closed</small>
+              <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#526071' }}>{decisionStats.closed}</div>
+            </div>
+            <div style={{ background: '#f9fbfb', padding: '10px', borderRadius: '6px', border: '1px solid #e4e7ec' }}>
+              <small style={{ color: '#667085' }}>Watch List</small>
+              <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#0f766e' }}>{decisionStats.watch}</div>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '12px', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '8px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#f9fbfb', borderRadius: '6px', border: '1px solid #e4e7ec' }}>
+              <Search size={16} style={{ color: '#9facbd' }} />
+              <input
+                type="text"
+                placeholder="Search by ticker..."
+                value={searchTicker}
+                onChange={(e) => setSearchTicker(e.target.value)}
+                style={{ flex: 1, border: 'none', background: 'transparent', fontSize: '0.9rem', outline: 'none' }}
+              />
+            </label>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              style={{ padding: '8px 12px', background: '#f9fbfb', border: '1px solid #e4e7ec', borderRadius: '6px', fontSize: '0.9rem' }}
+            >
+              <option value="all">All types</option>
+              <option value="watch">Watch</option>
+              <option value="buy">Buy</option>
+              <option value="sell">Sell</option>
+              <option value="avoid">Avoid</option>
+            </select>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              style={{ padding: '8px 12px', background: '#f9fbfb', border: '1px solid #e4e7ec', borderRadius: '6px', fontSize: '0.9rem' }}
+            >
+              <option value="all">All status</option>
+              <option value="active">Active</option>
+              <option value="closed">Closed</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+
+          <DecisionTable decisions={filteredDecisions} showEmpty={filteredDecisions.length === 0} />
+          {filteredDecisions.length === 0 && searchTicker === '' && filterType === 'all' && filterStatus === 'all' && (
+            <Empty text="No decisions yet. Create your first decision to start your journal." />
+          )}
+          {filteredDecisions.length === 0 && (searchTicker !== '' || filterType !== 'all' || filterStatus !== 'all') && (
+            <Empty text="No decisions match your filters. Try adjusting your search." />
+          )}
+        </Panel>
+      </section>
+    </>
   );
 }
 
@@ -1223,10 +1305,17 @@ function SettingsView({ ownerId, authToken, demoMode }) {
 }
 
 function DecisionForm({ decisionForm, setDecisionForm, createDecision }) {
+  const typeDescriptions = {
+    watch: 'Monitor for future action',
+    buy: 'Initiate or increase position',
+    sell: 'Close or reduce position',
+    avoid: 'Do not engage with'
+  };
+
   return (
     <form className="stack" onSubmit={createDecision}>
       <div className="row">
-        <Field label="Ticker" value={decisionForm.ticker} onChange={(value) => setDecisionForm({ ...decisionForm, ticker: value })} required />
+        <Field label="Ticker" value={decisionForm.ticker} onChange={(value) => setDecisionForm({ ...decisionForm, ticker: value })} placeholder="e.g., AAPL, MSFT" required />
         <label>
           Type
           <select value={decisionForm.decisionType} onChange={(event) => setDecisionForm({ ...decisionForm, decisionType: event.target.value })}>
@@ -1235,20 +1324,22 @@ function DecisionForm({ decisionForm, setDecisionForm, createDecision }) {
             <option value="sell">Sell</option>
             <option value="avoid">Avoid</option>
           </select>
+          <small style={{ display: 'block', marginTop: '4px', color: '#667085' }}>{typeDescriptions[decisionForm.decisionType]}</small>
         </label>
       </div>
-      <Field label="Title" value={decisionForm.title} onChange={(value) => setDecisionForm({ ...decisionForm, title: value })} required />
-      <TextField label="Thesis" value={decisionForm.thesis} onChange={(value) => setDecisionForm({ ...decisionForm, thesis: value })} required />
-      <TextField label="Evidence" value={decisionForm.evidence} onChange={(value) => setDecisionForm({ ...decisionForm, evidence: value })} required />
-      <TextField label="Risks" value={decisionForm.riskFactors} onChange={(value) => setDecisionForm({ ...decisionForm, riskFactors: value })} required />
+      <Field label="Title" value={decisionForm.title} onChange={(value) => setDecisionForm({ ...decisionForm, title: value })} placeholder="Brief decision summary" required />
+      <TextField label="Thesis" value={decisionForm.thesis} onChange={(value) => setDecisionForm({ ...decisionForm, thesis: value })} placeholder="Why are you making this decision? What's your investment case?" required />
+      <TextField label="Evidence" value={decisionForm.evidence} onChange={(value) => setDecisionForm({ ...decisionForm, evidence: value })} placeholder="Supporting facts, metrics, or research. One per line." required />
+      <TextField label="Risks" value={decisionForm.riskFactors} onChange={(value) => setDecisionForm({ ...decisionForm, riskFactors: value })} placeholder="What could go wrong? List key downside scenarios. One per line." required />
       <div className="row">
         <label>
-          Confidence
+          Confidence (1-10)
           <input type="number" min="1" max="10" value={decisionForm.confidence} onChange={(event) => setDecisionForm({ ...decisionForm, confidence: event.target.value })} />
+          <small style={{ display: 'block', marginTop: '4px', color: '#667085' }}>How confident are you in this decision?</small>
         </label>
-        <Field label="Horizon" value={decisionForm.timeHorizon} onChange={(value) => setDecisionForm({ ...decisionForm, timeHorizon: value })} required />
+        <Field label="Time Horizon" value={decisionForm.timeHorizon} onChange={(value) => setDecisionForm({ ...decisionForm, timeHorizon: value })} placeholder="e.g., 3 months, 1 year" required />
       </div>
-      <TextField label="Exit Criteria" value={decisionForm.exitCriteria} onChange={(value) => setDecisionForm({ ...decisionForm, exitCriteria: value })} required />
+      <TextField label="Exit Criteria" value={decisionForm.exitCriteria} onChange={(value) => setDecisionForm({ ...decisionForm, exitCriteria: value })} placeholder="When will you exit? What conditions trigger sale or review? One per line." required />
       <button className="primary" type="submit"><Plus size={17} />Create Decision</button>
     </form>
   );
@@ -1412,20 +1503,20 @@ function Panel({ title, icon, children, className = '', action, onAction }) {
   );
 }
 
-function Field({ label, value, onChange, required }) {
+function Field({ label, value, onChange, required, placeholder }) {
   return (
     <label>
       {label}
-      <input value={value} required={required} onChange={(event) => onChange(event.target.value)} />
+      <input value={value} required={required} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} />
     </label>
   );
 }
 
-function TextField({ label, value, onChange, required }) {
+function TextField({ label, value, onChange, required, placeholder }) {
   return (
     <label>
       {label}
-      <textarea value={value} required={required} onChange={(event) => onChange(event.target.value)} />
+      <textarea value={value} required={required} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} />
     </label>
   );
 }
@@ -1448,19 +1539,88 @@ function Badge({ label, value }) {
   );
 }
 
-function DecisionTable({ decisions }) {
+function DecisionTable({ decisions, showEmpty = true }) {
+  const getTypeColor = (type) => {
+    switch (type) {
+      case 'buy': return '#16a34a';
+      case 'sell': return '#dc2626';
+      case 'watch': return '#0f766e';
+      case 'avoid': return '#ea580c';
+      default: return '#9facbd';
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'active': return '#16a34a';
+      case 'closed': return '#9facbd';
+      case 'archived': return '#d1d5db';
+      default: return '#9facbd';
+    }
+  };
+
   return (
     <div className="decisionTable">
+      {decisions.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr', gap: '8px', padding: '12px', background: '#f9fbfb', borderRadius: '6px', marginBottom: '8px', fontSize: '0.75rem', fontWeight: 600, color: '#667085', borderBottom: '1px solid #e4e7ec' }}>
+          <span>Ticker</span>
+          <span>Type</span>
+          <span>Confidence</span>
+          <span>Status</span>
+          <span>Thesis</span>
+          <span>Date</span>
+        </div>
+      )}
       {decisions.map((decision) => (
-        <article className="tableRow" key={decision.id}>
-          <strong>{decision.ticker}</strong>
-          <span>{decision.decisionType}</span>
-          <span>{decision.confidence}/10</span>
-          <span>{decision.status}</span>
-          <small>{formatDate(decision.createdAt)}</small>
+        <article
+          className="tableRow"
+          key={decision.id}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr',
+            gap: '8px',
+            alignItems: 'center',
+            padding: '12px',
+            borderBottom: '1px solid #e4e7ec',
+            background: '#fff'
+          }}
+        >
+          <strong style={{ fontSize: '0.95rem', color: '#20242a' }}>{decision.ticker}</strong>
+          <span
+            style={{
+              display: 'inline-block',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              background: getTypeColor(decision.decisionType) + '20',
+              color: getTypeColor(decision.decisionType),
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              textTransform: 'capitalize'
+            }}
+          >
+            {decision.decisionType}
+          </span>
+          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#20242a' }}>
+            {decision.confidence}
+            <span style={{ fontSize: '0.7rem', color: '#9facbd', fontWeight: 400 }}>/10</span>
+          </span>
+          <span
+            style={{
+              fontSize: '0.75rem',
+              fontWeight: 500,
+              color: getStatusColor(decision.status),
+              textTransform: 'capitalize'
+            }}
+          >
+            {decision.status}
+          </span>
+          <span style={{ fontSize: '0.8rem', color: '#667085', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {decision.title || '—'}
+          </span>
+          <small style={{ color: '#9facbd', fontSize: '0.75rem' }}>{formatDate(decision.createdAt)}</small>
         </article>
       ))}
-      {decisions.length === 0 && <Empty text="No decisions yet." />}
+      {showEmpty && decisions.length === 0 && <Empty text="No decisions to display." />}
     </div>
   );
 }
