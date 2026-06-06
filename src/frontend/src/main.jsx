@@ -707,21 +707,21 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
             </div>
           </div>
 
-          <div style={{ marginBottom: '12px', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '8px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#f9fbfb', borderRadius: '6px', border: '1px solid #e4e7ec' }}>
-              <Search size={16} style={{ color: '#9facbd' }} />
+          <div style={{ marginBottom: '12px', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '8px', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: '#ffffff', borderRadius: '6px', border: '1px solid #d7dce2' }}>
+              <Search size={16} style={{ color: '#9facbd', flexShrink: 0 }} />
               <input
                 type="text"
                 placeholder="Search by ticker..."
                 value={searchTicker}
                 onChange={(e) => setSearchTicker(e.target.value)}
-                style={{ flex: 1, border: 'none', background: 'transparent', fontSize: '0.9rem', outline: 'none' }}
+                style={{ flex: 1, border: 'none', background: 'transparent', fontSize: '0.9rem', outline: 'none', color: '#20242a', padding: 0, width: '100%' }}
               />
-            </label>
+            </div>
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              style={{ padding: '8px 12px', background: '#f9fbfb', border: '1px solid #e4e7ec', borderRadius: '6px', fontSize: '0.9rem' }}
+              style={{ padding: '10px 11px', background: '#ffffff', border: '1px solid #d7dce2', borderRadius: '7px', fontSize: '0.9rem', color: '#20242a' }}
             >
               <option value="all">All types</option>
               <option value="watch">Watch</option>
@@ -732,7 +732,7 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              style={{ padding: '8px 12px', background: '#f9fbfb', border: '1px solid #e4e7ec', borderRadius: '6px', fontSize: '0.9rem' }}
+              style={{ padding: '10px 11px', background: '#ffffff', border: '1px solid #d7dce2', borderRadius: '7px', fontSize: '0.9rem', color: '#20242a' }}
             >
               <option value="all">All status</option>
               <option value="active">Active</option>

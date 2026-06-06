@@ -264,11 +264,7 @@ button {
 }
 
 .mainShell {
-  background:
-    linear-gradient(180deg, rgba(246, 248, 250, 0.94), rgba(239, 242, 245, 1)),
-    url('/idp.png');
-  background-position: top center;
-  background-size: cover;
+  background: #f6f8fa;
   min-width: 0;
 }
 
