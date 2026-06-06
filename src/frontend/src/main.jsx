@@ -911,27 +911,56 @@ function ResearchSurface({ selectedStrategy, symbolForm, setSymbolForm, addSymbo
       <form className="symbolForm" onSubmit={addSymbol}>
         <Field label="Symbol" value={symbolForm.symbol} onChange={(value) => setSymbolForm({ ...symbolForm, symbol: value })} required />
         <Field label="Note" value={symbolForm.note} onChange={(value) => setSymbolForm({ ...symbolForm, note: value })} />
-        <Field label="Tags" value={symbolForm.tags} onChange={(value) => setSymbolForm({ ...symbolForm, tags: value })} />
         <button className="primary" type="submit"><Search size={17} />Track</button>
       </form>
       <div className="quoteGrid">
-        {(strategyQuotes?.symbols || []).map((quote) => (
-          <div className="quote" key={quote.symbol}>
-            <strong>{quote.symbol}</strong>
-            <span>{quote.trackingStatus}</span>
-            <small>{strategyQuotes.dataFreshness}</small>
-          </div>
-        ))}
+        {(strategyQuotes?.symbols || []).map((quote) => {
+          const change = quote.change || 0;
+          const changePercent = quote.percentChange || 0;
+          const isPositive = change >= 0;
+          return (
+            <article className="quote" key={quote.symbol}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <strong>{quote.symbol}</strong>
+                <span style={{ color: isPositive ? '#16a34a' : '#dc2626', fontSize: '0.9rem', fontWeight: 600 }}>
+                  {isPositive ? '↑' : '↓'} {Math.abs(changePercent).toFixed(1)}%
+                </span>
+              </div>
+              <span style={{ fontSize: '1.1rem', fontWeight: 600, color: '#20242a' }}>
+                ${quote.price ? quote.price.toFixed(2) : 'N/A'}
+              </span>
+              <small>
+                Vol: {quote.volume ? (quote.volume / 1e6).toFixed(1) : 'N/A'}M | 52W: {quote.week52Low ? `$${quote.week52Low}` : 'N/A'} - {quote.week52High ? `$${quote.week52High}` : 'N/A'}
+              </small>
+            </article>
+          );
+        })}
         {(!strategyQuotes?.symbols || strategyQuotes.symbols.length === 0) && <Empty text="Add a tracked symbol to activate this surface." />}
       </div>
       <div className="researchGrid">
         <div>
-          <h3><BarChart3 size={17} />History</h3>
-          <p>{strategyHistory?.series?.length || 0} symbol series · {strategyHistory?.range || '1mo'}</p>
+          <h3><BarChart3 size={17} />Price History</h3>
+          {strategyHistory?.series && strategyHistory.series.length > 0 ? (
+            <div style={{ fontSize: '0.85rem' }}>
+              <p style={{ margin: '2px 0' }}>{strategyHistory.series.length} symbols tracked</p>
+              <p style={{ margin: '2px 0', color: '#667085' }}>Range: {strategyHistory.range || '1M'}</p>
+            </div>
+          ) : (
+            <p style={{ color: '#667085', fontSize: '0.85rem' }}>Chart data loading...</p>
+          )}
         </div>
         <div>
-          <h3><ShieldCheck size={17} />Indicators</h3>
-          <p>{indicator ? `${indicator.symbol}: ${indicator.trendVerdict}` : 'No symbol selected'}</p>
+          <h3><ShieldCheck size={17} />Signals</h3>
+          {indicator ? (
+            <div style={{ fontSize: '0.85rem' }}>
+              <p style={{ margin: '2px 0' }}><strong>RSI:</strong> {indicator.rsi} {indicator.rsi > 70 ? '⚠️ Overbought' : indicator.rsi < 30 ? '⚠️ Oversold' : '✓'}</p>
+              <p style={{ margin: '2px 0', color: indicator.rsiSignal === 'overbought' || indicator.rsiSignal === 'oversold' ? '#dc2626' : '#16a34a' }}>
+                {indicator.trendVerdict || 'Analyzing...'}
+              </p>
+            </div>
+          ) : (
+            <p style={{ color: '#667085', fontSize: '0.85rem' }}>Select a symbol for indicators</p>
+          )}
         </div>
       </div>
     </>

@@ -142,8 +142,8 @@ button {
   color: #f8fafc;
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  padding: 22px 16px;
+  gap: 12px;
+  padding: 16px 12px;
 }
 
 .brand {
@@ -275,9 +275,9 @@ button {
 .topbar {
   align-items: center;
   display: flex;
-  gap: 24px;
+  gap: 16px;
   justify-content: space-between;
-  padding: 24px clamp(18px, 3vw, 42px) 18px;
+  padding: 16px clamp(12px, 3vw, 28px) 12px;
 }
 
 .eyebrow {
@@ -398,25 +398,25 @@ textarea {
 }
 
 .layout {
-  padding: 0 clamp(18px, 3vw, 42px) 42px;
+  padding: 0 clamp(12px, 2vw, 28px) 28px;
 }
 
 .scoreGrid {
   display: grid;
-  gap: 14px;
+  gap: 10px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .dashboardGrid {
   display: grid;
-  gap: 16px;
+  gap: 12px;
   grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
 }
 
 .workspaceGrid {
   display: grid;
-  gap: 16px;
+  gap: 12px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -430,9 +430,9 @@ textarea {
 
 .metric {
   display: grid;
-  gap: 4px;
-  min-height: 116px;
-  padding: 18px;
+  gap: 3px;
+  min-height: 100px;
+  padding: 12px;
 }
 
 .metricIcon {
@@ -468,7 +468,7 @@ textarea {
 
 .panel {
   min-width: 0;
-  padding: 18px;
+  padding: 12px;
 }
 
 .span2 {
@@ -478,9 +478,9 @@ textarea {
 .panelHeader {
   align-items: center;
   display: flex;
-  gap: 12px;
+  gap: 8px;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .panelHeader button {
@@ -492,18 +492,18 @@ textarea {
 
 .stack {
   display: grid;
-  gap: 11px;
+  gap: 8px;
 }
 
 .row {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .list {
   display: grid;
-  gap: 9px;
+  gap: 6px;
 }
 
 .list.compact {
@@ -519,8 +519,8 @@ textarea {
   border: 1px solid #e4e7ec;
   border-radius: 7px;
   display: grid;
-  gap: 4px;
-  padding: 11px 12px;
+  gap: 2px;
+  padding: 8px 10px;
 }
 
 .listItem span,
@@ -536,7 +536,7 @@ textarea {
 .returnGrid,
 .marketGrid {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -548,20 +548,25 @@ textarea {
   border: 1px solid #e2e8f0;
   border-radius: 7px;
   display: grid;
-  gap: 4px;
-  padding: 13px;
+  gap: 2px;
+  padding: 10px;
+}
+
+.quote {
+  background: #ffffff;
+  border: 1px solid #d7dce2;
 }
 
 .score strong {
   color: #1f6f61;
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   line-height: 1;
 }
 
 .component strong {
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
