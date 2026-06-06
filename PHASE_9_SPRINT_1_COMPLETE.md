@@ -126,6 +126,15 @@ GET /api/strategies/4/quotes
 - NVDA: $205.10 (-6.20%)
 ```
 
+### ✅ History Data
+```
+GET /api/strategies/4/history?range=1M
+✅ Response: Historical price data for all symbols
+- AAPL: 22 data points (1M range)
+- NVDA: 22 data points (1M range)
+- Each point has: timestamp, close price
+```
+
 ### ✅ Indicator Data
 ```
 GET /api/strategies/4/indicators?symbol=NVDA&range=1M
