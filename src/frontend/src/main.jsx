@@ -241,7 +241,7 @@ function App() {
       const detail = await api(`/api/strategies/${strategyId}`);
       setSelectedStrategy(detail);
       const quotes = await api(`/api/strategies/${strategyId}/quotes`);
-      const history = await api(`/api/strategies/${strategyId}/charts?range=1M`);
+      const history = await api(`/api/strategies/${strategyId}/history?range=1M`);
       setStrategyQuotes(quotes);
       setStrategyHistory(history);
       const firstSymbol = detail.trackedSymbols?.[0]?.symbol || quotes.symbols?.[0]?.symbol;
