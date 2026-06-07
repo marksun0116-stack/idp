@@ -633,6 +633,28 @@ textarea {
   width: 30px;
 }
 
+.symbolActionButton.indicatorIcon {
+  aspect-ratio: 1;
+  background: #f0f4f8;
+  border: 1px solid #d7dce2;
+  color: #526071;
+  padding: 0;
+  width: 30px;
+  transition: all 200ms;
+}
+
+.symbolActionButton.indicatorIcon:hover {
+  background: #e4eaf2;
+  border-color: #b8c5d0;
+  color: #344054;
+}
+
+.symbolActionButton.indicatorIcon.active {
+  background: #e4edff;
+  border-color: #6b9ff7;
+  color: #2563eb;
+}
+
 .secondaryCompactButton {
   background: #eef2f6;
   border: 1px solid #d7dce2;

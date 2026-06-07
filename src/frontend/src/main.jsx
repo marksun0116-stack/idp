@@ -95,6 +95,7 @@ function App() {
   const [strategyHistory, setStrategyHistory] = useState(null);
   const [selectedHistorySymbol, setSelectedHistorySymbol] = useState('');
   const [indicator, setIndicator] = useState(null);
+  const [selectedIndicatorSymbol, setSelectedIndicatorSymbol] = useState(null);
   const [publicProfile, setPublicProfile] = useState(null);
   const [portfolioSummary, setPortfolioSummary] = useState(null);
   const [decisionForm, setDecisionForm] = useState(emptyDecision);
@@ -298,6 +299,19 @@ function App() {
       setIndicator(firstSymbol
         ? await api(`/api/strategies/${strategyId}/indicators?symbol=${encodeURIComponent(firstSymbol)}&range=1y`)
         : null);
+    } catch (error) {
+      setNotice(error.message);
+    }
+  }
+
+  async function loadSymbolIndicators(symbol) {
+    setNotice('');
+    try {
+      if (selectedStrategyId) {
+        const indicators = await api(`/api/strategies/${selectedStrategyId}/indicators?symbol=${encodeURIComponent(symbol)}&range=1y`);
+        setIndicator(indicators);
+        setSelectedIndicatorSymbol(symbol);
+      }
     } catch (error) {
       setNotice(error.message);
     }
@@ -623,6 +637,8 @@ function App() {
               selectedHistorySymbol={selectedHistorySymbol}
               setSelectedHistorySymbol={setSelectedHistorySymbol}
               indicator={indicator}
+              selectedIndicatorSymbol={selectedIndicatorSymbol}
+              loadSymbolIndicators={loadSymbolIndicators}
               chartRange={chartRange}
               setChartRange={setChartRange}
               showStrategyForm={showStrategyForm}
@@ -1201,6 +1217,8 @@ function PortfolioView({
   selectedHistorySymbol,
   setSelectedHistorySymbol,
   indicator,
+  selectedIndicatorSymbol,
+  loadSymbolIndicators,
   chartRange,
   setChartRange,
   showStrategyForm,
@@ -1332,6 +1350,15 @@ function PortfolioView({
                         {signedNumber(changePercent)}%
                       </span>
                       <div className="symbolActions">
+                        <button
+                          className={`symbolActionButton indicatorIcon ${selectedIndicatorSymbol === quote.symbol ? 'active' : ''}`}
+                          type="button"
+                          title={`View technical indicators for ${quote.symbol}`}
+                          aria-label={`View technical indicators for ${quote.symbol}`}
+                          onClick={() => loadSymbolIndicators(quote.symbol)}
+                        >
+                          <ShieldCheck size={17} />
+                        </button>
                         {quote.trackingStatus === 'watch' ? (
                           <>
                             <button className="symbolActionButton buy" type="button" onClick={() => startSymbolAction('buy', quote.symbol)}>Buy</button>
@@ -1367,8 +1394,8 @@ function PortfolioView({
         </Panel>
       </section>
       <section className="workspaceGrid">
-        <Panel title="Technical Indicators" icon={<ShieldCheck />}>
-          <IndicatorPanel symbol={strategyQuotes?.symbols[0]?.symbol} indicator={indicator} />
+        <Panel title={`Technical Indicators${selectedIndicatorSymbol ? ` - ${selectedIndicatorSymbol}` : ''}`} icon={<ShieldCheck />}>
+          <IndicatorPanel symbol={selectedIndicatorSymbol} indicator={indicator} />
         </Panel>
       </section>
       <section className="workspaceGrid">
