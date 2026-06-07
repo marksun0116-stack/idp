@@ -744,6 +744,30 @@ textarea {
   padding: 2px 5px;
 }
 
+.activityList {
+  display: grid;
+  gap: 10px;
+}
+
+.activityRow {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e4e7ec;
+  border-radius: 7px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+}
+
+.activityRow div strong {
+  font-size: 0.9rem;
+}
+
+.activityRow small {
+  color: #9facbd;
+  font-size: 0.75rem;
+}
+
 .positiveText {
   color: #15803d !important;
   font-weight: 700;

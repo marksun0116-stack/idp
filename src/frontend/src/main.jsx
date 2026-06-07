@@ -90,6 +90,7 @@ function App() {
   const [strategies, setStrategies] = useState([]);
   const [selectedStrategyId, setSelectedStrategyId] = useState(null);
   const [selectedStrategy, setSelectedStrategy] = useState(null);
+  const [strategyActivities, setStrategyActivities] = useState([]);
   const [strategyQuotes, setStrategyQuotes] = useState(null);
   const [strategyHistory, setStrategyHistory] = useState(null);
   const [selectedHistorySymbol, setSelectedHistorySymbol] = useState('');
@@ -284,6 +285,7 @@ function App() {
     try {
       const detail = await api(`/api/strategies/${strategyId}`);
       setSelectedStrategy(detail);
+      setStrategyActivities(detail.transactions || []);
       const quotes = await api(`/api/strategies/${strategyId}/quotes`);
       const history = await api(`/api/strategies/${strategyId}/history?range=${encodeURIComponent(chartRange)}`);
       setStrategyQuotes(quotes);
@@ -606,6 +608,7 @@ function App() {
               selectedStrategyId={selectedStrategyId}
               setSelectedStrategyId={setSelectedStrategyId}
               selectedStrategy={selectedStrategy}
+              strategyActivities={strategyActivities}
               strategyForm={strategyForm}
               setStrategyForm={setStrategyForm}
               createStrategy={createStrategy}
@@ -1183,6 +1186,7 @@ function PortfolioView({
   selectedStrategyId,
   setSelectedStrategyId,
   selectedStrategy,
+  strategyActivities,
   strategyForm,
   setStrategyForm,
   createStrategy,
@@ -1365,6 +1369,56 @@ function PortfolioView({
       <section className="workspaceGrid">
         <Panel title="Technical Indicators" icon={<ShieldCheck />}>
           <IndicatorPanel symbol={strategyQuotes?.symbols[0]?.symbol} indicator={indicator} />
+        </Panel>
+      </section>
+      <section className="workspaceGrid">
+        <Panel title="Activities" icon={<Activity />} className="span2">
+          <div className="activityList">
+            {strategyActivities.length > 0 ? (
+              strategyActivities.map((activity) => {
+                const isBuy = activity.side === 'BUY';
+                const date = new Date(activity.executedAt || activity.createdAt);
+                return (
+                  <article className="activityRow" key={activity.id}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                      <div style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: isBuy ? '#d4edda' : '#f8d7da',
+                        color: isBuy ? '#16a34a' : '#dc2626',
+                        fontSize: '0.8rem',
+                        fontWeight: 'bold'
+                      }}>
+                        {isBuy ? '+' : '−'}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <strong>{activity.ticker}</strong>
+                          <span style={{ fontSize: '0.8rem', color: '#667085' }}>
+                            {isBuy ? 'Bought' : 'Sold'} {Number(activity.quantity || 0).toLocaleString()} shares
+                          </span>
+                        </div>
+                        <small style={{ color: '#9facbd', fontSize: '0.75rem' }}>
+                          @ ${Number(activity.price || 0).toFixed(2)} · {date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </small>
+                      </div>
+                    </div>
+                    {activity.decisionId && (
+                      <span style={{ fontSize: '0.75rem', color: '#667085', padding: '4px 8px', background: '#f0f4f8', borderRadius: '4px' }}>
+                        Linked decision
+                      </span>
+                    )}
+                  </article>
+                );
+              })
+            ) : (
+              <Empty text="No activities yet. Add symbols and transactions to see activity here." />
+            )}
+          </div>
         </Panel>
       </section>
     </>
