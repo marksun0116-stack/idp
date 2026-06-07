@@ -1918,24 +1918,35 @@ function IndicatorPanel({ symbol, indicator, compact = false }) {
 
   const trendLabel = analysis?.label || 'No Validated Edge';
   const confidence = analysis?.confidence || 'Low';
+  const isValidated = !trendLabel.includes('not historically validated');
   const trendColor = trendLabel.toLowerCase().includes('bearish') ? '#dc2626' : trendLabel.toLowerCase().includes('bullish') ? '#16a34a' : '#9facbd';
 
   if (compact) {
     return (
       <div style={{ fontSize: '0.75rem', display: 'grid', gap: '8px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span>RSI(14):</span>
-          <strong style={{ color: rsiColor }}>{rsi.toFixed(1)} — {rsiStatus}</strong>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span>Recommendation:</span>
-          <strong style={{ color: trendColor, fontSize: '0.8rem' }}>
-            {trendLabel} ({confidence})
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <strong style={{ color: trendColor, fontSize: '0.85rem' }}>
+            {trendLabel}
           </strong>
+          <span style={{ background: confidence === 'High' ? '#dcfce7' : confidence === 'Medium' ? '#fef3c7' : '#fee2e2',
+                         color: confidence === 'High' ? '#166534' : confidence === 'Medium' ? '#92400e' : '#991b1b',
+                         padding: '2px 6px', borderRadius: '3px', fontSize: '0.7rem', fontWeight: 600 }}>
+            {confidence}
+          </span>
         </div>
-        {analysis?.sampleSize && (
+        {analysis?.signals && analysis.signals.length > 0 && (
+          <div style={{ fontSize: '0.7rem', color: '#667085' }}>
+            {analysis.signals.map((sig, idx) => (
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>{sig.indicator}</span>
+                <strong style={{ color: sig.signal === 'Buy' ? '#16a34a' : '#dc2626' }}>{sig.signal}</strong>
+              </div>
+            ))}
+          </div>
+        )}
+        {analysis?.sampleSize > 0 && (
           <small style={{ color: '#9facbd', marginTop: '4px' }}>
-            {analysis.sampleSize} similar setups • {(analysis.winRate || 0).toFixed(0)}% win rate
+            {analysis.sampleSize} setups • {(analysis.winRate || 0).toFixed(0)}% win • {(analysis.medianReturn || 0).toFixed(1)}% ret
           </small>
         )}
       </div>
@@ -1944,38 +1955,82 @@ function IndicatorPanel({ symbol, indicator, compact = false }) {
 
   return (
     <div style={{ fontSize: '0.8rem' }}>
-      <div style={{ marginBottom: '8px', paddingBottom: '6px', borderBottom: '1px solid #e4e7ec' }}>
-        <strong style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span>Recommendation</span>
-          <span style={{ color: trendColor, fontWeight: 700 }}>{trendLabel}</span>
-        </strong>
-        <small style={{ color: '#667085' }}>Confidence: {confidence}</small>
-      </div>
-      <div style={{ marginBottom: '8px', paddingBottom: '6px', borderBottom: '1px solid #e4e7ec' }}>
-        <strong style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span>RSI(14)</span>
-          <span style={{ color: rsiColor, fontWeight: 700 }}>{rsi.toFixed(1)}</span>
-        </strong>
-        <small style={{ color: '#667085' }}>{rsiStatus}</small>
-      </div>
-      {analysis?.sampleSize && analysis.sampleSize > 0 && (
-        <div style={{ marginTop: '6px', padding: '6px', background: '#fafbfc', borderLeft: '3px solid #0f766e', borderRadius: '3px' }}>
-          <small style={{ color: '#4b5563', display: 'block', marginBottom: '3px' }}>
-            <strong>{analysis.sampleSize}</strong> similar setups found
+      <div style={{ marginBottom: '12px', paddingBottom: '10px', borderBottom: '2px solid #e4e7ec' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+          <div>
+            <strong style={{ fontSize: '1rem', color: trendColor, display: 'block' }}>
+              {trendLabel}
+            </strong>
+            {analysis?.strategy && analysis.strategy !== 'N/A' && (
+              <small style={{ color: '#667085', display: 'block', marginTop: '2px' }}>
+                {analysis.strategy}
+              </small>
+            )}
+          </div>
+          <span style={{ background: confidence === 'High' ? '#dcfce7' : confidence === 'Medium' ? '#fef3c7' : '#fee2e2',
+                         color: confidence === 'High' ? '#166534' : confidence === 'Medium' ? '#92400e' : '#991b1b',
+                         padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, minWidth: '50px', textAlign: 'center' }}>
+            {confidence}
+          </span>
+        </div>
+        {analysis?.reason && (
+          <small style={{ color: '#667085', display: 'block' }}>
+            {analysis.reason}
           </small>
-          <small style={{ color: '#4b5563' }}>
-            Win Rate: <strong>{(analysis.winRate || 0).toFixed(1)}%</strong> |
-            Median Return: <strong>{(analysis.medianReturn || 0).toFixed(2)}%</strong>
-          </small>
+        )}
+      </div>
+
+      {analysis?.signals && analysis.signals.length > 0 && (
+        <div style={{ marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #e4e7ec' }}>
+          <strong style={{ display: 'block', marginBottom: '6px', color: '#20242a' }}>Trend Inputs</strong>
+          {analysis.signals.map((sig, idx) => (
+            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', alignItems: 'center' }}>
+              <span style={{ color: '#667085' }}>{sig.indicator}</span>
+              <div>
+                <strong style={{ color: sig.signal === 'Buy' ? '#16a34a' : '#dc2626', marginRight: '8px', minWidth: '40px', textAlign: 'right', display: 'inline-block' }}>
+                  {sig.signal}
+                </strong>
+                <small style={{ color: '#9facbd' }}>{sig.detail}</small>
+              </div>
+            </div>
+          ))}
         </div>
       )}
-      {analysis?.strategy && analysis.strategy !== 'N/A' && (
-        <div style={{ marginTop: '6px', padding: '6px', background: '#f0f9ff', borderLeft: '3px solid #2563eb', borderRadius: '3px' }}>
-          <small style={{ color: '#1e40af', display: 'block' }}>
-            <strong>Strategy:</strong> {analysis.strategy}
-          </small>
-          <small style={{ color: '#1e40af', display: 'block', marginTop: '2px' }}>
-            {analysis.reason}
+
+      {analysis?.sampleSize && analysis.sampleSize > 0 && (
+        <div style={{ marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #e4e7ec' }}>
+          <strong style={{ display: 'block', marginBottom: '6px', color: '#20242a' }}>Historical Validation</strong>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div>
+              <small style={{ color: '#667085', display: 'block' }}>Similar Setups</small>
+              <strong style={{ fontSize: '0.95rem', color: '#20242a' }}>{analysis.sampleSize}</strong>
+            </div>
+            <div>
+              <small style={{ color: '#667085', display: 'block' }}>20D Win Rate</small>
+              <strong style={{ fontSize: '0.95rem', color: analysis.winRate >= 55 ? '#16a34a' : '#dc2626' }}>
+                {(analysis.winRate || 0).toFixed(1)}%
+              </strong>
+            </div>
+            <div>
+              <small style={{ color: '#667085', display: 'block' }}>Median Return</small>
+              <strong style={{ fontSize: '0.95rem', color: analysis.medianReturn > 0 ? '#16a34a' : '#dc2626' }}>
+                {(analysis.medianReturn || 0).toFixed(2)}%
+              </strong>
+            </div>
+            <div>
+              <small style={{ color: '#667085', display: 'block' }}>Status</small>
+              <strong style={{ fontSize: '0.95rem', color: isValidated ? '#16a34a' : '#dc2626' }}>
+                {isValidated ? 'Validated' : 'Not Validated'}
+              </strong>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {analysis?.invalidation && analysis.invalidation !== 'N/A' && (
+        <div style={{ padding: '8px', background: '#fef2f2', borderLeft: '3px solid #fca5a5', borderRadius: '3px' }}>
+          <small style={{ color: '#7f1d1d', display: 'block' }}>
+            <strong>Invalidation:</strong> {analysis.invalidation}
           </small>
         </div>
       )}

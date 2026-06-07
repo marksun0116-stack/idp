@@ -129,6 +129,10 @@ public class StrategyTechnicalAnalysisService {
         .map(s -> new SimilarSetupData(s.idx, s.close, s.forwardReturn, s.direction, s.strategy))
         .toList();
 
+    List<TechnicalRecommendationResponse.SignalData> signalData = rec.signals.stream()
+        .map(sig -> new TechnicalRecommendationResponse.SignalData(sig.indicator, sig.signal, sig.detail))
+        .toList();
+
     return new TechnicalRecommendationResponse(
         rec.label,
         rec.confidence,
@@ -139,7 +143,8 @@ public class StrategyTechnicalAnalysisService {
         rec.winRate,
         rec.medianReturn,
         rec.direction,
-        setupData
+        setupData,
+        signalData
     );
   }
 }

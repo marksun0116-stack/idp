@@ -13,7 +13,8 @@ public record TechnicalRecommendationResponse(
     double winRate,
     double medianReturn,
     String direction,
-    List<SimilarSetupData> similarSetups
+    List<SimilarSetupData> similarSetups,
+    List<SignalData> signals
 ) {
   public record SimilarSetupData(
       int idx,
@@ -21,5 +22,11 @@ public record TechnicalRecommendationResponse(
       double forwardReturn,
       String direction,
       String strategy
+  ) {}
+
+  public record SignalData(
+      String indicator,
+      String signal,
+      String detail
   ) {}
 }

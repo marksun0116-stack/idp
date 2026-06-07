@@ -72,8 +72,9 @@ public class TechnicalRecommendationEngine {
         : samples.size() >= 8 && winRate >= 58 ? "Medium"
         : "Low";
 
-    String label = supported ? (current.direction.equals("bullish") ? "Bullish Trend" : "Bearish Trend")
-        : "No Validated Edge";
+    String directionLabel = current.direction.equals("bullish") ? "Bullish" : "Bearish";
+    String label = supported ? directionLabel
+        : directionLabel + " not historically validated";
 
     return new TechnicalRecommendation(
         label,
@@ -85,7 +86,8 @@ public class TechnicalRecommendationEngine {
         winRate,
         median(samples),
         current.direction,
-        similarSetups
+        similarSetups,
+        current.items
     );
   }
 
@@ -292,10 +294,17 @@ public class TechnicalRecommendationEngine {
     public double medianReturn;
     public String direction;
     public List<SimilarSetup> similarSetups;
+    public List<Signal> signals;
 
     public TechnicalRecommendation(String label, String confidence, String strategy, String reason,
         String invalidation, int sampleSize, double winRate, double medianReturn, String direction,
         List<SimilarSetup> similarSetups) {
+      this(label, confidence, strategy, reason, invalidation, sampleSize, winRate, medianReturn, direction, similarSetups, List.of());
+    }
+
+    public TechnicalRecommendation(String label, String confidence, String strategy, String reason,
+        String invalidation, int sampleSize, double winRate, double medianReturn, String direction,
+        List<SimilarSetup> similarSetups, List<Signal> signals) {
       this.label = label;
       this.confidence = confidence;
       this.strategy = strategy;
@@ -306,6 +315,7 @@ public class TechnicalRecommendationEngine {
       this.medianReturn = medianReturn;
       this.direction = direction;
       this.similarSetups = similarSetups;
+      this.signals = signals;
     }
   }
 }
