@@ -109,21 +109,37 @@ public class TechnicalRecommendationEngine {
       }
     }
 
-    // RSI signals
-    if (valid(ctx.rsi.get(idx))) {
-      if (ctx.rsi.get(idx).compareTo(BigDecimal.valueOf(30)) < 0) {
-        items.add(new Signal("RSI", "Buy", "Oversold (< 30)"));
-      } else if (ctx.rsi.get(idx).compareTo(BigDecimal.valueOf(70)) > 0) {
-        items.add(new Signal("RSI", "Sell", "Overbought (> 70)"));
+    // Price position relative to moving averages
+    if (valid(ctx.sma20.get(idx))) {
+      BigDecimal price = ctx.closes.get(idx);
+      if (price.compareTo(ctx.sma20.get(idx)) > 0) {
+        items.add(new Signal("Price Position", "Buy", "Price > SMA20"));
+      } else if (price.compareTo(ctx.sma20.get(idx)) < 0) {
+        items.add(new Signal("Price Position", "Sell", "Price < SMA20"));
       }
     }
 
-    // MACD signals
+    // RSI signals - based on momentum and level
+    if (valid(ctx.rsi.get(idx))) {
+      BigDecimal rsiVal = ctx.rsi.get(idx);
+      if (rsiVal.compareTo(BigDecimal.valueOf(30)) < 0) {
+        items.add(new Signal("RSI", "Buy", "Oversold (< 30)"));
+      } else if (rsiVal.compareTo(BigDecimal.valueOf(70)) > 0) {
+        items.add(new Signal("RSI", "Sell", "Overbought (> 70)"));
+      } else if (rsiVal.compareTo(BigDecimal.valueOf(50)) > 0) {
+        items.add(new Signal("RSI", "Buy", "Bullish momentum (> 50)"));
+      } else if (rsiVal.compareTo(BigDecimal.valueOf(50)) < 0) {
+        items.add(new Signal("RSI", "Sell", "Bearish momentum (< 50)"));
+      }
+    }
+
+    // MACD signals - based on histogram and trend
     if (valid(ctx.histogram.get(idx))) {
-      if (ctx.histogram.get(idx).compareTo(BigDecimal.ZERO) > 0) {
-        items.add(new Signal("MACD", "Buy", "Histogram > 0"));
-      } else if (ctx.histogram.get(idx).compareTo(BigDecimal.ZERO) < 0) {
-        items.add(new Signal("MACD", "Sell", "Histogram < 0"));
+      BigDecimal histogram = ctx.histogram.get(idx);
+      if (histogram.compareTo(BigDecimal.ZERO) > 0) {
+        items.add(new Signal("MACD", "Buy", "Bullish (Histogram > 0)"));
+      } else if (histogram.compareTo(BigDecimal.ZERO) < 0) {
+        items.add(new Signal("MACD", "Sell", "Bearish (Histogram < 0)"));
       }
     }
 
