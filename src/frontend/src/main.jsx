@@ -1357,9 +1357,13 @@ function PortfolioView({
               const volume = quote.volume || 0;
               const analysis = symbolIndicators[quote.symbol];
               const isExpanded = expandedIndicatorSymbol === quote.symbol;
-              const trendLabel = analysis?.recommendation?.label || 'No Data';
               const confidence = analysis?.recommendation?.confidence || 'Low';
-              const trendColor = trendLabel.toLowerCase().includes('bearish') ? '#dc2626' : trendLabel.toLowerCase().includes('bullish') ? '#16a34a' : '#9facbd';
+              const isMediumOrHigher = confidence === 'Medium' || confidence === 'High';
+              const rawLabel = analysis?.recommendation?.label || 'No Data';
+              const trendLabel = isMediumOrHigher ? rawLabel : 'N/A';
+              const trendColor = isMediumOrHigher && rawLabel.toLowerCase().includes('bearish') ? '#dc2626'
+                                 : isMediumOrHigher && rawLabel.toLowerCase().includes('bullish') ? '#16a34a'
+                                 : '#9facbd';
 
               return (
                 <article className="quote" key={quote.symbol} style={{ overflow: 'hidden' }}>
@@ -1395,7 +1399,7 @@ function PortfolioView({
                     </span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '8px', flexShrink: 0 }}>
                       <span style={{ color: trendColor, fontWeight: 600, minWidth: '75px', textAlign: 'right', fontSize: '0.75rem' }}>
-                        {confidence} • {trendLabel.substring(0, 8)}
+                        {confidence}{isMediumOrHigher ? ` • ${trendLabel.substring(0, 8)}` : ''}
                       </span>
                       <button
                         className={`expandIndicatorButton ${isExpanded ? 'expanded' : ''}`}
@@ -1964,9 +1968,12 @@ function TechnicalChartPanel({ symbol, indicator }) {
 
   const chartData = closes.map((close, idx) => {
     const setup = similarSetups.find(s => s.idx === idx);
+    const date = new Date(0);
+    date.setUTCSeconds(Math.floor(idx * 86400)); // Approximate date based on index
     return {
       idx,
       price: parseFloat(close),
+      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       similarSetup: setup ? {
         returnPct: setup.forwardReturn,
         direction: setup.direction
@@ -1997,11 +2004,10 @@ function TechnicalChartPanel({ symbol, indicator }) {
         <RechartsLineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e4e7ec" />
           <XAxis
-            dataKey="idx"
-            tick={false}
+            dataKey="date"
+            tick={{ fontSize: 12, fill: '#9facbd' }}
             stroke="#9facbd"
-            type="number"
-            domain={[0, chartData.length - 1]}
+            interval={Math.floor(chartData.length / 8)}
           />
           <YAxis
             stroke="#9facbd"
@@ -2081,24 +2087,36 @@ function IndicatorPanel({ symbol, indicator, compact = false }) {
     rsiColor = rsi > 70 ? '#dc2626' : rsi < 30 ? '#16a34a' : '#9facbd';
   }
 
-  const trendLabel = analysis?.label || 'No Validated Edge';
   const confidence = analysis?.confidence || 'Low';
+  const isMediumOrHigher = confidence === 'Medium' || confidence === 'High';
+
+  // Only show bull/bear if confidence >= Medium, otherwise show "No Validated Edge"
+  const trendLabel = isMediumOrHigher ? (analysis?.label || 'No Validated Edge') : 'No Validated Edge';
   const isValidated = !trendLabel.includes('not historically validated');
-  const trendColor = trendLabel.toLowerCase().includes('bearish') ? '#dc2626' : trendLabel.toLowerCase().includes('bullish') ? '#16a34a' : '#9facbd';
+  const trendColor = isMediumOrHigher && trendLabel.toLowerCase().includes('bearish') ? '#dc2626'
+                     : isMediumOrHigher && trendLabel.toLowerCase().includes('bullish') ? '#16a34a'
+                     : '#9facbd';
 
   if (compact) {
     return (
       <div style={{ fontSize: '0.75rem', display: 'grid', gap: '8px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <strong style={{ color: trendColor, fontSize: '0.85rem' }}>
-            {trendLabel}
-          </strong>
-          <span style={{ background: confidence === 'High' ? '#dcfce7' : confidence === 'Medium' ? '#fef3c7' : '#fee2e2',
-                         color: confidence === 'High' ? '#166534' : confidence === 'Medium' ? '#92400e' : '#991b1b',
-                         padding: '2px 6px', borderRadius: '3px', fontSize: '0.7rem', fontWeight: 600 }}>
-            {confidence}
-          </span>
-        </div>
+        {isMediumOrHigher && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <strong style={{ color: trendColor, fontSize: '0.85rem' }}>
+              {trendLabel}
+            </strong>
+            <span style={{ background: confidence === 'High' ? '#dcfce7' : confidence === 'Medium' ? '#fef3c7' : '#fee2e2',
+                           color: confidence === 'High' ? '#166534' : confidence === 'Medium' ? '#92400e' : '#991b1b',
+                           padding: '2px 6px', borderRadius: '3px', fontSize: '0.7rem', fontWeight: 600 }}>
+              {confidence}
+            </span>
+          </div>
+        )}
+        {!isMediumOrHigher && (
+          <div style={{ padding: '4px 8px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '3px', textAlign: 'center' }}>
+            <small style={{ color: '#991b1b', fontWeight: 600 }}>Low Confidence - No Recommendation</small>
+          </div>
+        )}
         {analysis?.signals && analysis.signals.length > 0 && (
           <div style={{ fontSize: '0.7rem', color: '#667085' }}>
             {analysis.signals.map((sig, idx) => (
