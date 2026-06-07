@@ -353,8 +353,8 @@ class StrategyPortfolioTest {
         long strategyId = createStrategy("alice", "Performance Strategy", "private");
         mockRegularQuote("NVDA", 120);
         when(marketDataService.history(eq("NVDA"), eq("1mo"))).thenReturn(List.of(
-            new MarketDataService.MarketHistoryPoint(1_780_000_000_000L, BigDecimal.valueOf(100)),
-            new MarketDataService.MarketHistoryPoint(1_780_086_400_000L, BigDecimal.valueOf(120))
+            new MarketDataService.MarketHistoryPoint(1_780_000_000_000L, BigDecimal.valueOf(100), BigDecimal.valueOf(102), BigDecimal.valueOf(98), BigDecimal.valueOf(100), 1_000_000L),
+            new MarketDataService.MarketHistoryPoint(1_780_086_400_000L, BigDecimal.valueOf(101), BigDecimal.valueOf(123), BigDecimal.valueOf(100), BigDecimal.valueOf(120), 2_000_000L)
         ));
 
         mvc.perform(post("/api/strategies/" + strategyId + "/transactions")
