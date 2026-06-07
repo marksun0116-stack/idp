@@ -475,4 +475,36 @@ class StrategyPortfolioTest {
             1000L
         )));
     }
+
+    @Test
+    void technicalAnalysisReturnsIndicatorsAndRecommendation() throws Exception {
+        long strategyId = createStrategy("alice", "Analysis Strategy", "private");
+        addSymbol("alice", strategyId, "AAPL", "private");
+
+        List<MarketDataService.MarketHistoryPoint> history = new java.util.ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            long timestamp = 1_780_000_000_000L + (i * 86_400_000L);
+            BigDecimal close = BigDecimal.valueOf(150 + Math.sin(i / 20.0) * 10);
+            history.add(new MarketDataService.MarketHistoryPoint(
+                timestamp,
+                close,
+                close.add(BigDecimal.valueOf(1)),
+                close.subtract(BigDecimal.valueOf(1)),
+                close,
+                1_000_000L
+            ));
+        }
+
+        when(marketDataService.history(eq("AAPL"), anyString())).thenReturn(history);
+
+        mvc.perform(get("/api/strategies/" + strategyId + "/analysis/AAPL")
+                .header("Authorization", "Bearer alice")
+                .queryParam("range", "1y"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.indicators").exists())
+            .andExpect(jsonPath("$.recommendation").exists())
+            .andExpect(jsonPath("$.recommendation.label").isString())
+            .andExpect(jsonPath("$.recommendation.confidence").isString())
+            .andExpect(jsonPath("$.recommendation.sampleSize").isNumber());
+    }
 }
