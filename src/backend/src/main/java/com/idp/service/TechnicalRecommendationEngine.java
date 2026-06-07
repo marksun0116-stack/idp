@@ -222,8 +222,8 @@ public class TechnicalRecommendationEngine {
     BigDecimal currentRsi = ctx.rsi.get(currentIdx);
     BigDecimal priorRsi = ctx.rsi.get(priorIdx);
 
-    // RSI must be within 15 points (e.g., 40-50 range)
-    if (Math.abs(currentRsi.doubleValue() - priorRsi.doubleValue()) > 15) {
+    // RSI must be within 25 points (relaxed from 15) - e.g., 35-60 range
+    if (Math.abs(currentRsi.doubleValue() - priorRsi.doubleValue()) > 25) {
       return false;
     }
 
@@ -235,8 +235,8 @@ public class TechnicalRecommendationEngine {
       double currentSmaDiff = (ctx.sma20.get(currentIdx).doubleValue() / ctx.sma50.get(currentIdx).doubleValue() - 1) * 100;
       double priorSmaDiff = (ctx.sma20.get(priorIdx).doubleValue() / ctx.sma50.get(priorIdx).doubleValue() - 1) * 100;
 
-      // Difference in SMA relationship should be within 3% (e.g., both 1-4% apart or -2-1% apart)
-      if (Math.abs(currentSmaDiff - priorSmaDiff) > 3) {
+      // Difference in SMA relationship should be within 5% (relaxed from 3%)
+      if (Math.abs(currentSmaDiff - priorSmaDiff) > 5) {
         return false;
       }
     }
@@ -251,12 +251,12 @@ public class TechnicalRecommendationEngine {
         return false;
       }
 
-      // Magnitude should be within 50% (e.g., if current is 1.0, accept 0.5-1.5)
+      // Magnitude should be within 3x (relaxed from 2x) - e.g., if current is 1.0, accept 0.33-3.0
       double currentHistAbs = Math.abs(currentHist.doubleValue());
       double priorHistAbs = Math.abs(priorHist.doubleValue());
       if (currentHistAbs > 0 && priorHistAbs > 0) {
         double ratio = Math.max(currentHistAbs, priorHistAbs) / Math.min(currentHistAbs, priorHistAbs);
-        if (ratio > 2.0) { // Allow up to 2x difference
+        if (ratio > 3.0) { // Allow up to 3x difference (relaxed)
           return false;
         }
       }
