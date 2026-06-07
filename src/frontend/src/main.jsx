@@ -6,10 +6,12 @@ import {
   BarChart3,
   BookOpen,
   Brain,
+  BriefcaseBusiness,
   CheckCircle2,
   Compass,
   Home,
   LineChart,
+  MinusCircle,
   Plus,
   RefreshCw,
   Search,
@@ -38,7 +40,7 @@ const emptyDecision = {
 const emptyStrategy = {
   name: '',
   description: '',
-  startingCapital: 100000,
+  startingCapital: 10000,
   visibility: 'private'
 };
 
@@ -49,10 +51,25 @@ const emptyProfile = {
   publishedMetricIds: ['dqs', 'researchDiscipline', 'riskManagement', 'strategyConsistency']
 };
 
+const emptyAccount = {
+  name: '',
+  accountType: 'BROKERAGE'
+};
+
+const emptyHolding = {
+  accountId: '',
+  symbol: '',
+  shares: '',
+  costBasis: '',
+  purchaseDate: '',
+  manualPrice: ''
+};
+
 const navItems = [
   ['dashboard', 'Dashboard', Home],
   ['decisions', 'Decisions', BookOpen],
-  ['portfolios', 'Portfolios', WalletCards],
+  ['portfolios', 'Strategies', WalletCards],
+  ['investment', 'Investment', BriefcaseBusiness],
   ['reviews', 'Reviews', CheckCircle2],
   ['analytics', 'Analytics', Brain],
   ['community', 'Community', Users],
@@ -75,13 +92,17 @@ function App() {
   const [selectedStrategy, setSelectedStrategy] = useState(null);
   const [strategyQuotes, setStrategyQuotes] = useState(null);
   const [strategyHistory, setStrategyHistory] = useState(null);
+  const [selectedHistorySymbol, setSelectedHistorySymbol] = useState('');
   const [indicator, setIndicator] = useState(null);
   const [publicProfile, setPublicProfile] = useState(null);
+  const [portfolioSummary, setPortfolioSummary] = useState(null);
   const [decisionForm, setDecisionForm] = useState(emptyDecision);
   const [strategyForm, setStrategyForm] = useState(emptyStrategy);
-  const [symbolForm, setSymbolForm] = useState({ symbol: '', note: '', tags: '', visibility: 'private' });
+  const [symbolForm, setSymbolForm] = useState({ action: 'watch', symbol: '', note: '', tags: '', visibility: 'private', quantity: '' });
   const [profileForm, setProfileForm] = useState(emptyProfile);
-  const [chartRange, setChartRange] = useState('1M');
+  const [accountForm, setAccountForm] = useState(emptyAccount);
+  const [holdingForm, setHoldingForm] = useState(emptyHolding);
+  const [chartRange, setChartRange] = useState('1mo');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
   const [showStrategyForm, setShowStrategyForm] = useState(false);
@@ -112,9 +133,24 @@ function App() {
       setSelectedStrategy(null);
       setStrategyQuotes(null);
       setStrategyHistory(null);
+      setSelectedHistorySymbol('');
       setIndicator(null);
     }
-  }, [selectedStrategyId]);
+  }, [selectedStrategyId, chartRange]);
+
+  useEffect(() => {
+    const historyOptions = [
+      ...(strategyHistory?.performance?.length ? ['strategy'] : []),
+      ...(strategyHistory?.series?.map((series) => series.symbol).filter(Boolean) || [])
+    ];
+    if (historyOptions.length === 0) {
+      setSelectedHistorySymbol('');
+      return;
+    }
+    if (!selectedHistorySymbol || !historyOptions.includes(selectedHistorySymbol)) {
+      setSelectedHistorySymbol(historyOptions[0]);
+    }
+  }, [strategyHistory, selectedHistorySymbol]);
 
   async function api(path, options = {}) {
     const response = await fetch(path, {
@@ -200,20 +236,24 @@ function App() {
     setStrategyHistory(null);
     setIndicator(null);
     setPublicProfile(null);
+    setPortfolioSummary(null);
     setProfileForm(emptyProfile);
+    setAccountForm(emptyAccount);
+    setHoldingForm(emptyHolding);
   }
 
   async function refreshWorkspace() {
     setLoading(true);
     setNotice('');
     try {
-      const [decisionData, reviewData, dqsData, behaviorData, strategyData, profileData] = await Promise.all([
+      const [decisionData, reviewData, dqsData, behaviorData, strategyData, profileData, portfolioData] = await Promise.all([
         api('/api/decisions'),
         api('/api/reviews'),
         api('/api/analytics/dqs'),
         api('/api/analytics/behavior'),
         api('/api/strategies'),
-        api('/api/profile/public', { allowNotFound: true })
+        api('/api/profile/public', { allowNotFound: true }),
+        api('/api/portfolio/summary')
       ]);
       setDecisions(decisionData.decisions || []);
       setReviews(reviewData.reviews || []);
@@ -221,6 +261,7 @@ function App() {
       setBehavior(behaviorData);
       setStrategies(strategyData.strategies || []);
       setPublicProfile(profileData);
+      setPortfolioSummary(portfolioData);
       setProfileForm(profileData ? {
         handle: profileData.handle,
         displayName: profileData.displayName,
@@ -244,7 +285,7 @@ function App() {
       const detail = await api(`/api/strategies/${strategyId}`);
       setSelectedStrategy(detail);
       const quotes = await api(`/api/strategies/${strategyId}/quotes`);
-      const history = await api(`/api/strategies/${strategyId}/history?range=1M`);
+      const history = await api(`/api/strategies/${strategyId}/history?range=${encodeURIComponent(chartRange)}`);
       setStrategyQuotes(quotes);
       setStrategyHistory(history);
       const firstSymbol = detail.trackedSymbols?.[0]?.symbol || quotes.symbols?.[0]?.symbol;
@@ -303,23 +344,140 @@ function App() {
     }
   }
 
+  async function updateStrategyVisibility(visibility) {
+    if (!selectedStrategyId) return;
+    setNotice('');
+    try {
+      await api(`/api/strategies/${selectedStrategyId}/visibility`, {
+        method: 'PUT',
+        body: JSON.stringify({ visibility })
+      });
+      setNotice(`Strategy is now ${visibility}.`);
+      await refreshWorkspace();
+      await loadStrategy(selectedStrategyId);
+    } catch (error) {
+      setNotice(error.message);
+    }
+  }
+
   async function addSymbol(event) {
     event.preventDefault();
     if (!selectedStrategyId) return;
     setNotice('');
     try {
-      await api(`/api/strategies/${selectedStrategyId}/symbols`, {
+      if (symbolForm.action === 'watch') {
+        await api(`/api/strategies/${selectedStrategyId}/symbols`, {
+          method: 'POST',
+          body: JSON.stringify({
+            symbol: symbolForm.symbol.toUpperCase(),
+            note: symbolForm.note,
+            tags: commaList(symbolForm.tags),
+            visibility: symbolForm.visibility
+          })
+        });
+        setNotice('Watch symbol added.');
+      } else {
+        await api(`/api/strategies/${selectedStrategyId}/transactions`, {
+          method: 'POST',
+          body: JSON.stringify({
+            ticker: symbolForm.symbol.toUpperCase(),
+            side: symbolForm.action,
+            quantity: Number(symbolForm.quantity),
+            decisionId: null,
+            executedAt: new Date().toISOString()
+          })
+        });
+        setNotice(`${labelize(symbolForm.action)} transaction recorded.`);
+      }
+      setSymbolForm({ action: symbolForm.action, symbol: '', note: '', tags: '', visibility: 'private', quantity: '' });
+      await loadStrategy(selectedStrategyId);
+    } catch (error) {
+      setNotice(error.message);
+    }
+  }
+
+  async function removeStrategySymbol(symbol) {
+    if (!selectedStrategyId) return;
+    setNotice('');
+    try {
+      await api(`/api/strategies/${selectedStrategyId}/symbols/${encodeURIComponent(symbol)}`, {
+        method: 'DELETE'
+      });
+      setNotice(`${symbol} removed from watch.`);
+      await loadStrategy(selectedStrategyId);
+    } catch (error) {
+      setNotice(error.message);
+    }
+  }
+
+  function startSymbolAction(action, symbol) {
+    setSymbolForm({
+      action,
+      symbol,
+      note: '',
+      tags: '',
+      visibility: 'private',
+      quantity: ''
+    });
+    setShowSymbolForm(true);
+  }
+
+  async function createAccount(event) {
+    event.preventDefault();
+    setNotice('');
+    try {
+      await api('/api/portfolio/accounts', {
+        method: 'POST',
+        body: JSON.stringify(accountForm)
+      });
+      setAccountForm(emptyAccount);
+      setNotice('Investment account created.');
+      await refreshWorkspace();
+    } catch (error) {
+      setNotice(error.message);
+    }
+  }
+
+  async function addHolding(event) {
+    event.preventDefault();
+    if (!holdingForm.accountId) return;
+    setNotice('');
+    try {
+      await api(`/api/portfolio/accounts/${holdingForm.accountId}/holdings`, {
         method: 'POST',
         body: JSON.stringify({
-          symbol: symbolForm.symbol.toUpperCase(),
-          note: symbolForm.note,
-          tags: commaList(symbolForm.tags),
-          visibility: symbolForm.visibility
+          symbol: holdingForm.symbol.toUpperCase(),
+          shares: Number(holdingForm.shares),
+          costBasis: holdingForm.costBasis === '' ? null : Number(holdingForm.costBasis),
+          purchaseDate: holdingForm.purchaseDate || null,
+          manualPrice: holdingForm.manualPrice === '' ? null : Number(holdingForm.manualPrice)
         })
       });
-      setSymbolForm({ symbol: '', note: '', tags: '', visibility: 'private' });
-      setNotice('Symbol added.');
-      await loadStrategy(selectedStrategyId);
+      setHoldingForm((current) => ({ ...emptyHolding, accountId: current.accountId }));
+      setNotice('Holding added.');
+      await refreshWorkspace();
+    } catch (error) {
+      setNotice(error.message);
+    }
+  }
+
+  async function deleteHolding(accountId, holdingId) {
+    setNotice('');
+    try {
+      await api(`/api/portfolio/accounts/${accountId}/holdings/${holdingId}`, { method: 'DELETE' });
+      setNotice('Holding removed.');
+      await refreshWorkspace();
+    } catch (error) {
+      setNotice(error.message);
+    }
+  }
+
+  async function deleteAccount(accountId) {
+    setNotice('');
+    try {
+      await api(`/api/portfolio/accounts/${accountId}`, { method: 'DELETE' });
+      setNotice('Investment account deleted.');
+      await refreshWorkspace();
     } catch (error) {
       setNotice(error.message);
     }
@@ -451,11 +609,16 @@ function App() {
               strategyForm={strategyForm}
               setStrategyForm={setStrategyForm}
               createStrategy={createStrategy}
+              updateStrategyVisibility={updateStrategyVisibility}
               symbolForm={symbolForm}
               setSymbolForm={setSymbolForm}
               addSymbol={addSymbol}
+              removeStrategySymbol={removeStrategySymbol}
+              startSymbolAction={startSymbolAction}
               strategyQuotes={strategyQuotes}
               strategyHistory={strategyHistory}
+              selectedHistorySymbol={selectedHistorySymbol}
+              setSelectedHistorySymbol={setSelectedHistorySymbol}
               indicator={indicator}
               chartRange={chartRange}
               setChartRange={setChartRange}
@@ -463,6 +626,19 @@ function App() {
               setShowStrategyForm={setShowStrategyForm}
               showSymbolForm={showSymbolForm}
               setShowSymbolForm={setShowSymbolForm}
+            />
+          )}
+          {activeView === 'investment' && (
+            <InvestmentWorkspaceView
+              portfolioSummary={portfolioSummary}
+              accountForm={accountForm}
+              setAccountForm={setAccountForm}
+              createAccount={createAccount}
+              holdingForm={holdingForm}
+              setHoldingForm={setHoldingForm}
+              addHolding={addHolding}
+              deleteHolding={deleteHolding}
+              deleteAccount={deleteAccount}
             />
           )}
           {activeView === 'reviews' && <ReviewsView reviews={reviews} pendingReviews={pendingReviews} overdueReviews={overdueReviews} />}
@@ -498,7 +674,7 @@ function AuthLanding({ authForm, setAuthForm, login, register, continueAsDemo, n
         </div>
         <p className="eyebrow">Investor Development Platform</p>
         <h1>Sign in to your investor workspace</h1>
-        <p>Track decisions, reviews, strategy portfolios, and public reputation signals from one private workspace.</p>
+        <p>Track decisions, reviews, strategies, and public reputation signals from one private workspace.</p>
       </section>
 
       <section className="authPanel" aria-label="Account access">
@@ -555,11 +731,17 @@ function Dashboard({
       <section className="dashboardGrid">
         <Panel className="span2" title="Performance Overview" icon={<LineChart />}>
           <div className="rangeTabs">
-            {['1M', '3M', 'YTD', '1Y', 'ALL'].map((range) => (
-              <button className={chartRange === range ? 'selected' : ''} type="button" key={range} onClick={() => setChartRange(range)}>{range}</button>
+            {[
+              ['1mo', '1M'],
+              ['3mo', '3M'],
+              ['6mo', '6M'],
+              ['1y', '1Y'],
+              ['5y', '5Y']
+            ].map(([value, label]) => (
+              <button className={chartRange === value ? 'selected' : ''} type="button" key={value} onClick={() => setChartRange(value)}>{label}</button>
             ))}
           </div>
-          <PerformanceSketch decisions={decisions} strategies={strategies} range={chartRange} />
+          <PerformanceSketch decisions={decisions} strategies={strategies} range={rangeLabel(chartRange)} />
           <div className="returnGrid">
             <Badge label="All Strategies" value={`${strategies.length} active`} />
             <Badge label="S&P 500" value="context" />
@@ -756,42 +938,47 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
 
 function PortfolioSummary({ strategyQuotes, selectedStrategy }) {
   if (!strategyQuotes?.symbols || strategyQuotes.symbols.length === 0) {
-    return <div style={{ fontSize: '0.9rem', color: '#667085', padding: '12px' }}>Add symbols to see portfolio metrics</div>;
+    return <div style={{ fontSize: '0.9rem', color: '#667085', padding: '12px' }}>Add symbols to see strategy metrics</div>;
   }
 
-  const totalValue = strategyQuotes.symbols.reduce((sum, q) => sum + (q.lastPrice || 0), 0);
-  const investedCapital = selectedStrategy?.startingCapital || 0;
-  const gainLoss = totalValue - investedCapital;
-  const gainLossPercent = investedCapital > 0 ? (gainLoss / investedCapital) * 100 : 0;
+  const owned = strategyQuotes.symbols.filter((q) => q.trackingStatus === 'owned');
+  const watch = strategyQuotes.symbols.filter((q) => q.trackingStatus === 'watch');
+  const startingCapital = strategyQuotes.startingCapital ?? selectedStrategy?.startingCapital ?? 0;
+  const totalValue = Number(strategyQuotes.totalStrategyValue ?? startingCapital);
+  const cashBalance = Number(strategyQuotes.cashBalance ?? startingCapital);
+  const holdingsValue = Number(strategyQuotes.holdingsValue ?? 0);
+  const gainLoss = Number(strategyQuotes.totalGain ?? 0);
+  const gainLossPercent = Number(strategyQuotes.totalGainPct ?? 0);
   const isPositive = gainLoss >= 0;
 
   return (
     <div style={{ padding: '12px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '12px' }}>
         <div style={{ background: '#f9fbfb', padding: '10px', borderRadius: '7px', border: '1px solid #e2e8f0' }}>
-          <small style={{ color: '#667085', fontSize: '0.75rem' }}>Total Value</small>
+          <small style={{ color: '#667085', fontSize: '0.75rem' }}>Strategy Value</small>
           <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#20242a' }}>
-            ${totalValue.toFixed(0)}
+            {currencyPrecise(totalValue)}
           </div>
         </div>
         <div style={{ background: '#f9fbfb', padding: '10px', borderRadius: '7px', border: '1px solid #e2e8f0' }}>
-          <small style={{ color: '#667085', fontSize: '0.75rem' }}>Invested</small>
+          <small style={{ color: '#667085', fontSize: '0.75rem' }}>Cash</small>
           <div style={{ fontSize: '1rem', fontWeight: 600, color: '#526071' }}>
-            ${investedCapital.toLocaleString()}
+            {currencyPrecise(cashBalance)}
           </div>
         </div>
       </div>
       <div style={{ background: isPositive ? '#f0fdf4' : '#fef2f2', padding: '10px', borderRadius: '7px', border: `1px solid ${isPositive ? '#dcfce7' : '#fee2e2'}` }}>
-        <small style={{ color: '#667085', fontSize: '0.75rem' }}>Unrealized P&L</small>
+        <small style={{ color: '#667085', fontSize: '0.75rem' }}>Total Strategy P&L</small>
         <div style={{ fontSize: '1.2rem', fontWeight: 700, color: isPositive ? '#16a34a' : '#dc2626', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-          <span>${Math.abs(gainLoss).toFixed(0)}</span>
-          <span style={{ fontSize: '0.9rem' }}>{isPositive ? '↑' : '↓'} {Math.abs(gainLossPercent).toFixed(1)}%</span>
+          <span>{signedCurrency(gainLoss)}</span>
+          <span style={{ fontSize: '0.9rem' }}>{signedNumber(gainLossPercent)}%</span>
         </div>
       </div>
       <div style={{ marginTop: '10px', fontSize: '0.8rem', color: '#667085', paddingTop: '10px', borderTop: '1px solid #e4e7ec' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-          <span>{strategyQuotes.symbols.length} symbols tracked</span>
-          <span>{strategyQuotes.symbols.filter(s => s.change > 0).length} gainers</span>
+          <span>{owned.length} owned</span>
+          <span>{watch.length} watch</span>
+          <span>{currencyPrecise(holdingsValue)} invested</span>
         </div>
       </div>
     </div>
@@ -801,11 +988,15 @@ function PortfolioSummary({ strategyQuotes, selectedStrategy }) {
 function AllocationChart({ strategyQuotes }) {
   if (!strategyQuotes?.symbols || strategyQuotes.symbols.length === 0) return null;
 
-  const totalValue = strategyQuotes.symbols.reduce((sum, q) => sum + (q.lastPrice || 0), 0);
-  const allocations = strategyQuotes.symbols.map(s => ({
+  const positions = strategyQuotes.symbols.filter((symbol) => symbol.trackingStatus === 'owned' && symbol.marketValue != null);
+  if (positions.length === 0) {
+    return <div style={{ fontSize: '0.85rem', color: '#667085', padding: '12px' }}>Record a buy transaction to see allocation.</div>;
+  }
+  const totalValue = positions.reduce((sum, q) => sum + Number(q.marketValue || 0), 0);
+  const allocations = positions.map(s => ({
     symbol: s.symbol,
-    value: s.lastPrice || 0,
-    percent: totalValue > 0 ? ((s.lastPrice || 0) / totalValue) * 100 : 0
+    value: Number(s.marketValue || 0),
+    percent: s.positionWeight != null ? Number(s.positionWeight) : totalValue > 0 ? (Number(s.marketValue || 0) / totalValue) * 100 : 0
   })).sort((a, b) => b.value - a.value);
 
   const colors = ['#1f6f61', '#0d9488', '#14b8a6', '#2dd4bf', '#67e8f9', '#a5f3fc'];
@@ -837,31 +1028,44 @@ function AllocationChart({ strategyQuotes }) {
   );
 }
 
-function PriceChart({ strategyHistory, strategyQuotes, chartRange, setChartRange }) {
-  if (!strategyHistory?.history || strategyHistory.history.length === 0 || !strategyQuotes?.symbols || strategyQuotes.symbols.length === 0) {
-    return <div style={{ fontSize: '0.85rem', color: '#667085', padding: '12px' }}>Add symbols to view price history</div>;
+function PriceChart({ strategyHistory, strategyQuotes, selectedHistorySymbol, setSelectedHistorySymbol, chartRange, setChartRange }) {
+  const series = strategyHistory?.series || [];
+  const performance = strategyHistory?.performance || [];
+  const showingStrategy = selectedHistorySymbol === 'strategy' || (!selectedHistorySymbol && performance.length > 0);
+  const selectedSeries = showingStrategy ? null : series.find((item) => item.symbol === selectedHistorySymbol) || series[0];
+  if (performance.length === 0 && (!selectedSeries?.data || selectedSeries.data.length === 0)) {
+    return <div style={{ fontSize: '0.85rem', color: '#667085', padding: '12px' }}>Add owned or watched symbols to view history</div>;
   }
 
-  const ranges = ['1D', '1W', '1M', '3M', '1Y', 'ALL'];
-  const chartData = strategyHistory.history.map(point => ({
+  const ranges = ['1w', '1mo', '3mo', '6mo', '1y'];
+  const chartData = (showingStrategy ? performance : selectedSeries.data).map(point => ({
     date: new Date(point.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     timestamp: point.timestamp,
-    price: parseFloat(point.close) || 0
+    value: parseFloat(showingStrategy ? point.value : point.close) || 0,
+    cash: showingStrategy ? parseFloat(point.cash) || 0 : null,
+    holdingsValue: showingStrategy ? parseFloat(point.holdingsValue) || 0 : null,
+    returnPct: showingStrategy ? parseFloat(point.returnPct) || 0 : null
   }));
 
-  const firstSymbol = strategyQuotes.symbols[0];
-  const currentPrice = firstSymbol?.lastPrice || 0;
-  const startPrice = chartData.length > 0 ? chartData[0].price : 0;
-  const priceChange = currentPrice - startPrice;
-  const priceChangePercent = startPrice > 0 ? (priceChange / startPrice) * 100 : 0;
-  const isPositive = priceChange >= 0;
+  const selectedSymbol = selectedSeries ? strategyQuotes?.symbols?.find((symbol) => symbol.symbol === selectedSeries.symbol) : null;
+  const currentValue = showingStrategy
+    ? Number(strategyQuotes?.totalStrategyValue ?? chartData.at(-1)?.value ?? 0)
+    : Number(selectedSymbol?.lastPrice || selectedSymbol?.price || chartData.at(-1)?.value || 0);
+  const startValue = chartData.length > 0 ? chartData[0].value : 0;
+  const valueChange = currentValue - startValue;
+  const valueChangePercent = startValue > 0 ? (valueChange / startValue) * 100 : 0;
+  const isPositive = valueChange >= 0;
+  const historyOptions = [
+    ...(performance.length ? [{ value: 'strategy', label: 'Total Strategy' }] : []),
+    ...series.map((item) => ({ value: item.symbol, label: item.symbol }))
+  ];
 
   return (
     <div style={{ padding: '12px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '12px' }}>
         <div>
           <h3 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: 600 }}>
-            {firstSymbol?.symbol} Price History
+            {showingStrategy ? 'Strategy Performance' : `${selectedSymbol?.symbol} Price History`}
           </h3>
           <small style={{ color: '#667085', fontSize: '0.75rem' }}>
             {chartData.length} data points
@@ -869,35 +1073,51 @@ function PriceChart({ strategyHistory, strategyQuotes, chartRange, setChartRange
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#20242a' }}>
-            ${currentPrice.toFixed(2)}
+            ${currentValue.toFixed(2)}
           </div>
           <small style={{ color: isPositive ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
-            {isPositive ? '↑' : '↓'} ${Math.abs(priceChange).toFixed(2)} ({isPositive ? '+' : ''}{priceChangePercent.toFixed(2)}%)
+            {isPositive ? '↑' : '↓'} ${Math.abs(valueChange).toFixed(2)} ({isPositive ? '+' : ''}{valueChangePercent.toFixed(2)}%)
           </small>
         </div>
       </div>
 
-      <div style={{ marginBottom: '12px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-        {ranges.map(range => (
-          <button
-            key={range}
-            type="button"
-            onClick={() => setChartRange(range)}
-            style={{
-              padding: '6px 12px',
-              fontSize: '0.75rem',
-              fontWeight: chartRange === range ? 700 : 500,
-              background: chartRange === range ? '#0f766e' : '#f0f0f0',
-              color: chartRange === range ? '#fff' : '#526071',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              transition: 'all 200ms'
-            }}
-          >
-            {range}
-          </button>
-        ))}
+      <div style={{ marginBottom: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {ranges.map(range => (
+            <button
+              key={range}
+              type="button"
+              onClick={() => setChartRange(range)}
+              style={{
+                padding: '6px 12px',
+                fontSize: '0.75rem',
+                fontWeight: chartRange === range ? 700 : 500,
+                background: chartRange === range ? '#0f766e' : '#f0f0f0',
+                color: chartRange === range ? '#fff' : '#526071',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                transition: 'all 200ms'
+              }}
+            >
+                {rangeLabel(range)}
+            </button>
+          ))}
+        </div>
+        {historyOptions.length > 1 && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: '#667085', margin: 0 }}>
+            View
+            <select
+              value={showingStrategy ? 'strategy' : selectedSeries.symbol}
+              onChange={(event) => setSelectedHistorySymbol(event.target.value)}
+              style={{ minWidth: '132px', padding: '6px 8px', fontSize: '0.8rem' }}
+            >
+              {historyOptions.map((item) => (
+                <option value={item.value} key={item.value}>{item.label}</option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
 
       <div style={{ background: '#fff', border: '1px solid #e4e7ec', borderRadius: '7px', padding: '8px', marginBottom: '12px' }}>
@@ -917,6 +1137,7 @@ function PriceChart({ strategyHistory, strategyQuotes, chartRange, setChartRange
               stroke="#9facbd"
               style={{ fontSize: '0.75rem' }}
               tick={{ fill: '#9facbd' }}
+              tickFormatter={(value) => Number(value).toFixed(2)}
               domain={['dataMin - 10', 'dataMax + 10']}
             />
             <Tooltip
@@ -927,12 +1148,12 @@ function PriceChart({ strategyHistory, strategyQuotes, chartRange, setChartRange
                 fontSize: '0.75rem',
                 padding: '8px'
               }}
-              formatter={(value) => [`$${value.toFixed(2)}`, 'Price']}
+              formatter={(value) => [`$${Number(value).toFixed(2)}`, showingStrategy ? 'Value' : 'Price']}
               labelStyle={{ color: '#20242a' }}
             />
             <Line
               type="monotone"
-              dataKey="price"
+              dataKey="value"
               stroke={isPositive ? '#16a34a' : '#dc2626'}
               strokeWidth={2}
               dot={false}
@@ -944,11 +1165,11 @@ function PriceChart({ strategyHistory, strategyQuotes, chartRange, setChartRange
 
       <div style={{ fontSize: '0.8rem', color: '#667085', paddingTop: '8px', borderTop: '1px solid #e4e7ec' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span>Range: {chartRange}</span>
+          <span>Range: {rangeLabel(chartRange)}</span>
           <span>Volatility: {Math.sqrt(chartData.reduce((sum, d, i, arr) => {
             if (i === 0) return 0;
-            const prev = arr[i - 1].price;
-            const curr = d.price;
+            const prev = arr[i - 1].value;
+            const curr = d.value;
             return sum + Math.pow((curr - prev) / prev, 2);
           }, 0) / Math.max(chartData.length - 1, 1)).toFixed(2)}%</span>
         </div>
@@ -965,11 +1186,16 @@ function PortfolioView({
   strategyForm,
   setStrategyForm,
   createStrategy,
+  updateStrategyVisibility,
   symbolForm,
   setSymbolForm,
   addSymbol,
+  removeStrategySymbol,
+  startSymbolAction,
   strategyQuotes,
   strategyHistory,
+  selectedHistorySymbol,
+  setSelectedHistorySymbol,
   indicator,
   chartRange,
   setChartRange,
@@ -998,39 +1224,23 @@ function PortfolioView({
 
   return (
     <>
-      <section className="workspaceGrid">
-        <Panel title="Strategies" icon={<WalletCards />}>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
+      <section className="workspaceGrid strategyWorkspaceTop">
+        <Panel title="Strategies" icon={<WalletCards />} action="+" onAction={() => setShowStrategyForm((show) => !show)}>
+          <div className="strategyCompactHeader">
             <div style={{ flex: 1 }}>
               <strong style={{ fontSize: '0.95rem' }}>{selectedStrategy.name}</strong>
               <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem', color: '#667085' }}>{selectedStrategy.description}</p>
             </div>
-            <span className="badge">{selectedStrategy.visibility}</span>
+            <button
+              type="button"
+              className="visibilityToggle"
+              onClick={() => updateStrategyVisibility(selectedStrategy.visibility === 'public' ? 'private' : 'public')}
+            >
+              {selectedStrategy.visibility}
+            </button>
           </div>
-          {showSymbolForm && (
-            <form className="symbolForm" onSubmit={(e) => { addSymbol(e); setShowSymbolForm(false); }} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '8px', alignItems: 'flex-end', marginBottom: '12px', padding: '12px', background: '#f9fbfb', borderRadius: '7px', border: '1px solid #e4e7ec' }}>
-              <Field label="Symbol" value={symbolForm.symbol} onChange={(value) => setSymbolForm({ ...symbolForm, symbol: value })} required />
-              <Field label="Note" value={symbolForm.note} onChange={(value) => setSymbolForm({ ...symbolForm, note: value })} />
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <button className="primary" type="submit" style={{ padding: '8px 12px' }}><Search size={16} />Track</button>
-                <button type="button" onClick={() => setShowSymbolForm(false)} style={{ padding: '8px 12px', background: '#e4e7ec', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>Cancel</button>
-              </div>
-            </form>
-          )}
-          {!showSymbolForm && (strategyQuotes?.symbols?.length || 0) >= 0 && (
-            <button type="button" onClick={() => setShowSymbolForm(true)} style={{ width: '100%', padding: '8px', marginBottom: '12px', background: '#f0f0f0', border: '1px solid #e4e7ec', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500, color: '#526071' }}><Plus size={14} style={{ marginRight: '4px' }} />Add Symbol to Portfolio</button>
-          )}
-          <div className="strategyTabs">
-            {strategies.map((strategy) => (
-              <button type="button" className={strategy.id === selectedStrategyId ? 'selected' : ''} key={strategy.id} onClick={() => setSelectedStrategyId(strategy.id)}>
-                {strategy.name}
-              </button>
-            ))}
-          </div>
-        </Panel>
-        <Panel title="Create New Strategy" icon={<Plus />}>
-          {showStrategyForm ? (
-            <form className="stack" onSubmit={(e) => { createStrategy(e); setShowStrategyForm(false); }}>
+          {showStrategyForm && (
+            <form className="stack compactStrategyForm" onSubmit={(e) => { createStrategy(e); setShowStrategyForm(false); }}>
               <Field label="Strategy Name" value={strategyForm.name} onChange={(value) => setStrategyForm({ ...strategyForm, name: value })} required />
               <TextField label="Description" value={strategyForm.description} onChange={(value) => setStrategyForm({ ...strategyForm, description: value })} required />
               <div className="row">
@@ -1047,20 +1257,53 @@ function PortfolioView({
                 </label>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button className="primary" type="submit"><Plus size={17} />Create Strategy</button>
-                <button type="button" onClick={() => setShowStrategyForm(false)} style={{ padding: '8px 12px', background: '#e4e7ec', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>Cancel</button>
+                <button className="primary compactActionButton" type="submit"><Plus size={17} />Create</button>
+                <button className="secondaryCompactButton" type="button" onClick={() => setShowStrategyForm(false)}>Cancel</button>
+              </div>
+            </form>
+          )}
+          <div className="strategyTabs">
+            {strategies.map((strategy) => (
+              <button type="button" className={strategy.id === selectedStrategyId ? 'selected' : ''} key={strategy.id} onClick={() => setSelectedStrategyId(strategy.id)}>
+                {strategy.name}
+              </button>
+            ))}
+          </div>
+        </Panel>
+        <Panel title="Add Symbol" icon={<Plus />}>
+          {showSymbolForm ? (
+            <form className="symbolForm compactSymbolForm" onSubmit={(e) => { addSymbol(e); setShowSymbolForm(false); }}>
+              <label>
+                Action
+                <select value={symbolForm.action} onChange={(event) => setSymbolForm({ ...symbolForm, action: event.target.value })}>
+                  <option value="watch">Watch</option>
+                  <option value="buy">Buy</option>
+                  <option value="sell">Sell</option>
+                </select>
+              </label>
+              <Field label="Symbol" value={symbolForm.symbol} onChange={(value) => setSymbolForm({ ...symbolForm, symbol: value })} required />
+              {symbolForm.action === 'watch' ? (
+                <Field label="Note" value={symbolForm.note} onChange={(value) => setSymbolForm({ ...symbolForm, note: value })} />
+              ) : (
+                <Field label="Shares" value={symbolForm.quantity} onChange={(value) => setSymbolForm({ ...symbolForm, quantity: value })} required />
+              )}
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button className="primary compactActionButton" type="submit"><Search size={16} />{symbolForm.action === 'watch' ? 'Watch' : 'Record'}</button>
+                <button className="secondaryCompactButton" type="button" onClick={() => setShowSymbolForm(false)}>Cancel</button>
               </div>
             </form>
           ) : (
-            <button type="button" onClick={() => setShowStrategyForm(true)} style={{ width: '100%', padding: '12px', background: '#0f766e', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}><Plus size={16} style={{ marginRight: '6px' }} />New Strategy</button>
+            <button type="button" className="secondaryCompactButton fullWidthCompact" onClick={() => setShowSymbolForm(true)}><Plus size={14} />Add Symbol to Strategy</button>
           )}
         </Panel>
       </section>
       <section className="workspaceGrid">
-        <Panel title="Price History" icon={<LineChart />}>
+        <Panel title="Strategy History" icon={<LineChart />}>
           <PriceChart
             strategyHistory={strategyHistory}
             strategyQuotes={strategyQuotes}
+            selectedHistorySymbol={selectedHistorySymbol}
+            setSelectedHistorySymbol={setSelectedHistorySymbol}
             chartRange={chartRange}
             setChartRange={setChartRange}
           />
@@ -1075,27 +1318,44 @@ function PortfolioView({
               const volume = quote.volume || 0;
               return (
                 <article className="quote" key={quote.symbol}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2px' }}>
-                    <strong style={{ fontSize: '1rem' }}>{quote.symbol}</strong>
-                    <span style={{ color: isPositive ? '#16a34a' : '#dc2626', fontSize: '0.85rem', fontWeight: 600 }}>
-                      {isPositive ? '↑' : '↓'} {Math.abs(changePercent).toFixed(2)}%
-                    </span>
+                  <div className="symbolQuoteHeader">
+                    <div className="symbolQuoteMain">
+                      <strong>{quote.symbol}</strong>
+                      <span>${price.toFixed(2)}</span>
+                    </div>
+                    <div className="symbolQuoteAside">
+                      <span className={isPositive ? 'positiveText' : 'negativeText'}>
+                        {signedNumber(changePercent)}%
+                      </span>
+                      <div className="symbolActions">
+                        {quote.trackingStatus === 'watch' ? (
+                          <>
+                            <button className="symbolActionButton buy" type="button" onClick={() => startSymbolAction('buy', quote.symbol)}>Buy</button>
+                            <button className="symbolActionButton deleteIcon" type="button" title={`Delete ${quote.symbol}`} aria-label={`Delete ${quote.symbol}`} onClick={() => removeStrategySymbol(quote.symbol)}>
+                              <MinusCircle size={17} />
+                            </button>
+                          </>
+                        ) : (
+                          <button className="symbolActionButton sell" type="button" onClick={() => startSymbolAction('sell', quote.symbol)}>Sell</button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <span style={{ fontSize: '1.15rem', fontWeight: 700, color: '#20242a', marginBottom: '2px', display: 'block' }}>
-                    ${price.toFixed(2)}
-                  </span>
                   <small style={{ color: '#667085', fontSize: '0.75rem' }}>
-                    Vol: {(volume / 1e6).toFixed(1)}M | Change: ${Math.abs(change).toFixed(2)}
+                    <span className="badge" style={{ marginRight: '6px' }}>{quote.trackingStatus === 'owned' ? 'Owned' : 'Watch'}</span>
+                    {quote.trackingStatus === 'owned' && quote.quantity ? `${Number(quote.quantity).toLocaleString()} shares | ` : ''}
+                    Change: {signedCurrency(change)}
+                    {volume ? ` | Vol: ${(volume / 1e6).toFixed(1)}M` : ''}
                   </small>
                 </article>
               );
             })}
-            {(!strategyQuotes?.symbols || strategyQuotes.symbols.length === 0) && <Empty text="Add a tracked symbol to view prices." />}
+            {(!strategyQuotes?.symbols || strategyQuotes.symbols.length === 0) && <Empty text="Add a symbol to view prices." />}
           </div>
         </Panel>
       </section>
       <section className="workspaceGrid">
-        <Panel title="Portfolio Summary" icon={<TrendingUp />}>
+        <Panel title="Strategy Snapshot" icon={<TrendingUp />}>
           <PortfolioSummary strategyQuotes={strategyQuotes} selectedStrategy={selectedStrategy} />
         </Panel>
         <Panel title="Asset Allocation" icon={<BarChart3 />}>
@@ -1105,6 +1365,162 @@ function PortfolioView({
       <section className="workspaceGrid">
         <Panel title="Technical Indicators" icon={<ShieldCheck />}>
           <IndicatorPanel symbol={strategyQuotes?.symbols[0]?.symbol} indicator={indicator} />
+        </Panel>
+      </section>
+    </>
+  );
+}
+
+function InvestmentWorkspaceView({
+  portfolioSummary,
+  accountForm,
+  setAccountForm,
+  createAccount,
+  holdingForm,
+  setHoldingForm,
+  addHolding,
+  deleteHolding,
+  deleteAccount
+}) {
+  const accounts = portfolioSummary?.accounts || [];
+  const [managementOpen, setManagementOpen] = useState(accounts.length === 0);
+  const selectedAccount = holdingForm.accountId || (accounts[0]?.id ? String(accounts[0].id) : '');
+  const holdings = accounts.flatMap((account) =>
+    (account.holdings || []).map((holding) => ({ ...holding, accountId: account.id, accountName: account.name }))
+  );
+  const gainClass = (amount, percent) => Number(amount ?? percent ?? 0) >= 0 ? 'positiveText' : 'negativeText';
+
+  useEffect(() => {
+    if (!holdingForm.accountId && accounts[0]?.id) {
+      setHoldingForm((current) => ({ ...current, accountId: String(accounts[0].id) }));
+    }
+  }, [accounts.length]);
+
+  useEffect(() => {
+    if (accounts.length === 0) {
+      setManagementOpen(true);
+    }
+  }, [accounts.length]);
+
+  return (
+    <>
+      <section className="scoreGrid">
+        <Metric icon={<BriefcaseBusiness />} label="Market Value" value={currencyPrecise(portfolioSummary?.totalValue)} detail="Across investment accounts" />
+        <Metric icon={<TrendingUp />} label="Unrealized Gain" value={currencyPrecise(portfolioSummary?.totalGain)} detail={percentLabel(portfolioSummary?.totalGainPct)} />
+        <Metric icon={<Activity />} label="Daily Gain" value={currencyPrecise(portfolioSummary?.dailyGain)} detail={percentLabel(portfolioSummary?.dailyGainPct)} />
+        <Metric icon={<WalletCards />} label="Accounts" value={accounts.length} detail={`${holdings.length} holdings`} />
+      </section>
+
+      <section className="workspaceGrid">
+        <Panel title="Holdings" icon={<BarChart3 />} className="span2">
+          <div className="holdingTable">
+            <div className="holdingHeader">
+              <span>Symbol</span>
+              <span>Account</span>
+              <span>Shares</span>
+              <span>Price</span>
+              <span>Value</span>
+              <span>Daily G/L</span>
+              <span>Total G/L</span>
+              <span></span>
+            </div>
+            {holdings.map((holding) => (
+              <article className="holdingRow" key={holding.id}>
+                <strong>{holding.symbol}</strong>
+                <span>{holding.accountName}</span>
+                <span>{Number(holding.shares || 0).toLocaleString()}</span>
+                <span>{currencyPrecise(holding.price)} {holding.manualPriceActive && <small className="manualBadge">M</small>}</span>
+                <span>{currencyPrecise(holding.value)}</span>
+                <span className={`gainStack ${gainClass(holding.dayGain, holding.dayChangePct)}`}>
+                  <strong>{currencyPrecise(holding.dayGain)}</strong>
+                  <small>{signedPercentLabel(holding.dayChangePct)}</small>
+                </span>
+                <span className={`gainStack ${gainClass(holding.gain, holding.gainPct)}`}>
+                  <strong>{currencyPrecise(holding.gain)}</strong>
+                  <small>{signedPercentLabel(holding.gainPct)}</small>
+                </span>
+                <button type="button" onClick={() => deleteHolding(holding.accountId, holding.id)}>Remove</button>
+              </article>
+            ))}
+            {holdings.length === 0 && <Empty text="No holdings yet." />}
+          </div>
+        </Panel>
+      </section>
+
+      <section className="workspaceGrid">
+        <Panel
+          title="Manage Accounts and Holdings"
+          icon={<BriefcaseBusiness />}
+          className="span2"
+          action={managementOpen ? 'Collapse' : 'Open'}
+          onAction={() => setManagementOpen((open) => !open)}
+        >
+          {managementOpen && (
+            <div className="managementGrid">
+              <div>
+                <h3><BriefcaseBusiness size={16} />Investment Accounts</h3>
+                <form className="stack" onSubmit={createAccount}>
+                  <div className="row">
+                    <Field label="Account Name" value={accountForm.name} onChange={(value) => setAccountForm({ ...accountForm, name: value })} required />
+                    <label>
+                      Type
+                      <select value={accountForm.accountType} onChange={(event) => setAccountForm({ ...accountForm, accountType: event.target.value })}>
+                        <option value="BROKERAGE">Brokerage</option>
+                        <option value="IRA">IRA</option>
+                        <option value="ROTH_IRA">Roth IRA</option>
+                        <option value="FOUR_O_ONE_K">401K</option>
+                        <option value="HSA">HSA</option>
+                      </select>
+                    </label>
+                  </div>
+                  <button className="primary" type="submit"><Plus size={17} />Create Account</button>
+                </form>
+                <div className="accountList">
+                  {accounts.map((account) => (
+                    <article className="accountRow" key={account.id}>
+                      <div>
+                        <strong>{account.name}</strong>
+                        <small>{accountTypeLabel(account.accountType)} · {currencyPrecise(account.value)} value</small>
+                      </div>
+                      <button type="button" onClick={() => deleteAccount(account.id)}>Delete</button>
+                    </article>
+                  ))}
+                  {accounts.length === 0 && <Empty text="Create an account before adding holdings." />}
+                </div>
+              </div>
+
+              <div>
+                <h3><Plus size={16} />Add Holding</h3>
+                <form className="stack" onSubmit={addHolding}>
+                  <label>
+                    Account
+                    <select
+                      value={String(selectedAccount)}
+                      onChange={(event) => setHoldingForm({ ...holdingForm, accountId: event.target.value })}
+                      disabled={accounts.length === 0}
+                    >
+                      {accounts.map((account) => (
+                        <option key={account.id} value={account.id}>{account.name}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <div className="row">
+                    <Field label="Symbol" value={holdingForm.symbol} onChange={(value) => setHoldingForm({ ...holdingForm, symbol: value })} required />
+                    <Field label="Shares" value={holdingForm.shares} onChange={(value) => setHoldingForm({ ...holdingForm, shares: value })} required />
+                  </div>
+                  <div className="row">
+                    <Field label="Cost Basis" value={holdingForm.costBasis} onChange={(value) => setHoldingForm({ ...holdingForm, costBasis: value })} />
+                    <Field label="Manual Price" value={holdingForm.manualPrice} onChange={(value) => setHoldingForm({ ...holdingForm, manualPrice: value })} />
+                  </div>
+                  <label>
+                    Purchase Date
+                    <input type="date" value={holdingForm.purchaseDate} onChange={(event) => setHoldingForm({ ...holdingForm, purchaseDate: event.target.value })} />
+                  </label>
+                  <button className="primary" type="submit" disabled={accounts.length === 0}><Plus size={17} />Add Holding</button>
+                </form>
+              </div>
+            </div>
+          )}
         </Panel>
       </section>
     </>
@@ -1728,6 +2144,61 @@ function profileStatus(profile) {
 function currency(value) {
   const amount = Number(value || 0);
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount);
+}
+
+function currencyPrecise(value) {
+  if (value == null) return '—';
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(Number(value));
+}
+
+function signedCurrency(value) {
+  if (value == null) return '—';
+  const number = Number(value);
+  const formatted = currencyPrecise(Math.abs(number));
+  return `${number >= 0 ? '+' : '-'}${formatted}`;
+}
+
+function signedNumber(value) {
+  if (value == null) return '—';
+  const number = Number(value);
+  return `${number >= 0 ? '+' : ''}${number.toFixed(2)}`;
+}
+
+function rangeLabel(value) {
+  return {
+    '1w': '1W',
+    '1mo': '1M',
+    '3mo': '3M',
+    '6mo': '6M',
+    '1y': '1Y',
+    '2y': '2Y',
+    '3y': '3Y',
+    '4y': '4Y',
+    '5y': '5Y'
+  }[value] || value;
+}
+
+function percentLabel(value) {
+  if (value == null) return 'No basis yet';
+  const number = Number(value);
+  return `${number >= 0 ? '+' : ''}${number.toFixed(2)}%`;
+}
+
+function signedPercentLabel(value) {
+  if (value == null) return '—';
+  const number = Number(value);
+  return `${number >= 0 ? '+' : ''}${number.toFixed(2)}%`;
+}
+
+function accountTypeLabel(value) {
+  const labels = {
+    BROKERAGE: 'Brokerage',
+    IRA: 'IRA',
+    ROTH_IRA: 'Roth IRA',
+    FOUR_O_ONE_K: '401K',
+    HSA: 'HSA'
+  };
+  return labels[value] || labelize(String(value || 'Account'));
 }
 
 function formatDate(value) {

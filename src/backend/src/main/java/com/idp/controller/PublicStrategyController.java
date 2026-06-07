@@ -33,7 +33,7 @@ public class PublicStrategyController {
                 .map(symbol -> new com.idp.dto.TrackedSymbolResponse(
                     symbol.getStrategy().getId(),
                     symbol.getSymbol(),
-                    "tracked",
+                    "watch",
                     symbol.getNote(),
                     symbol.getTags(),
                     symbol.getVisibility(),

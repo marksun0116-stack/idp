@@ -62,6 +62,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
     }
 
+    @ExceptionHandler(PortfolioNotFoundException.class)
+    ResponseEntity<Map<String, String>> portfolioNotFound(PortfolioNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(PortfolioConflictException.class)
+    ResponseEntity<Map<String, String>> portfolioConflict(PortfolioConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
+    }
+
     @ExceptionHandler(UserConflictException.class)
     ResponseEntity<Map<String, String>> userConflict(UserConflictException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));

@@ -12,7 +12,7 @@ public record AppendTransactionRequest(
     @NotBlank String ticker,
     @NotNull TransactionSide side,
     @NotNull @DecimalMin(value = "0.0", inclusive = false) BigDecimal quantity,
-    @NotNull @DecimalMin(value = "0.0", inclusive = false) BigDecimal price,
+    @DecimalMin(value = "0.0", inclusive = false) BigDecimal price,
     Long decisionId,
     @NotNull Instant executedAt
 ) {

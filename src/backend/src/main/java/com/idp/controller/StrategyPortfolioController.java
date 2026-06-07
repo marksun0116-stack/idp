@@ -13,6 +13,7 @@ import com.idp.dto.StrategyQuotesResponse;
 import com.idp.dto.StrategySummaryResponse;
 import com.idp.dto.StrategyTransactionResponse;
 import com.idp.dto.TrackedSymbolResponse;
+import com.idp.dto.UpdateStrategyVisibilityRequest;
 import com.idp.model.StrategyPortfolio;
 import com.idp.model.StrategyTrackedSymbol;
 import com.idp.model.StrategyTransaction;
@@ -20,9 +21,11 @@ import com.idp.service.StrategyPortfolioService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -64,6 +67,16 @@ public class StrategyPortfolioController {
         return detail(strategy, false);
     }
 
+    @PutMapping("/{id}/visibility")
+    public CreateStrategyResponse updateVisibility(
+        @PathVariable("id") Long id,
+        @Valid @RequestBody UpdateStrategyVisibilityRequest request,
+        Authentication authentication
+    ) {
+        StrategyPortfolio strategy = strategyPortfolioService.updateVisibility(authentication.getName(), id, request);
+        return new CreateStrategyResponse(strategy.getId(), strategy.getName(), strategy.getVisibility(), strategy.getCreatedAt());
+    }
+
     @PostMapping("/{id}/symbols")
     @ResponseStatus(HttpStatus.CREATED)
     public TrackedSymbolResponse addSymbol(
@@ -72,6 +85,16 @@ public class StrategyPortfolioController {
         Authentication authentication
     ) {
         return trackedSymbol(strategyPortfolioService.addTrackedSymbol(authentication.getName(), id, request));
+    }
+
+    @DeleteMapping("/{id}/symbols/{symbol}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeSymbol(
+        @PathVariable("id") Long id,
+        @PathVariable("symbol") String symbol,
+        Authentication authentication
+    ) {
+        strategyPortfolioService.removeTrackedSymbol(authentication.getName(), id, symbol);
     }
 
     @PostMapping("/{id}/transactions")
@@ -126,7 +149,7 @@ public class StrategyPortfolioController {
         return new TrackedSymbolResponse(
             trackedSymbol.getStrategy().getId(),
             trackedSymbol.getSymbol(),
-            "tracked",
+            "watch",
             trackedSymbol.getNote(),
             trackedSymbol.getTags(),
             trackedSymbol.getVisibility(),

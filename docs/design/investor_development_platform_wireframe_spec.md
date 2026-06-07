@@ -4,8 +4,8 @@ title: "Investor Development Platform Wireframe and UX Requirements"
 status: draft
 owner: "Product/UX"
 architect: "TBD"
-last_updated: 2026-06-04
-version: "0.1"
+last_updated: 2026-06-07
+version: "0.2"
 linked_prds:
   - PRD-investor-development-platform-001
 linked_features:
@@ -22,7 +22,7 @@ This document captures the UX requirements for the Investor Development Platform
 
 ## 1. Purpose
 
-Use the wireframe to define the experience for the investor dashboard and the top-level product flow for research, decisions, reviews, portfolios, analytics, and reputation.
+Use the wireframe to define the experience for the investor dashboard and the top-level product flow for research, decisions, reviews, strategies, investment holdings, analytics, and reputation.
 
 ## 2. UX objectives
 
@@ -30,7 +30,7 @@ Use the wireframe to define the experience for the investor dashboard and the to
 - Make it easy for users to see recent activity and next review actions.
 - Surface strategy performance in a single overview chart with a time-range selector.
 - Highlight active investor strategies, behavior insights, decision funnel health, and market context.
-- Support navigation to Research, Decisions, Portfolios, Reviews, Analytics, Community, Profile, and Settings.
+- Support navigation to Research, Decisions, Strategies, Investment, Reviews, Analytics, Community, Profile, and Settings.
 - Enable a polished, modern dashboard that feels like a productivity tool for investor improvement.
 
 ## 3. Primary screen sections
@@ -42,7 +42,7 @@ Use the wireframe to define the experience for the investor dashboard and the to
   - Dashboard
   - Research
   - Decisions
-  - Portfolios
+  - Strategies
   - Reviews
   - Analytics
   - Community
@@ -180,3 +180,4 @@ Each card includes:
 | Revision | Date | Status | Supersedes | Notes |
 | --- | --- | --- | --- | --- |
 | 0.1 | 2026-06-04 | draft | — | Initial wireframe and UX requirements document created from `idp.png`. |
+| 0.2 | 2026-06-07 | draft | 0.1 | Renamed the user-facing Strategy Portfolio navigation entry to Strategies and added Investment as the holdings/account workspace. |

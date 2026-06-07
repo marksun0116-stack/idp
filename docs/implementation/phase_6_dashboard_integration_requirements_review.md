@@ -2,8 +2,8 @@
 title: "Phase 6 Dashboard Integration Requirements Review"
 status: approved
 owner: "Investor Development Platform Team"
-last_updated: 2026-06-05
-version: "0.1"
+last_updated: 2026-06-07
+version: "0.2"
 ---
 
 # Phase 6 Dashboard Integration Requirements Review
@@ -14,7 +14,7 @@ Phase 6 turns the first private workspace UI into a dashboard-first product expe
 
 ## Included
 
-- Persistent left navigation with Dashboard, Decisions, Portfolios, Reviews, Analytics, Community, Profile, and Settings entries.
+- Persistent left navigation with Dashboard, Decisions, Strategies, Investment, Reviews, Analytics, Community, Profile, and Settings entries.
 - Dashboard landing page with score cards, recent activity, next reviews, active strategies, behavior insights, decision funnel, market snapshot, recent decisions, and community signal placeholders.
 - Reuse existing owner-scoped APIs from Phases 1-5.
 - Keep existing decision, strategy, tracked-symbol, and public-profile write workflows available in focused sections.
@@ -35,8 +35,9 @@ Phase 6 turns the first private workspace UI into a dashboard-first product expe
 - Dashboard lists next reviews, recent decisions, active strategies, behavior insights, and public profile status.
 - Existing write workflows remain usable after dashboard integration.
 
-## Change Log
+## Change log
 
 | Revision | Date | Status | Supersedes | Notes |
 | --- | --- | --- | --- | --- |
 | 0.1 | 2026-06-05 | approved | - | Initial Phase 6 dashboard integration requirements review. |
+| 0.2 | 2026-06-07 | approved | 0.1 | Updated the navigation terminology from Portfolios to Strategies and included the Investment workspace entry. |

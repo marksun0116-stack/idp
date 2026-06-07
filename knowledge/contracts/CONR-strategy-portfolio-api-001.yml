@@ -3,7 +3,7 @@ kind: contract
 title: "Strategy Portfolio API"
 status: draft
 owner: "Investor Development Platform Team"
-version: "0.5"
+version: "0.6"
 auth: "Bearer JWT required for owner writes; public reads allowed for published strategies"
 summary: >
   API boundary for public virtual strategy portfolios, immutable transaction
@@ -25,6 +25,17 @@ endpoints:
     validation:
       startingCapital: "Positive decimal value"
       visibility: "private or public"
+  update_strategy_visibility:
+    method: PUT
+    path: "/api/strategies/{id}/visibility"
+    request_body: |
+      { "visibility": "private" | "public" }
+    response_200: |
+      { "id": string, "name": string, "visibility": string, "createdAt": string }
+    validation:
+      visibility: "private or public"
+    errors:
+      404: "Strategy not found for authenticated user"
   append_transaction:
     method: POST
     path: "/api/strategies/{id}/transactions"
@@ -33,7 +44,7 @@ endpoints:
         "ticker": string,
         "side": "buy" | "sell",
         "quantity": number,
-        "price": number,
+        "price": number | null,
         "decisionId": string | null,
         "executedAt": string
       }
@@ -41,10 +52,14 @@ endpoints:
       { "id": string, "strategyId": string, "createdAt": string }
     validation:
       quantity: "Positive decimal value"
-      price: "Positive decimal value"
+      price: "Ignored when supplied; server records the current live quote price"
+      market_state: "Current quote must be available and regular/open market"
+      buying_power: "Buy value must not exceed strategy cash balance"
+      owned_shares: "Sell quantity must not exceed current owned shares"
       decisionId: "Optional; when supplied, decision must be owned by authenticated user"
     errors:
       404: "Strategy or linked decision not found for authenticated user"
+      409: "Market is not open, quote unavailable, insufficient strategy cash, or insufficient owned shares"
   add_tracked_symbol:
     method: POST
     path: "/api/strategies/{id}/symbols"
@@ -63,7 +78,7 @@ endpoints:
       {
         "strategyId": string,
         "symbol": string,
-        "trackingStatus": "tracked",
+        "trackingStatus": "watch",
         "createdAt": string
       }
     validation:
@@ -79,7 +94,9 @@ endpoints:
       has historical transactions or an open position, transaction history is not
       deleted and the symbol remains available where required for auditability.
     errors:
+      404: "Strategy or watch symbol not found for authenticated user"
       409: "Symbol has transaction history or open position and cannot be removed from historical strategy scope"
+    response_204: "Watch symbol removed"
   public_strategy:
     method: GET
     path: "/api/public/strategies/{id}"
@@ -96,7 +113,7 @@ endpoints:
   strategy_quotes:
     method: GET
     path: "/api/strategies/{id}/quotes"
-    description: "Returns current quote rows for tracked symbols and position symbols in a strategy portfolio. Owner-scoped for private strategies."
+    description: "Returns current quote rows for watch symbols and owned symbols in a strategy portfolio. Owner-scoped for private strategies."
     response_200: |
       {
         "strategyId": string,
@@ -108,12 +125,25 @@ endpoints:
           "marketTime": number | null,
           "marketState": string | null,
           "volume": number | null,
+          "quantity": number | null,
+          "averageCost": number | null,
+          "costBasis": number | null,
+          "marketValue": number | null,
+          "unrealizedGain": number | null,
+          "unrealizedGainPct": number | null,
           "positionWeight": number | null,
-          "trackingStatus": "tracked" | "position" | "historical"
+          "trackingStatus": "watch" | "owned"
         }],
+        "startingCapital": number,
+        "cashBalance": number,
+        "holdingsValue": number,
+        "totalStrategyValue": number,
+        "totalGain": number,
+        "totalGainPct": number,
         "dataFreshness": string
       }
     phase_7_update: "Attempts Yahoo Finance chart-backed quote data and returns nullable market fields with market_data_unavailable freshness when the provider is unavailable."
+    phase_10_update: "Owned rows include net quantity, average cost, cost basis, market value, unrealized gain/loss, gain/loss percent, and position weight computed from append-only transactions. Watch rows keep position fields null and do not affect performance. Strategy totals include uninvested cash. Frontend row actions allow watch symbols to buy/delete and owned symbols to sell."
   public_strategy_quotes:
     method: GET
     path: "/api/public/strategies/{id}/quotes"
@@ -127,7 +157,7 @@ endpoints:
   strategy_history:
     method: GET
     path: "/api/strategies/{id}/history?range="
-    description: "Returns normalized historical chart series for tracked symbols and position symbols in a strategy portfolio. Owner-scoped for private strategies."
+    description: "Returns normalized per-symbol historical chart series plus total strategy performance including cash and owned holdings. Owner-scoped for private strategies."
     request:
       query_params:
         range:
@@ -141,9 +171,17 @@ endpoints:
         "series": [{
           "symbol": string,
           "data": [{ "timestamp": number, "close": number }]
+        }],
+        "performance": [{
+          "timestamp": number,
+          "value": number,
+          "cash": number,
+          "holdingsValue": number,
+          "returnPct": number
         }]
       }
     phase_7_update: "Attempts Yahoo Finance chart-backed daily close series and returns empty symbol series when the provider is unavailable."
+    phase_10_update: "The frontend presents total strategy performance by default and keeps per-symbol series available for individual stock research."
   public_strategy_history:
     method: GET
     path: "/api/public/strategies/{id}/history?range="
@@ -187,7 +225,8 @@ endpoints:
 visibility_rules:
   private_endpoints: "Authenticated owner only"
   public_endpoints: "Public strategies only; private tracked symbols are excluded"
-  symbol_scope: "Market-data endpoints may only return symbols from tracked symbols or appended transaction symbols"
+  symbol_scope: "Market-data endpoints may only return symbols from watch symbols or appended transaction symbols"
+  performance_scope: "Strategy performance includes cash and owned holdings only; watch symbols never affect strategy value"
 linked_features:
   - FEAT-investor-development-platform-001
 related_constraints:

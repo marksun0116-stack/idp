@@ -10,6 +10,12 @@ public record StrategyQuoteResponse(
     Long marketTime,
     String marketState,
     Long volume,
+    BigDecimal quantity,
+    BigDecimal averageCost,
+    BigDecimal costBasis,
+    BigDecimal marketValue,
+    BigDecimal unrealizedGain,
+    BigDecimal unrealizedGainPct,
     BigDecimal positionWeight,
     String trackingStatus
 ) {

@@ -1,10 +1,10 @@
 ---
 plan_id: PLAN-investor-development-platform-001
 title: "Investor Development Platform Implementation Plan"
-status: draft
+status: active
 owner: "Investor Development Platform Team"
-last_updated: 2026-06-05
-version: "2.9"
+last_updated: 2026-06-07
+version: "3.5"
 linked_prds:
   - PRD-investor-development-platform-001
 linked_features:
@@ -41,6 +41,7 @@ The plan coordinates implementation work only. Product intent remains in `docs/p
 | Phase 6 — Dashboard Integration | Bring scorecards, activity, reviews, strategies, recent decisions, strategy research widgets, and community decisions into the primary dashboard. | done | Phases 1-5 and Phase 5A UI surfaces | None | FEAT-investor-development-platform-001 |
 | Phase 7 — Auth and Market Data Hardening | Replace MVP shortcuts with local user auth and real strategy market data with graceful fallback. | done | Phase 6 | UI polish and demo data can proceed after contracts stabilize | CONR-user-api-001, CONR-strategy-portfolio-api-001 |
 | Phase 8 — Auth-First UX | Make login/register the default app entry while preserving explicit demo-mode access. | done | Phase 7 | None | CONR-user-api-001 |
+| Phase 9 — Investment Workspace Core | Implement owner-scoped investment accounts, holdings, and portfolio summary using live or manual prices. | done | Phase 8 | Sector cache and CSV import can follow after account/holding contract tests pass. | CONR-portfolio-api-001, INV-portfolio-ownership-001, INV-holding-cost-basis-001, INV-manual-price-001 |
 
 ## 4. User Story Plan
 
@@ -73,6 +74,10 @@ The plan coordinates implementation work only. Product intent remains in `docs/p
 | US-014 | Phase 7 | As an investor, I want real quotes, charts, and indicators in strategy portfolios instead of placeholder market data. | done | RR-007 | Can proceed in parallel with US-013 after strategy symbol scoping is stable. | CONR-strategy-portfolio-api-001, CONR-historical-chart-api-001, CONR-insights-api-001 | Implemented Yahoo chart-backed strategy quotes/history/indicators with market-data-unavailable fallback. |
 | RR-008 | Phase 8 | Review auth-first UX requirements before changing the application entry flow. | done | US-013 | No | CONR-user-api-001 | Completed in `docs/implementation/phase_8_auth_first_ux_requirements_review.md`; scoped login/register-first entry, explicit demo mode, logout behavior, and identity copy. |
 | US-015 | Phase 8 | As an investor, I want the app to start at login/register so my private workspace is not opened through an implicit development identity. | done | RR-008 | No | CONR-user-api-001, CON-private-research-default-001 | Implemented auth-first React entry screen, explicit demo mode, workspace state clearing on logout, and authenticated/demo identity indicators. |
+| RR-009 | Phase 9 | Review Investment Workspace core requirements before account and holding implementation starts. | done | US-015 | No | FEAT-account-management-001, FEAT-holding-management-001, FEAT-portfolio-dashboard-001, CONR-portfolio-api-001 | Completed in `docs/implementation/phase_9_investment_workspace_core_requirements_review.md`; scoped account CRUD, holding CRUD, owner isolation, optional cost basis, manual price, and summary math. |
+| US-016 | Phase 9 | As an investor, I want to create and manage investment accounts so holdings are grouped by account type. | done | RR-009 | Can proceed in parallel with frontend shell after backend ownership tests exist. | FEAT-account-management-001, CONR-portfolio-api-001, INV-portfolio-ownership-001 | Implemented owner-scoped account create/list/delete through portfolio summary with per-user name uniqueness and cascade behavior. |
+| US-017 | Phase 9 | As an investor, I want to add, update, and remove holdings with optional cost basis and manual price. | done | US-016 | Backend holding CRUD and summary UI can split after DTO shape is stable. | FEAT-holding-management-001, CON-holding-uniqueness-001, INV-holding-cost-basis-001, INV-manual-price-001 | Implemented owner-scoped holding CRUD, duplicate-symbol conflict handling, optional cost basis, and manual price priority. |
+| US-018 | Phase 9 | As an investor, I want a portfolio summary that calculates value, gain/loss, daily change, and account totals. | done | US-017 | Frontend table/allocation view can proceed once summary response is contract-tested. | FEAT-portfolio-dashboard-001, CONR-portfolio-api-001, INV-allocation-consolidation-001 | Implemented portfolio summary API and Investment Workspace UI with totals, account list, holding entry, and holding table. |
 
 ## 5. Parallelization Notes
 
@@ -86,6 +91,7 @@ The plan coordinates implementation work only. Product intent remains in `docs/p
 - Phase 5A is an intentional early UI slice: it can start before Phase 5 because it uses the already completed private APIs from Phases 1-4 and does not expose public reputation data.
 - Phase implementation stories should not move to `in_progress` until the phase's `RR-*` requirements review is `done` or explicitly `in_progress` with named accepted risks.
 - Auth-first UX should not run in parallel with auth backend hardening because the entry flow depends on settled token and demo-compatibility behavior.
+- Phase 9 account and holding backend work must land before CSV import or sector-cache UI expansion; those depend on stable owner-scoped account and holding identities.
 
 ## 6. Progress Updates
 
@@ -118,12 +124,21 @@ The plan coordinates implementation work only. Product intent remains in `docs/p
 - 2026-06-05: Started Phase 7; completed `RR-007` auth and market-data requirements review and began `US-013`/`US-014`.
 - 2026-06-05: Completed `US-013` and `US-014`; added local account registration/login, opaque bearer tokens, frontend auth controls, Yahoo-backed strategy quotes/history/indicators, and graceful provider fallback. Marked Phase 7 done.
 - 2026-06-05: Completed Phase 8; added `RR-008`, auth-first app entry, explicit demo mode, logout-to-login behavior, and authenticated/demo identity indicators. Marked `US-015` done.
+- 2026-06-06: Closed the current MVP implementation plan after confirming all tracked phases and stories are `done`; no active implementation story remains in this plan.
+- 2026-06-07: Reopened the plan for Phase 9 Investment Workspace Core; completed `RR-009` and started `US-016`.
+- 2026-06-07: Completed Phase 9 Investment Workspace Core; added account and holding persistence, owner-scoped portfolio APIs, summary math, Investment Workspace UI, and portfolio contract tests.
+- 2026-06-07: Refined Phase 9 Investment Workspace UI so holdings are the primary view, account/holding setup controls are collapsible, and daily/total gain/loss percentages are visible per holding.
+- 2026-06-07: Renamed the user-facing Strategy Portfolio navigation label from Portfolios to Strategies so it is distinct from the Investment accounts and holdings page.
+- 2026-06-07: Refined Strategies symbol entry so watch symbols stay research-only while buy/sell actions collect shares and price for transaction-derived allocation and performance.
+- 2026-06-07: Clarified and implemented symbol-level strategy price history with an in-chart symbol selector and two-decimal price-axis formatting.
+- 2026-06-07: Reframed Strategies as paper portfolios with uninvested cash, live-quote transaction fills, market-open/cash/share guardrails, and total strategy performance history.
+- 2026-06-07: Added strategy symbol row actions so watch symbols can buy/delete and owned symbols can sell from the tracked-symbol list.
+- 2026-06-07: Moved strategy creation behind the Strategies panel `+`, made Add Symbol the right-side panel, added strategy visibility switching, and compressed tracked-symbol rows.
 
 ## 7. Open Questions
 
-- Which IDP slice should be implemented first after KFS planning support: decision journal backend, decision journal UI, or a static dashboard prototype?
-- Should AI research assistant remain outside MVP implementation until the decision/review loop is working?
-- Which DQS component definitions are acceptable for v0.1 before real behavioral data accumulates?
+- No open blockers for Phase 9 account/holding core.
+- CSV import conflict resolution and sector-cache refresh remain deferred until the core portfolio API and UI are stable.
 
 ## Change log
 
@@ -158,3 +173,13 @@ The plan coordinates implementation work only. Product intent remains in `docs/p
 | 2.7 | 2026-06-05 | draft | 2.6 | Started Phase 7 auth and market-data hardening. |
 | 2.8 | 2026-06-05 | draft | 2.7 | Completed Phase 7 auth and market-data hardening. |
 | 2.9 | 2026-06-05 | draft | 2.8 | Completed Phase 8 auth-first UX and explicit demo-mode entry. |
+| 3.0 | 2026-06-06 | complete | 2.9 | Closed the current MVP implementation plan with all tracked phases and stories done. |
+| 3.1 | 2026-06-07 | active | 3.0 | Reopened the implementation plan for Phase 9 Investment Workspace Core and started account management. |
+| 3.2 | 2026-06-07 | active | 3.1 | Completed Phase 9 Investment Workspace Core and left CSV import / sector-cache expansion deferred. |
+| 3.3 | 2026-06-07 | active | 3.2 | Refined Phase 9 Investment Workspace UI to prioritize holdings and make account/holding setup controls collapsible. |
+| 3.4 | 2026-06-07 | active | 3.3 | Renamed the user-facing Strategy Portfolio nav label to Strategies to distinguish it from Investment holdings. |
+| 3.5 | 2026-06-07 | active | 3.4 | Added strategy watch-vs-position UI semantics and transaction-derived strategy allocation/performance fields. |
+| 3.6 | 2026-06-07 | active | 3.5 | Clarified strategy price history as a selected-symbol chart and formatted price-axis values to two decimals. |
+| 3.7 | 2026-06-07 | active | 3.6 | Reframed Strategies as paper portfolios with live quote execution, cash/share guardrails, and total strategy performance history. |
+| 3.8 | 2026-06-07 | active | 3.7 | Added row-level watch buy/delete and owned sell actions in Strategies. |
+| 3.9 | 2026-06-07 | active | 3.8 | Compact Strategies layout with header create action, right-side Add Symbol panel, visibility toggle, and denser symbol rows. |

@@ -31,16 +31,18 @@ endpoints:
             "symbol":       string,
             "companyName":  string | null,
             "shares":       number,
-            "costBasis":    number,
+            "costBasis":    number | null,
             "purchaseDate": string | null,
+            "manualPrice":  number | null,
             "price":        number | null,
             "value":        number | null,
-            "cost":         number,
+            "cost":         number | null,
             "gain":         number | null,
             "gainPct":      number | null,
             "dayChange":    number | null,
             "dayChangePct": number | null,
-            "dayGain":      number | null
+            "dayGain":      number | null,
+            "manualPriceActive": boolean
           }]
         }]
       }
@@ -66,9 +68,9 @@ endpoints:
     method: POST
     path: "/api/portfolio/accounts/{accountId}/holdings"
     request_body: |
-      { "symbol": string, "shares": number, "costBasis": number, "purchaseDate": string | null }
+      { "symbol": string, "shares": number, "costBasis": number | null, "purchaseDate": string | null, "manualPrice": number | null }
     response_201: |
-      { "id": number, "symbol": string, "shares": number, "costBasis": number, "purchaseDate": string | null }
+      { "id": number, "symbol": string, "shares": number, "costBasis": number | null, "purchaseDate": string | null, "manualPrice": number | null, "manualPriceActive": boolean }
     errors:
       404: "Account not found or not owned by user"
       409: "Symbol already held in this account"
@@ -77,9 +79,9 @@ endpoints:
     method: PUT
     path: "/api/portfolio/accounts/{accountId}/holdings/{id}"
     request_body: |
-      { "shares": number, "costBasis": number, "purchaseDate": string | null }
+      { "shares": number, "costBasis": number | null, "purchaseDate": string | null, "manualPrice": number | null }
     response_200: |
-      { "id": number, "symbol": string, "shares": number, "costBasis": number, "purchaseDate": string | null }
+      { "id": number, "symbol": string, "shares": number, "costBasis": number | null, "purchaseDate": string | null, "manualPrice": number | null, "manualPriceActive": boolean }
     errors:
       404: "Holding not found or not in this account"
 
