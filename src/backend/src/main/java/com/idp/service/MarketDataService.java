@@ -22,7 +22,11 @@ public interface MarketDataService {
 
     record MarketHistoryPoint(
         Long timestamp,
-        BigDecimal close
+        BigDecimal open,
+        BigDecimal high,
+        BigDecimal low,
+        BigDecimal close,
+        Long volume
     ) {
     }
 }

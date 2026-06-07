@@ -72,11 +72,30 @@ public class YahooMarketDataService implements MarketDataService {
         try {
             JsonNode result = chart(symbol, normalizeRange(range), "1d");
             JsonNode timestamps = result.path("timestamp");
-            JsonNode closes = result.path("indicators").path("quote").path(0).path("close");
+            JsonNode quote = result.path("indicators").path("quote").path(0);
+            JsonNode opens = quote.path("open");
+            JsonNode highs = quote.path("high");
+            JsonNode lows = quote.path("low");
+            JsonNode closes = quote.path("close");
+            JsonNode volumes = quote.path("volume");
+
             List<MarketHistoryPoint> points = new ArrayList<>();
-            for (int i = 0; i < timestamps.size() && i < closes.size(); i++) {
+            for (int i = 0; i < timestamps.size(); i++) {
                 if (timestamps.path(i).isNumber() && closes.path(i).isNumber()) {
-                    points.add(new MarketHistoryPoint(timestamps.path(i).asLong(), closes.path(i).decimalValue()));
+                    BigDecimal open = opens.path(i).isNumber() ? opens.path(i).decimalValue() : closes.path(i).decimalValue();
+                    BigDecimal high = highs.path(i).isNumber() ? highs.path(i).decimalValue() : closes.path(i).decimalValue();
+                    BigDecimal low = lows.path(i).isNumber() ? lows.path(i).decimalValue() : closes.path(i).decimalValue();
+                    BigDecimal close = closes.path(i).decimalValue();
+                    Long volume = volumes.path(i).isNumber() ? volumes.path(i).asLong() : null;
+
+                    points.add(new MarketHistoryPoint(
+                        timestamps.path(i).asLong(),
+                        open,
+                        high,
+                        low,
+                        close,
+                        volume
+                    ));
                 }
             }
             return points;
