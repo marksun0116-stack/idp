@@ -72,9 +72,35 @@ public class TechnicalRecommendationEngine {
         : samples.size() >= 8 && winRate >= 58 ? "Medium"
         : "Low";
 
-    String directionLabel = current.direction.equals("bullish") ? "Bullish" : "Bearish";
+    // Determine direction and label
+    String directionLabel;
+    String finalDirection;
+
+    if (supported) {
+      // High/Medium confidence: use validated signal direction
+      directionLabel = current.direction.equals("bullish") ? "Bullish" : "Bearish";
+      finalDirection = current.direction;
+    } else if (!samples.isEmpty()) {
+      // Low confidence with data: infer direction from median return
+      if (medianReturn > 0) {
+        directionLabel = "Bullish";
+        finalDirection = "bullish";
+      } else if (medianReturn < 0) {
+        directionLabel = "Bearish";
+        finalDirection = "bearish";
+      } else {
+        directionLabel = "No Validated Edge";
+        finalDirection = "none";
+      }
+    } else {
+      // No data at all
+      directionLabel = "No Validated Edge";
+      finalDirection = "none";
+    }
+
     String label = supported ? directionLabel
-        : directionLabel + " not historically validated";
+        : !samples.isEmpty() ? directionLabel + " (limited validation)"
+        : directionLabel;
 
     return new TechnicalRecommendation(
         label,
@@ -85,7 +111,7 @@ public class TechnicalRecommendationEngine {
         samples.size(),
         winRate,
         median(samples),
-        current.direction,
+        finalDirection,
         similarSetups,
         current.items
     );
