@@ -60,7 +60,7 @@ public class TechnicalAnalysisService {
    */
   public static List<BigDecimal> calculateRSI(List<BigDecimal> closes, int period) {
     if (closes.size() < period + 1) {
-      return closes.stream().map(v -> null).toList();
+      return new ArrayList<>(closes.stream().map(v -> (BigDecimal) null).toList());
     }
 
     List<BigDecimal> rsi = new ArrayList<>();
@@ -116,7 +116,7 @@ public class TechnicalAnalysisService {
    */
   public static List<BigDecimal> calculateEMA(List<BigDecimal> closes, int period) {
     if (closes.size() < period) {
-      return closes.stream().map(v -> null).toList();
+      return new ArrayList<>(closes.stream().map(v -> (BigDecimal) null).toList());
     }
 
     List<BigDecimal> ema = new ArrayList<>();
@@ -275,7 +275,7 @@ public class TechnicalAnalysisService {
   public static List<BigDecimal> calculateMFI(List<BigDecimal> highs, List<BigDecimal> lows,
       List<BigDecimal> closes, List<Long> volumes, int period) {
     if (closes.size() < period + 1) {
-      return closes.stream().map(v -> null).toList();
+      return new ArrayList<>(closes.stream().map(v -> (BigDecimal) null).toList());
     }
 
     List<BigDecimal> typicalPrices = new ArrayList<>();
