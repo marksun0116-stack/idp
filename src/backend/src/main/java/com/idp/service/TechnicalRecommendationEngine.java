@@ -33,13 +33,15 @@ public class TechnicalRecommendationEngine {
           "Bullish and bearish trend inputs are both present.", current);
     }
 
-    // Find similar historical setups and calculate win rate
+    // Find similar historical setups based on indicator value ranges (not signal conclusions)
     List<Double> samples = new ArrayList<>();
     List<SimilarSetup> similarSetups = new ArrayList<>();
 
     for (int i = SCORE_START_INDEX; i <= latestIdx - DEFAULT_HORIZON; i++) {
+      if (!indicatorValuesMatch(ctx, latestIdx, i)) continue;
+
       BarScore prior = scoreBar(ctx, i);
-      if (!similarSetupMatch(current, prior)) continue;
+      if (prior == null || !current.direction.equals(prior.direction)) continue;
 
       double forwardReturn = pct(ctx.closes.get(i + DEFAULT_HORIZON), ctx.closes.get(i));
       if (!Double.isFinite(forwardReturn)) continue;
@@ -212,31 +214,55 @@ public class TechnicalRecommendationEngine {
     return null;
   }
 
-  private static boolean similarSetupMatch(BarScore current, BarScore prior) {
-    if (prior == null || !current.direction.equals(prior.direction)) return false;
+  private static boolean indicatorValuesMatch(IndicatorContext ctx, int currentIdx, int priorIdx) {
+    if (!valid(ctx.rsi.get(currentIdx)) || !valid(ctx.rsi.get(priorIdx))) {
+      return false; // Need RSI for matching
+    }
 
-    // Match on direction + signal alignment (not strict regime matching)
-    // Count matching signals between current and prior
-    int matchingSignals = 0;
-    for (Signal curSig : current.items) {
-      for (Signal priorSig : prior.items) {
-        if (curSig.indicator.equals(priorSig.indicator) && curSig.signal.equals(priorSig.signal)) {
-          matchingSignals++;
-          break;
+    BigDecimal currentRsi = ctx.rsi.get(currentIdx);
+    BigDecimal priorRsi = ctx.rsi.get(priorIdx);
+
+    // RSI must be within 15 points (e.g., 40-50 range)
+    if (Math.abs(currentRsi.doubleValue() - priorRsi.doubleValue()) > 15) {
+      return false;
+    }
+
+    // SMA relationship: Check if SMA20/SMA50 difference is similar
+    if (valid(ctx.sma20.get(currentIdx)) && valid(ctx.sma50.get(currentIdx)) &&
+        valid(ctx.sma20.get(priorIdx)) && valid(ctx.sma50.get(priorIdx))) {
+
+      // Calculate percentage difference between SMA20 and SMA50
+      double currentSmaDiff = (ctx.sma20.get(currentIdx).doubleValue() / ctx.sma50.get(currentIdx).doubleValue() - 1) * 100;
+      double priorSmaDiff = (ctx.sma20.get(priorIdx).doubleValue() / ctx.sma50.get(priorIdx).doubleValue() - 1) * 100;
+
+      // Difference in SMA relationship should be within 3% (e.g., both 1-4% apart or -2-1% apart)
+      if (Math.abs(currentSmaDiff - priorSmaDiff) > 3) {
+        return false;
+      }
+    }
+
+    // MACD histogram: Similar momentum direction and magnitude
+    if (valid(ctx.histogram.get(currentIdx)) && valid(ctx.histogram.get(priorIdx))) {
+      BigDecimal currentHist = ctx.histogram.get(currentIdx);
+      BigDecimal priorHist = ctx.histogram.get(priorIdx);
+
+      // Both should be on same side of zero (both positive or both negative)
+      if ((currentHist.compareTo(BigDecimal.ZERO) > 0) != (priorHist.compareTo(BigDecimal.ZERO) > 0)) {
+        return false;
+      }
+
+      // Magnitude should be within 50% (e.g., if current is 1.0, accept 0.5-1.5)
+      double currentHistAbs = Math.abs(currentHist.doubleValue());
+      double priorHistAbs = Math.abs(priorHist.doubleValue());
+      if (currentHistAbs > 0 && priorHistAbs > 0) {
+        double ratio = Math.max(currentHistAbs, priorHistAbs) / Math.min(currentHistAbs, priorHistAbs);
+        if (ratio > 2.0) { // Allow up to 2x difference
+          return false;
         }
       }
     }
 
-    // Need at least 2 matching signals OR both have aligned direction signals
-    if (matchingSignals >= 2) return true;
-
-    // Fallback: both agree on MA Alignment direction
-    boolean curHasMAAlignment = current.items.stream()
-        .anyMatch(s -> s.indicator.equals("MA Alignment") && s.signal.equals(current.direction.equals("bullish") ? "Buy" : "Sell"));
-    boolean priorHasMAAlignment = prior.items.stream()
-        .anyMatch(s -> s.indicator.equals("MA Alignment") && s.signal.equals(prior.direction.equals("bullish") ? "Buy" : "Sell"));
-
-    return curHasMAAlignment && priorHasMAAlignment && current.items.size() >= 2;
+    return true;
   }
 
   private static boolean valid(BigDecimal v) {
