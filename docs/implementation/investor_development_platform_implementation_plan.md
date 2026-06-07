@@ -42,6 +42,7 @@ The plan coordinates implementation work only. Product intent remains in `docs/p
 | Phase 7 — Auth and Market Data Hardening | Replace MVP shortcuts with local user auth and real strategy market data with graceful fallback. | done | Phase 6 | UI polish and demo data can proceed after contracts stabilize | CONR-user-api-001, CONR-strategy-portfolio-api-001 |
 | Phase 8 — Auth-First UX | Make login/register the default app entry while preserving explicit demo-mode access. | done | Phase 7 | None | CONR-user-api-001 |
 | Phase 9 — Investment Workspace Core | Implement owner-scoped investment accounts, holdings, and portfolio summary using live or manual prices. | done | Phase 8 | Sector cache and CSV import can follow after account/holding contract tests pass. | CONR-portfolio-api-001, INV-portfolio-ownership-001, INV-holding-cost-basis-001, INV-manual-price-001 |
+| Phase 10 — Advanced Technical Analysis | Port stock-monitor's multi-indicator analysis and historical backtesting to enrich strategy technical signals. | in_progress | Phase 9 | Each sprint can advance in parallel after indicator contract stabilizes | CONR-technical-analysis-api-001, INV-strategy-validation-001 |
 
 ## 4. User Story Plan
 

@@ -1,0 +1,131 @@
+---
+contract_id: CONR-technical-analysis-api-001
+title: "Technical Analysis API Contract"
+status: draft
+version: "0.1"
+traces:
+  - FEAT-technical-analysis-001
+  - FEAT-indicator-validation-001
+  - CON-strategy-analysis-scope-001
+---
+
+# Technical Analysis API Contract
+
+## Overview
+
+Defines the contract for retrieving multi-indicator technical analysis and historical validation data for strategy symbols.
+
+## Endpoints
+
+### GET /api/strategies/{id}/analysis/{symbol}
+
+Returns complete technical analysis for a symbol in a strategy.
+
+**Response:**
+
+```json
+{
+  "symbol": "AAPL",
+  "strategyId": 1,
+  "range": "1y",
+  "timestamp": "2026-06-07T10:30:00Z",
+
+  "indicators": {
+    "closes": [150.0, 150.5, ...],
+    "volumes": [1000000, 1100000, ...],
+    "sma20": [150.2, 150.3, ...],
+    "sma50": [149.8, 149.9, ...],
+    "bollinger": [
+      {"upper": 152.0, "middle": 150.5, "lower": 149.0},
+      ...
+    ],
+    "rsi": [65.0, 63.5, ...],
+    "macdLine": [0.5, 0.6, ...],
+    "signalLine": [0.4, 0.5, ...],
+    "histogram": [0.1, 0.1, ...],
+    "ema12": [150.1, 150.2, ...],
+    "ema26": [150.0, 150.1, ...],
+    "pctK": [75.0, 73.0, ...],
+    "pctD": [70.0, 72.0, ...],
+    "obv": [50000000, 50500000, ...],
+    "mfi": [65.0, 64.0, ...]
+  },
+
+  "recommendation": {
+    "label": "Bullish Trend",
+    "displayLabel": "Historically Bullish Trend",
+    "confidence": "Medium",
+    "strategy": "SMA Crossover (20/50)",
+    "strategyRationale": "Price above 20-SMA, 20-SMA above 50-SMA, both rising",
+    "invalidation": "Close below 50-SMA would invalidate",
+    "reason": "The detected SMA Crossover setup has 15 similar historical examples with 62% win rate",
+
+    "validation": {
+      "sampleSize": 15,
+      "winRate": 62.0,
+      "avgReturn": 3.5,
+      "medianReturn": 2.8,
+      "horizon": 20,
+      "similarSetups": [
+        {
+          "idx": 100,
+          "close": 145.0,
+          "forwardReturn": 3.2,
+          "daysAgo": 245,
+          "winRate": 62.0
+        },
+        ...
+      ]
+    },
+
+    "scorecard": {
+      "trend": "strong",
+      "momentum": "strong",
+      "volatility": "neutral",
+      "volume": "strong",
+      "composite": "strong"
+    },
+
+    "current": {
+      "direction": "bullish",
+      "strategy": {
+        "name": "SMA Crossover (20/50)",
+        "rationale": "...",
+        "invalidation": "..."
+      },
+      "regime": "trending-up",
+      "items": [
+        {
+          "id": "sma-crossover",
+          "label": "SMA Crossover",
+          "signal": "Buy",
+          "detail": "20-SMA > 50-SMA",
+          "family": "moving-average"
+        },
+        ...
+      ]
+    }
+  }
+}
+```
+
+## Data Guarantees
+
+- All indicator arrays have matching length equal to `closes.length`
+- All values are numbers (null if not available)
+- Time windows: 1d, 1w, 1mo, 3mo, 6mo, 1y, 2y, 3y, 4y, 5y
+- Historical validation uses 20-day horizon (user can request different)
+- Min 5 samples to calculate win rate (null if fewer available)
+
+## Implementation Notes
+
+- Indicator calculation uses stock-monitor's logic for consistency
+- Recommendation engine scores current setup against 5+ years of history
+- Similar setups filtered by regime compatibility and signal alignment
+- Graceful null handling for missing indicator data
+
+## Change log
+
+| Revision | Date | Status | Notes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-06-07 | draft | Initial contract defining technical analysis response shape. |
