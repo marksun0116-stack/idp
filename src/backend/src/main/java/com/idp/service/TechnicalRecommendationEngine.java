@@ -214,8 +214,29 @@ public class TechnicalRecommendationEngine {
 
   private static boolean similarSetupMatch(BarScore current, BarScore prior) {
     if (prior == null || !current.direction.equals(prior.direction)) return false;
-    if (!current.regime.equals(prior.regime)) return false;
-    return current.items.size() >= 2; // At least 2 signals for match
+
+    // Match on direction + signal alignment (not strict regime matching)
+    // Count matching signals between current and prior
+    int matchingSignals = 0;
+    for (Signal curSig : current.items) {
+      for (Signal priorSig : prior.items) {
+        if (curSig.indicator.equals(priorSig.indicator) && curSig.signal.equals(priorSig.signal)) {
+          matchingSignals++;
+          break;
+        }
+      }
+    }
+
+    // Need at least 2 matching signals OR both have aligned direction signals
+    if (matchingSignals >= 2) return true;
+
+    // Fallback: both agree on MA Alignment direction
+    boolean curHasMAAlignment = current.items.stream()
+        .anyMatch(s -> s.indicator.equals("MA Alignment") && s.signal.equals(current.direction.equals("bullish") ? "Buy" : "Sell"));
+    boolean priorHasMAAlignment = prior.items.stream()
+        .anyMatch(s -> s.indicator.equals("MA Alignment") && s.signal.equals(prior.direction.equals("bullish") ? "Buy" : "Sell"));
+
+    return curHasMAAlignment && priorHasMAAlignment && current.items.size() >= 2;
   }
 
   private static boolean valid(BigDecimal v) {
