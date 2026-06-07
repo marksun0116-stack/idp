@@ -1,6 +1,6 @@
 package com.idp.controller;
 
-import com.idp.dto.TechnicalIndicatorsResponse;
+import com.idp.dto.TechnicalAnalysisResponse;
 import com.idp.service.StrategyTechnicalAnalysisService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,17 +20,17 @@ public class StrategyAnalysisController {
   }
 
   /**
-   * Get all technical indicators for a symbol in the strategy.
+   * Get technical indicators and recommendation for a symbol in the strategy.
    * Range examples: "1d", "1w", "1mo", "3mo", "6mo", "1y", "2y", "3y", "4y", "5y"
    */
   @GetMapping("/{symbol}")
-  public TechnicalIndicatorsResponse getSymbolAnalysis(
+  public TechnicalAnalysisResponse getSymbolAnalysis(
       @PathVariable("id") Long strategyId,
       @PathVariable("symbol") String symbol,
       @RequestParam(name = "range", defaultValue = "1y") String range,
       Authentication authentication
   ) {
     // TODO: Verify user owns the strategy
-    return technicalAnalysisService.getIndicators(symbol, range);
+    return technicalAnalysisService.getAnalysis(symbol, range);
   }
 }

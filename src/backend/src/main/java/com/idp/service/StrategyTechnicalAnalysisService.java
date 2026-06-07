@@ -1,11 +1,16 @@
 package com.idp.service;
 
+import com.idp.dto.TechnicalAnalysisResponse;
 import com.idp.dto.TechnicalIndicatorsResponse;
 import com.idp.dto.TechnicalIndicatorsResponse.BollingerBandData;
+import com.idp.dto.TechnicalRecommendationResponse;
+import com.idp.dto.TechnicalRecommendationResponse.SimilarSetupData;
 import com.idp.service.MarketDataService.MarketHistoryPoint;
 import com.idp.service.TechnicalAnalysisService.BollingerBand;
 import com.idp.service.TechnicalAnalysisService.MACDResult;
 import com.idp.service.TechnicalAnalysisService.StochasticResult;
+import com.idp.service.TechnicalRecommendationEngine.IndicatorContext;
+import com.idp.service.TechnicalRecommendationEngine.TechnicalRecommendation;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -86,6 +91,55 @@ public class StrategyTechnicalAnalysisService {
         stochastic.pctD,
         obv,
         mfi
+    );
+  }
+
+  /**
+   * Get complete technical analysis including indicators and recommendation.
+   */
+  public TechnicalAnalysisResponse getAnalysis(String symbol, String range) {
+    TechnicalIndicatorsResponse indicators = getIndicators(symbol, range);
+
+    if (indicators.closes().isEmpty()) {
+      // Return empty response if no data
+      return new TechnicalAnalysisResponse(indicators, toRecommendationResponse(
+          TechnicalRecommendationEngine.buildRecommendation(
+              new IndicatorContext(List.of(), List.of(), List.of(), List.of(), List.of())
+          )
+      ));
+    }
+
+    // Build recommendation engine context from indicators
+    IndicatorContext ctx = new IndicatorContext(
+        indicators.closes(),
+        indicators.sma20(),
+        indicators.sma50(),
+        indicators.rsi(),
+        indicators.histogram()
+    );
+
+    TechnicalRecommendation recommendation = TechnicalRecommendationEngine.buildRecommendation(ctx);
+    TechnicalRecommendationResponse recResponse = toRecommendationResponse(recommendation);
+
+    return new TechnicalAnalysisResponse(indicators, recResponse);
+  }
+
+  private TechnicalRecommendationResponse toRecommendationResponse(TechnicalRecommendation rec) {
+    List<SimilarSetupData> setupData = rec.similarSetups.stream()
+        .map(s -> new SimilarSetupData(s.idx, s.close, s.forwardReturn, s.direction, s.strategy))
+        .toList();
+
+    return new TechnicalRecommendationResponse(
+        rec.label,
+        rec.confidence,
+        rec.strategy,
+        rec.reason,
+        rec.invalidation,
+        rec.sampleSize,
+        rec.winRate,
+        rec.medianReturn,
+        rec.direction,
+        setupData
     );
   }
 }
