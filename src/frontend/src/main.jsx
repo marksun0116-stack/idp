@@ -1409,9 +1409,7 @@ function PortfolioView({
                     </div>
                   </small>
                   {isExpanded && analysis && (
-                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e4e7ec' }}>
-                      <IndicatorPanel symbol={quote.symbol} indicator={analysis} compact={true} />
-                    </div>
+                    <ExpandedAnalysisPanel symbol={quote.symbol} indicator={analysis} />
                   )}
                 </article>
               );
@@ -1896,6 +1894,173 @@ function StrategyForm({ strategyForm, setStrategyForm, createStrategy }) {
       </div>
       <button className="primary" type="submit"><Plus size={17} />Create Strategy</button>
     </form>
+  );
+}
+
+function ExpandedAnalysisPanel({ symbol, indicator }) {
+  const [activeTab, setActiveTab] = useState('chart');
+
+  return (
+    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e4e7ec' }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '12px', borderBottom: '1px solid #e4e7ec' }}>
+        <button
+          type="button"
+          onClick={() => setActiveTab('chart')}
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: '8px 0',
+            fontSize: '0.85rem',
+            fontWeight: activeTab === 'chart' ? 700 : 500,
+            color: activeTab === 'chart' ? '#2563eb' : '#9facbd',
+            cursor: 'pointer',
+            borderBottom: activeTab === 'chart' ? '2px solid #2563eb' : 'none',
+            marginBottom: '-1px'
+          }}
+        >
+          Price Chart & Similar Setups
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('analysis')}
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: '8px 0',
+            fontSize: '0.85rem',
+            fontWeight: activeTab === 'analysis' ? 700 : 500,
+            color: activeTab === 'analysis' ? '#2563eb' : '#9facbd',
+            cursor: 'pointer',
+            borderBottom: activeTab === 'analysis' ? '2px solid #2563eb' : 'none',
+            marginBottom: '-1px'
+          }}
+        >
+          Recommendation Details
+        </button>
+      </div>
+
+      {activeTab === 'chart' && (
+        <TechnicalChartPanel symbol={symbol} indicator={indicator} />
+      )}
+
+      {activeTab === 'analysis' && (
+        <IndicatorPanel symbol={symbol} indicator={indicator} compact={true} />
+      )}
+    </div>
+  );
+}
+
+function TechnicalChartPanel({ symbol, indicator }) {
+  if (!indicator || !symbol) return <div style={{ fontSize: '0.85rem', color: '#667085' }}>Loading chart...</div>;
+
+  const analysis = indicator.recommendation;
+  const indicators = indicator.indicators;
+  const closes = indicators?.closes || [];
+  const similarSetups = analysis?.similarSetups || [];
+
+  if (closes.length === 0) {
+    return <div style={{ fontSize: '0.85rem', color: '#667085', padding: '20px', textAlign: 'center' }}>No price data available</div>;
+  }
+
+  const chartData = closes.map((close, idx) => {
+    const setup = similarSetups.find(s => s.idx === idx);
+    return {
+      idx,
+      price: parseFloat(close),
+      similarSetup: setup ? {
+        returnPct: setup.forwardReturn,
+        direction: setup.direction
+      } : null
+    };
+  });
+
+  const CustomDot = (props) => {
+    const { cx, cy, payload } = props;
+    if (!payload.similarSetup) return null;
+
+    const returnColor = payload.similarSetup.returnPct > 0 ? '#16a34a' : '#dc2626';
+    return (
+      <g>
+        <circle cx={cx} cy={cy} r={5} fill={returnColor} opacity={0.7} />
+        <circle cx={cx} cy={cy} r={8} fill="none" stroke={returnColor} strokeWidth={2} opacity={0.5} />
+      </g>
+    );
+  };
+
+  const minPrice = Math.min(...closes.map(v => parseFloat(v)));
+  const maxPrice = Math.max(...closes.map(v => parseFloat(v)));
+  const priceRange = maxPrice - minPrice || 1;
+
+  return (
+    <div style={{ width: '100%', height: '300px', display: 'flex', flexDirection: 'column' }}>
+      <ResponsiveContainer width="100%" height={250}>
+        <RechartsLineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e4e7ec" />
+          <XAxis
+            dataKey="idx"
+            tick={false}
+            stroke="#9facbd"
+            type="number"
+            domain={[0, chartData.length - 1]}
+          />
+          <YAxis
+            stroke="#9facbd"
+            domain={[minPrice - priceRange * 0.05, maxPrice + priceRange * 0.05]}
+            width={50}
+            tickFormatter={(v) => `$${v.toFixed(0)}`}
+          />
+          <Tooltip
+            contentStyle={{ background: '#fff', border: '1px solid #e4e7ec', borderRadius: '4px' }}
+            formatter={(value, name, props) => {
+              if (name === 'price') {
+                const setup = props.payload.similarSetup;
+                if (setup) {
+                  return [
+                    `$${parseFloat(value).toFixed(2)}`,
+                    `Price (Similar Setup +${setup.returnPct > 0 ? '+' : ''}${setup.returnPct.toFixed(2)}%)`
+                  ];
+                }
+                return [`$${parseFloat(value).toFixed(2)}`, 'Price'];
+              }
+              return [value, name];
+            }}
+          />
+          <Line
+            type="monotone"
+            dataKey="price"
+            stroke="#2563eb"
+            dot={<CustomDot />}
+            strokeWidth={2}
+            isAnimationActive={false}
+          />
+        </RechartsLineChart>
+      </ResponsiveContainer>
+
+      {similarSetups.length > 0 && (
+        <div style={{ padding: '8px 0', borderTop: '1px solid #e4e7ec', fontSize: '0.75rem', color: '#667085' }}>
+          <strong style={{ color: '#20242a' }}>Similar Setup Points:</strong>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '6px', flexWrap: 'wrap' }}>
+            {similarSetups.slice(0, 8).map((setup, idx) => (
+              <div key={idx} style={{
+                padding: '4px 8px',
+                background: setup.forwardReturn > 0 ? '#f0fdf4' : '#fef2f2',
+                border: `1px solid ${setup.forwardReturn > 0 ? '#86efac' : '#fca5a5'}`,
+                borderRadius: '3px'
+              }}>
+                <small style={{ fontWeight: 600, color: setup.forwardReturn > 0 ? '#166534' : '#991b1b' }}>
+                  {setup.forwardReturn > 0 ? '+' : ''}{setup.forwardReturn.toFixed(2)}%
+                </small>
+              </div>
+            ))}
+            {similarSetups.length > 8 && (
+              <div style={{ padding: '4px 8px', color: '#9facbd' }}>
+                +{similarSetups.length - 8} more
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
