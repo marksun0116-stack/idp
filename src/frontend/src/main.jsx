@@ -293,16 +293,16 @@ function App() {
       setStrategyQuotes(quotes);
       setStrategyHistory(history);
 
-      // Pre-load indicators for all symbols
+      // Pre-load technical analysis for all symbols
       const allSymbols = quotes.symbols || [];
       const newSymbolIndicators = { ...symbolIndicators };
       for (const symbol of allSymbols) {
         if (!newSymbolIndicators[symbol.symbol]) {
           try {
-            const indicators = await api(`/api/strategies/${strategyId}/indicators?symbol=${encodeURIComponent(symbol.symbol)}&range=1y`);
-            newSymbolIndicators[symbol.symbol] = indicators;
+            const analysis = await api(`/api/strategies/${strategyId}/analysis/${encodeURIComponent(symbol.symbol)}?range=1y`);
+            newSymbolIndicators[symbol.symbol] = analysis;
           } catch (e) {
-            // Skip if indicator fetch fails for a symbol
+            // Skip if analysis fetch fails for a symbol
           }
         }
       }
@@ -310,7 +310,7 @@ function App() {
 
       const firstSymbol = detail.trackedSymbols?.[0]?.symbol || quotes.symbols?.[0]?.symbol;
       setIndicator(firstSymbol
-        ? await api(`/api/strategies/${strategyId}/indicators?symbol=${encodeURIComponent(firstSymbol)}&range=1y`)
+        ? await api(`/api/strategies/${strategyId}/analysis/${encodeURIComponent(firstSymbol)}?range=1y`)
         : null);
     } catch (error) {
       setNotice(error.message);
@@ -325,8 +325,8 @@ function App() {
     }
     try {
       if (selectedStrategyId && !symbolIndicators[symbol]) {
-        const indicators = await api(`/api/strategies/${selectedStrategyId}/indicators?symbol=${encodeURIComponent(symbol)}&range=1y`);
-        setSymbolIndicators({ ...symbolIndicators, [symbol]: indicators });
+        const analysis = await api(`/api/strategies/${selectedStrategyId}/analysis/${encodeURIComponent(symbol)}?range=1y`);
+        setSymbolIndicators({ ...symbolIndicators, [symbol]: analysis });
       }
       setExpandedIndicatorSymbol(symbol);
     } catch (error) {
@@ -1355,10 +1355,11 @@ function PortfolioView({
               const isPositive = change >= 0;
               const price = quote.lastPrice || quote.price || 0;
               const volume = quote.volume || 0;
-              const indicators = symbolIndicators[quote.symbol];
+              const analysis = symbolIndicators[quote.symbol];
               const isExpanded = expandedIndicatorSymbol === quote.symbol;
-              const trend = indicators?.trendVerdict || 'N/A';
-              const trendColor = trend.toLowerCase().includes('bearish') ? '#dc2626' : trend.toLowerCase().includes('bullish') ? '#16a34a' : '#9facbd';
+              const trendLabel = analysis?.recommendation?.label || 'No Data';
+              const confidence = analysis?.recommendation?.confidence || 'Low';
+              const trendColor = trendLabel.toLowerCase().includes('bearish') ? '#dc2626' : trendLabel.toLowerCase().includes('bullish') ? '#16a34a' : '#9facbd';
 
               return (
                 <article className="quote" key={quote.symbol} style={{ overflow: 'hidden' }}>
@@ -1393,7 +1394,9 @@ function PortfolioView({
                       {volume ? ` | Vol: ${(volume / 1e6).toFixed(1)}M` : ''}
                     </span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '8px', flexShrink: 0 }}>
-                      <span style={{ color: trendColor, fontWeight: 700, minWidth: '55px', textAlign: 'right' }}>{trend.substring(0, 7)}</span>
+                      <span style={{ color: trendColor, fontWeight: 600, minWidth: '75px', textAlign: 'right', fontSize: '0.75rem' }}>
+                        {confidence} • {trendLabel.substring(0, 8)}
+                      </span>
                       <button
                         className={`expandIndicatorButton ${isExpanded ? 'expanded' : ''}`}
                         type="button"
@@ -1405,9 +1408,9 @@ function PortfolioView({
                       </button>
                     </div>
                   </small>
-                  {isExpanded && indicators && (
+                  {isExpanded && analysis && (
                     <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e4e7ec' }}>
-                      <IndicatorPanel symbol={quote.symbol} indicator={indicators} compact={true} />
+                      <IndicatorPanel symbol={quote.symbol} indicator={analysis} compact={true} />
                     </div>
                   )}
                 </article>
@@ -1899,13 +1902,23 @@ function StrategyForm({ strategyForm, setStrategyForm, createStrategy }) {
 function IndicatorPanel({ symbol, indicator, compact = false }) {
   if (!indicator || !symbol) return <div style={{ fontSize: '0.85rem', color: '#667085' }}>Select a symbol for indicators</div>;
 
-  const rsi = indicator.rsi14 || 0;
-  const rsiStatus = rsi > 70 ? 'Overbought' : rsi < 30 ? 'Oversold' : 'Neutral';
-  const rsiColor = rsi > 70 ? '#dc2626' : rsi < 30 ? '#16a34a' : '#9facbd';
+  const analysis = indicator.recommendation;
+  const indicators = indicator.indicators;
 
-  const trendVerdict = indicator.trendVerdict || 'No trend data';
-  const confidence = indicator.confidence || 'N/A';
-  const trendColor = trendVerdict.toLowerCase().includes('bearish') ? '#dc2626' : trendVerdict.toLowerCase().includes('bullish') ? '#16a34a' : '#9facbd';
+  let rsi = 0;
+  let rsiStatus = 'N/A';
+  let rsiColor = '#9facbd';
+
+  if (indicators?.rsi && indicators.rsi.length > 0) {
+    const rsiValues = indicators.rsi.filter(v => v !== null);
+    rsi = rsiValues.length > 0 ? rsiValues[rsiValues.length - 1] : 0;
+    rsiStatus = rsi > 70 ? 'Overbought' : rsi < 30 ? 'Oversold' : 'Neutral';
+    rsiColor = rsi > 70 ? '#dc2626' : rsi < 30 ? '#16a34a' : '#9facbd';
+  }
+
+  const trendLabel = analysis?.label || 'No Validated Edge';
+  const confidence = analysis?.confidence || 'Low';
+  const trendColor = trendLabel.toLowerCase().includes('bearish') ? '#dc2626' : trendLabel.toLowerCase().includes('bullish') ? '#16a34a' : '#9facbd';
 
   if (compact) {
     return (
@@ -1915,12 +1928,14 @@ function IndicatorPanel({ symbol, indicator, compact = false }) {
           <strong style={{ color: rsiColor }}>{rsi.toFixed(1)} — {rsiStatus}</strong>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span>Trend:</span>
-          <strong style={{ color: trendColor }}>{trendVerdict} (Conf: {confidence})</strong>
+          <span>Recommendation:</span>
+          <strong style={{ color: trendColor, fontSize: '0.8rem' }}>
+            {trendLabel} ({confidence})
+          </strong>
         </div>
-        {indicator.sampleSize && (
+        {analysis?.sampleSize && (
           <small style={{ color: '#9facbd', marginTop: '4px' }}>
-            {indicator.sampleSize} days • {indicator.range}
+            {analysis.sampleSize} similar setups • {(analysis.winRate || 0).toFixed(0)}% win rate
           </small>
         )}
       </div>
@@ -1931,22 +1946,36 @@ function IndicatorPanel({ symbol, indicator, compact = false }) {
     <div style={{ fontSize: '0.8rem' }}>
       <div style={{ marginBottom: '8px', paddingBottom: '6px', borderBottom: '1px solid #e4e7ec' }}>
         <strong style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span>Recommendation</span>
+          <span style={{ color: trendColor, fontWeight: 700 }}>{trendLabel}</span>
+        </strong>
+        <small style={{ color: '#667085' }}>Confidence: {confidence}</small>
+      </div>
+      <div style={{ marginBottom: '8px', paddingBottom: '6px', borderBottom: '1px solid #e4e7ec' }}>
+        <strong style={{ display: 'flex', justifyContent: 'space-between' }}>
           <span>RSI(14)</span>
           <span style={{ color: rsiColor, fontWeight: 700 }}>{rsi.toFixed(1)}</span>
         </strong>
         <small style={{ color: '#667085' }}>{rsiStatus}</small>
       </div>
-      <div style={{ marginBottom: '8px', paddingBottom: '6px', borderBottom: '1px solid #e4e7ec' }}>
-        <strong style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span>Trend</span>
-          <span style={{ color: trendColor, fontWeight: 700 }}>{trendVerdict.toUpperCase()}</span>
-        </strong>
-        <small style={{ color: '#667085' }}>Confidence: {confidence}</small>
-      </div>
-      {indicator.sampleSize && (
-        <div style={{ marginTop: '6px', padding: '6px', background: '#fafbfc', borderLeft: '3px solid #9facbd', borderRadius: '3px' }}>
+      {analysis?.sampleSize && analysis.sampleSize > 0 && (
+        <div style={{ marginTop: '6px', padding: '6px', background: '#fafbfc', borderLeft: '3px solid #0f766e', borderRadius: '3px' }}>
+          <small style={{ color: '#4b5563', display: 'block', marginBottom: '3px' }}>
+            <strong>{analysis.sampleSize}</strong> similar setups found
+          </small>
           <small style={{ color: '#4b5563' }}>
-            Based on {indicator.sampleSize} trading days (Range: {indicator.range})
+            Win Rate: <strong>{(analysis.winRate || 0).toFixed(1)}%</strong> |
+            Median Return: <strong>{(analysis.medianReturn || 0).toFixed(2)}%</strong>
+          </small>
+        </div>
+      )}
+      {analysis?.strategy && analysis.strategy !== 'N/A' && (
+        <div style={{ marginTop: '6px', padding: '6px', background: '#f0f9ff', borderLeft: '3px solid #2563eb', borderRadius: '3px' }}>
+          <small style={{ color: '#1e40af', display: 'block' }}>
+            <strong>Strategy:</strong> {analysis.strategy}
+          </small>
+          <small style={{ color: '#1e40af', display: 'block', marginTop: '2px' }}>
+            {analysis.reason}
           </small>
         </div>
       )}
