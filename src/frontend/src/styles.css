@@ -633,23 +633,31 @@ textarea {
   width: 30px;
 }
 
-.symbolActionButton.indicatorIcon {
+.expandIndicatorButton {
   aspect-ratio: 1;
-  background: #f0f4f8;
+  background: transparent;
   border: 1px solid #d7dce2;
-  color: #526071;
+  border-radius: 4px;
+  color: #667085;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  width: 24px;
+  height: 24px;
   padding: 0;
-  width: 30px;
-  transition: all 200ms;
+  transition: all 150ms;
 }
 
-.symbolActionButton.indicatorIcon:hover {
-  background: #e4eaf2;
+.expandIndicatorButton:hover {
+  background: #f0f4f8;
   border-color: #b8c5d0;
   color: #344054;
 }
 
-.symbolActionButton.indicatorIcon.active {
+.expandIndicatorButton.expanded {
   background: #e4edff;
   border-color: #6b9ff7;
   color: #2563eb;

@@ -95,7 +95,8 @@ function App() {
   const [strategyHistory, setStrategyHistory] = useState(null);
   const [selectedHistorySymbol, setSelectedHistorySymbol] = useState('');
   const [indicator, setIndicator] = useState(null);
-  const [selectedIndicatorSymbol, setSelectedIndicatorSymbol] = useState(null);
+  const [expandedIndicatorSymbol, setExpandedIndicatorSymbol] = useState(null);
+  const [symbolIndicators, setSymbolIndicators] = useState({});
   const [publicProfile, setPublicProfile] = useState(null);
   const [portfolioSummary, setPortfolioSummary] = useState(null);
   const [decisionForm, setDecisionForm] = useState(emptyDecision);
@@ -291,11 +292,23 @@ function App() {
       const history = await api(`/api/strategies/${strategyId}/history?range=${encodeURIComponent(chartRange)}`);
       setStrategyQuotes(quotes);
       setStrategyHistory(history);
-      const firstSymbol = detail.trackedSymbols?.[0]?.symbol || quotes.symbols?.[0]?.symbol;
-      if (firstSymbol) {
-        const indicators = await api(`/api/strategies/${strategyId}/indicators?symbol=${firstSymbol}&range=1M`);
-        setIndicator(indicators);
+
+      // Pre-load indicators for all symbols
+      const allSymbols = quotes.symbols || [];
+      const newSymbolIndicators = { ...symbolIndicators };
+      for (const symbol of allSymbols) {
+        if (!newSymbolIndicators[symbol.symbol]) {
+          try {
+            const indicators = await api(`/api/strategies/${strategyId}/indicators?symbol=${encodeURIComponent(symbol.symbol)}&range=1y`);
+            newSymbolIndicators[symbol.symbol] = indicators;
+          } catch (e) {
+            // Skip if indicator fetch fails for a symbol
+          }
+        }
       }
+      setSymbolIndicators(newSymbolIndicators);
+
+      const firstSymbol = detail.trackedSymbols?.[0]?.symbol || quotes.symbols?.[0]?.symbol;
       setIndicator(firstSymbol
         ? await api(`/api/strategies/${strategyId}/indicators?symbol=${encodeURIComponent(firstSymbol)}&range=1y`)
         : null);
@@ -304,14 +317,18 @@ function App() {
     }
   }
 
-  async function loadSymbolIndicators(symbol) {
+  async function toggleSymbolIndicators(symbol) {
     setNotice('');
+    if (expandedIndicatorSymbol === symbol) {
+      setExpandedIndicatorSymbol(null);
+      return;
+    }
     try {
-      if (selectedStrategyId) {
+      if (selectedStrategyId && !symbolIndicators[symbol]) {
         const indicators = await api(`/api/strategies/${selectedStrategyId}/indicators?symbol=${encodeURIComponent(symbol)}&range=1y`);
-        setIndicator(indicators);
-        setSelectedIndicatorSymbol(symbol);
+        setSymbolIndicators({ ...symbolIndicators, [symbol]: indicators });
       }
+      setExpandedIndicatorSymbol(symbol);
     } catch (error) {
       setNotice(error.message);
     }
@@ -636,9 +653,9 @@ function App() {
               strategyHistory={strategyHistory}
               selectedHistorySymbol={selectedHistorySymbol}
               setSelectedHistorySymbol={setSelectedHistorySymbol}
-              indicator={indicator}
-              selectedIndicatorSymbol={selectedIndicatorSymbol}
-              loadSymbolIndicators={loadSymbolIndicators}
+              expandedIndicatorSymbol={expandedIndicatorSymbol}
+              toggleSymbolIndicators={toggleSymbolIndicators}
+              symbolIndicators={symbolIndicators}
               chartRange={chartRange}
               setChartRange={setChartRange}
               showStrategyForm={showStrategyForm}
@@ -1216,9 +1233,9 @@ function PortfolioView({
   strategyHistory,
   selectedHistorySymbol,
   setSelectedHistorySymbol,
-  indicator,
-  selectedIndicatorSymbol,
-  loadSymbolIndicators,
+  expandedIndicatorSymbol,
+  toggleSymbolIndicators,
+  symbolIndicators,
   chartRange,
   setChartRange,
   showStrategyForm,
@@ -1338,8 +1355,13 @@ function PortfolioView({
               const isPositive = change >= 0;
               const price = quote.lastPrice || quote.price || 0;
               const volume = quote.volume || 0;
+              const indicators = symbolIndicators[quote.symbol];
+              const isExpanded = expandedIndicatorSymbol === quote.symbol;
+              const trend = indicators?.trendVerdict || 'N/A';
+              const trendColor = trend.toLowerCase().includes('bearish') ? '#dc2626' : trend.toLowerCase().includes('bullish') ? '#16a34a' : '#9facbd';
+
               return (
-                <article className="quote" key={quote.symbol}>
+                <article className="quote" key={quote.symbol} style={{ overflow: 'hidden' }}>
                   <div className="symbolQuoteHeader">
                     <div className="symbolQuoteMain">
                       <strong>{quote.symbol}</strong>
@@ -1350,15 +1372,6 @@ function PortfolioView({
                         {signedNumber(changePercent)}%
                       </span>
                       <div className="symbolActions">
-                        <button
-                          className={`symbolActionButton indicatorIcon ${selectedIndicatorSymbol === quote.symbol ? 'active' : ''}`}
-                          type="button"
-                          title={`View technical indicators for ${quote.symbol}`}
-                          aria-label={`View technical indicators for ${quote.symbol}`}
-                          onClick={() => loadSymbolIndicators(quote.symbol)}
-                        >
-                          <ShieldCheck size={17} />
-                        </button>
                         {quote.trackingStatus === 'watch' ? (
                           <>
                             <button className="symbolActionButton buy" type="button" onClick={() => startSymbolAction('buy', quote.symbol)}>Buy</button>
@@ -1372,12 +1385,31 @@ function PortfolioView({
                       </div>
                     </div>
                   </div>
-                  <small style={{ color: '#667085', fontSize: '0.75rem' }}>
-                    <span className="badge" style={{ marginRight: '6px' }}>{quote.trackingStatus === 'owned' ? 'Owned' : 'Watch'}</span>
-                    {quote.trackingStatus === 'owned' && quote.quantity ? `${Number(quote.quantity).toLocaleString()} shares | ` : ''}
-                    Change: {signedCurrency(change)}
-                    {volume ? ` | Vol: ${(volume / 1e6).toFixed(1)}M` : ''}
+                  <small style={{ color: '#667085', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>
+                      <span className="badge" style={{ marginRight: '6px' }}>{quote.trackingStatus === 'owned' ? 'Owned' : 'Watch'}</span>
+                      {quote.trackingStatus === 'owned' && quote.quantity ? `${Number(quote.quantity).toLocaleString()} shares | ` : ''}
+                      Change: {signedCurrency(change)}
+                      {volume ? ` | Vol: ${(volume / 1e6).toFixed(1)}M` : ''}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '8px', flexShrink: 0 }}>
+                      <span style={{ color: trendColor, fontWeight: 700, minWidth: '55px', textAlign: 'right' }}>{trend.substring(0, 7)}</span>
+                      <button
+                        className={`expandIndicatorButton ${isExpanded ? 'expanded' : ''}`}
+                        type="button"
+                        title={`${isExpanded ? 'Hide' : 'Show'} technical analysis for ${quote.symbol}`}
+                        aria-label={`${isExpanded ? 'Hide' : 'Show'} technical analysis for ${quote.symbol}`}
+                        onClick={() => toggleSymbolIndicators(quote.symbol)}
+                      >
+                        {isExpanded ? '−' : '+'}
+                      </button>
+                    </div>
                   </small>
+                  {isExpanded && indicators && (
+                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e4e7ec' }}>
+                      <IndicatorPanel symbol={quote.symbol} indicator={indicators} compact={true} />
+                    </div>
+                  )}
                 </article>
               );
             })}
@@ -1391,11 +1423,6 @@ function PortfolioView({
         </Panel>
         <Panel title="Asset Allocation" icon={<BarChart3 />}>
           <AllocationChart strategyQuotes={strategyQuotes} />
-        </Panel>
-      </section>
-      <section className="workspaceGrid">
-        <Panel title={`Technical Indicators${selectedIndicatorSymbol ? ` - ${selectedIndicatorSymbol}` : ''}`} icon={<ShieldCheck />}>
-          <IndicatorPanel symbol={selectedIndicatorSymbol} indicator={indicator} />
         </Panel>
       </section>
       <section className="workspaceGrid">
@@ -1869,7 +1896,7 @@ function StrategyForm({ strategyForm, setStrategyForm, createStrategy }) {
   );
 }
 
-function IndicatorPanel({ symbol, indicator }) {
+function IndicatorPanel({ symbol, indicator, compact = false }) {
   if (!indicator || !symbol) return <div style={{ fontSize: '0.85rem', color: '#667085' }}>Select a symbol for indicators</div>;
 
   const rsi = indicator.rsi14 || 0;
@@ -1879,6 +1906,26 @@ function IndicatorPanel({ symbol, indicator }) {
   const trendVerdict = indicator.trendVerdict || 'No trend data';
   const confidence = indicator.confidence || 'N/A';
   const trendColor = trendVerdict.toLowerCase().includes('bearish') ? '#dc2626' : trendVerdict.toLowerCase().includes('bullish') ? '#16a34a' : '#9facbd';
+
+  if (compact) {
+    return (
+      <div style={{ fontSize: '0.75rem', display: 'grid', gap: '8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span>RSI(14):</span>
+          <strong style={{ color: rsiColor }}>{rsi.toFixed(1)} — {rsiStatus}</strong>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span>Trend:</span>
+          <strong style={{ color: trendColor }}>{trendVerdict} (Conf: {confidence})</strong>
+        </div>
+        {indicator.sampleSize && (
+          <small style={{ color: '#9facbd', marginTop: '4px' }}>
+            {indicator.sampleSize} days • {indicator.range}
+          </small>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div style={{ fontSize: '0.8rem' }}>
