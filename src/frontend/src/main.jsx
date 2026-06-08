@@ -422,7 +422,7 @@ function App() {
         });
         setNotice('Watch symbol added.');
       } else {
-        await api(`/api/strategies/${selectedStrategyId}/transactions`, {
+        const response = await api(`/api/strategies/${selectedStrategyId}/transactions`, {
           method: 'POST',
           body: JSON.stringify({
             ticker: symbolForm.symbol.toUpperCase(),
@@ -432,6 +432,29 @@ function App() {
             executedAt: new Date().toISOString()
           })
         });
+
+        // Show AUTO decision capture modal for strategy transactions
+        // Backend already created the decision with real-time price
+        setPendingDecisionData({
+          symbol: symbolForm.symbol.toUpperCase(),
+          action: symbolForm.action === 'buy' ? 'BUY' : 'SELL',
+          shares: Number(symbolForm.quantity),
+          price: response?.price || null, // System-determined price
+          transactionDate: new Date().toISOString().split('T')[0],
+          isAuto: true // Mark as AUTO decision (system price, locked)
+        });
+        setShowDecisionCaptureModal(true);
+        setDecisionCaptureForm({
+          thesis: '',
+          evidence: '',
+          risks: '',
+          comments: '',
+          thesisChecked: [],
+          evidenceChecked: [],
+          risksChecked: [],
+          exitCriteria: []
+        });
+
         setNotice(`${labelize(symbolForm.action)} transaction recorded.`);
       }
       setSymbolForm({ action: symbolForm.action, symbol: '', note: '', tags: '', visibility: 'private', quantity: '' });
@@ -758,7 +781,7 @@ function App() {
         pendingDecision={pendingDecisionData}
         formData={decisionCaptureForm}
         onFormChange={setDecisionCaptureForm}
-        onSubmit={async (decision) => {
+        onSubmit={async (decision, isAutoDecision) => {
           setLoading(true);
           try {
             const payload = {
@@ -772,7 +795,10 @@ function App() {
               risks: decision.risks || null,
               comments: decision.comments || null
             };
-            const decisionResponse = await api('/api/decisions/manual', {
+
+            // Route to appropriate endpoint based on decision source
+            const endpoint = isAutoDecision ? '/api/decisions/auto' : '/api/decisions/manual';
+            const decisionResponse = await api(endpoint, {
               method: 'POST',
               body: JSON.stringify(payload)
             });
@@ -2799,6 +2825,7 @@ function DecisionCaptureModal({
   if (!isOpen || !pendingDecision) return null;
 
   const transactionTitle = `${pendingDecision.action} ${pendingDecision.shares} shares of ${pendingDecision.symbol} at $${pendingDecision.price?.toFixed(2) || '—'}`;
+  const isAutoDecision = pendingDecision.isAuto;
 
   const handleCheckChange = (category, index) => {
     const key = `${category}Checked`;
@@ -2828,13 +2855,16 @@ function DecisionCaptureModal({
     const risks = combinedText('risks', risksSuggestions);
     const comments = formData.comments || '';
 
-    await onSubmit({
+    const decisionData = {
       ...pendingDecision,
       thesis,
       evidence,
       risks,
       comments
-    });
+    };
+
+    // Add flag for AUTO vs MANUAL to onSubmit handler
+    await onSubmit(decisionData, isAutoDecision);
   };
 
   return (
@@ -2848,6 +2878,11 @@ function DecisionCaptureModal({
         <div className="modal-body">
           <div className="decision-summary">
             <strong>{transactionTitle}</strong>
+            {isAutoDecision && (
+              <div style={{ fontSize: '12px', marginTop: '6px', color: '#13a79a', fontStyle: 'italic' }}>
+                Price locked (real-time market price)
+              </div>
+            )}
           </div>
 
           <form onSubmit={handleSubmitDecision} className="decision-form">
