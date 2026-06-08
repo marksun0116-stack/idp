@@ -2,8 +2,8 @@
 plan_id: PLAN-decision-journal-001
 title: "Decision Journal Implementation Plan"
 status: in_progress
-version: "0.5"
-last_updated: 2026-06-07
+version: "0.6"
+last_updated: 2026-06-08
 owner: "IDP Product Team"
 ---
 
@@ -382,7 +382,7 @@ If user clicks "Add Details":
 | US-DJL-405 | Wire modal to Strategy section execution flows | 1d | ✅ Done |
 | US-DJL-406 | Add optional field toggle + local storage for drafts | 1d | 🟡 Deferred |
 
-**Phase 4 Total: 8 days — 87% COMPLETE (7 of 8 days done)**
+**Phase 4 Total: 8 days — ✅ COMPLETE**
 
 **Completed Features:**
 
@@ -560,7 +560,8 @@ Optimized with parallelization:
 
 | Version | Date | Status | Notes |
 |---------|------|--------|-------|
-| 0.5 | 2026-06-07 | In Progress | Phase 4 nearly complete (7 of 8 days, 87%). Exit criteria input added. Strategy execution wired to AUTO decision modal. MANUAL vs AUTO routing implemented. Backend/frontend fully integrated. |
+| 0.6 | 2026-06-08 | In Progress | Phase 4 complete (100%). US-DJL-406 finished: local storage draft persistence + optional field toggle. Drafts auto-save (500ms debounce) and recover on modal reopen. Optional fields collapsible. Phase 5 starting: Decision Journal Timeline view. |
+| 0.5 | 2026-06-07 | Complete | Phase 4 nearly complete (7 of 8 days, 87%). Exit criteria input added. Strategy execution wired to AUTO decision modal. MANUAL vs AUTO routing implemented. Backend/frontend fully integrated. |
 | 0.4 | 2026-06-07 | In Progress | Phase 4 in progress (4 of 8 days). DecisionCaptureModal component built and wired to addHolding (BUY) and deleteHolding (SELL). Modal shows suggestions + custom text for thesis/evidence/risks. Responsive UI with animations. |
 | 0.3 | 2026-06-07 | In Progress | Phase 1, 2 & 3 complete (20 days). StrategyPortfolioService wired to appendTransaction → createAutoDecision. Real-time prices locked (immutable). Ready for Phase 4 frontend. |
 | 0.2 | 2026-06-07 | In Progress | Phase 1 & 2 complete (26 days). DecisionSource enum supports MANUAL/AUTO distinction. PortfolioService wired to capture BUY/SELL. All tests passing. |
