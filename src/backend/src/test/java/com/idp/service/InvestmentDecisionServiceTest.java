@@ -168,6 +168,7 @@ class InvestmentDecisionServiceTest {
         assertEquals(DecisionStatus.CLOSED, closed.getStatus());
         assertEquals(new BigDecimal("165.00"), closed.getExitPrice());
         assertEquals(new BigDecimal("3000.00"), closed.getExitPnl());
+        assertEquals("target_hit", closed.getCloseReason());
         assertNotNull(closed.getClosedAt());
         verify(decisionRepository, times(1)).save(any());
     }
@@ -188,6 +189,69 @@ class InvestmentDecisionServiceTest {
         assertEquals(new BigDecimal("165.00"), triggered.getTriggeredPrice());
         assertNotNull(triggered.getTriggeredAt());
         verify(alertRepository, times(1)).save(any());
+    }
+
+    @Test
+    void testCloseDecision_MarksClosed_WithNullReason() {
+        // Arrange
+        InvestmentDecision decision = new InvestmentDecision();
+        decision.setStatus(DecisionStatus.ACTIVE);
+        when(decisionRepository.findById(1L)).thenReturn(Optional.of(decision));
+        when(alertRepository.findByDecisionId(1L)).thenReturn(java.util.List.of());
+        when(decisionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        InvestmentDecision closed = service.closeDecision(
+            1L, new BigDecimal("100.00"), new BigDecimal("-500.00"), null);
+
+        // Assert
+        assertEquals(DecisionStatus.CLOSED, closed.getStatus());
+        assertNull(closed.getCloseReason());
+    }
+
+    @Test
+    void testCloseDecision_MarksAlertsClosed() {
+        // Arrange
+        InvestmentDecision decision = new InvestmentDecision();
+        decision.setStatus(DecisionStatus.ACTIVE);
+        InvestmentDecisionAlert alert = new InvestmentDecisionAlert();
+        alert.setStatus(AlertStatus.PENDING);
+        when(decisionRepository.findById(1L)).thenReturn(Optional.of(decision));
+        when(alertRepository.findByDecisionId(1L)).thenReturn(java.util.List.of(alert));
+        when(decisionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(alertRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        InvestmentDecision closed = service.closeDecision(
+            1L, new BigDecimal("100.00"), new BigDecimal("500.00"), "stop_loss");
+
+        // Assert
+        assertEquals(DecisionStatus.CLOSED, closed.getStatus());
+        assertEquals(AlertStatus.CLOSED, alert.getStatus());
+        verify(alertRepository, times(1)).save(alert);
+    }
+
+    @Test
+    void testEditDecision_TracksMultipleFields() {
+        // Arrange
+        InvestmentDecision decision = new InvestmentDecision();
+        decision.setStatus(DecisionStatus.ACTIVE);
+        decision.setThesis("Old thesis");
+        decision.setEvidence("Old evidence");
+        decision.setRisks("Old risks");
+        when(decisionRepository.findById(1L)).thenReturn(Optional.of(decision));
+        when(decisionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(editRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        service.editDecision(1L, "New thesis", "New evidence", "New risks", "New comments");
+
+        // Assert
+        assertEquals("New thesis", decision.getThesis());
+        assertEquals("New evidence", decision.getEvidence());
+        assertEquals("New risks", decision.getRisks());
+        assertEquals("New comments", decision.getComments());
+        verify(editRepository, times(4)).save(any());
     }
 
     @Test
