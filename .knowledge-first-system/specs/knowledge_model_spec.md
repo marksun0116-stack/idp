@@ -51,6 +51,19 @@ This specification defines:
 | `knowledge/specs/` | **`FEAT-*`** | Feature specs with bindings to the above |
 | `knowledge/catalog.yml` | Index | ID → file path for all primitives |
 
+### Multi-repo workspaces
+
+When a workspace contains multiple repositories, KFS artifacts are organized by ownership:
+
+| Ownership level | Recommended location | Role |
+| --- | --- | --- |
+| Workspace/program knowledge | Program or governance repo `knowledge/` and `docs/` | Cross-repo decisions, shared constraints, shared contracts, workspace implementation plans |
+| Shared-service knowledge | Shared-service repo `knowledge/` and `docs/`, or program/governance repo when the service repo does not yet carry KFS | Service-owned behavior, data ownership, service-local tests and runtime docs |
+| Consumer knowledge | Consumer repo `knowledge/` and `docs/` | Consumer adapter behavior, local user-facing behavior, local tests |
+| Mirrored contracts | Consumer repo `knowledge/contracts/` when needed | References the owning contract/version; does not redefine incompatible shape |
+
+One repo must be named as owner for every shared `CONR-*`, `DEC-*`, and cross-repo `CON-*`. Consumers may mirror or reference the owning primitive, but must not silently fork it. Workspace-level implementation plans live in the program/governance repo.
+
 ### Derived (optional tooling)
 
 - **Knowledge graph** — nodes and edges extracted from YAML and doc links for trace queries and CI.
@@ -134,6 +147,14 @@ Constraint / Invariant → Spec → HLD → plan → code → tests
 
 **Meaning:** Product and architecture direction inform **decisions** and **design**. **Primitives** bind **features**; implementation plans sequence work into ordered and parallelizable slices; implementation and tests must remain traceable to **`FEAT-*`**, **`INV-*`**, **`CON-*`**, and **`CONR-*`**.
 
+For multi-repo workspaces, the same flow applies across repo boundaries:
+
+```text
+Workspace DEC / CON / CONR -> shared-service plan + implementation -> consumer adapter plan + implementation -> per-repo tests
+```
+
+Cross-repo work must name the contract owner and the consumer repos in the implementation plan. Validation is complete only when the owning knowledge validates and the relevant per-repo tests have been run or explicitly recorded as not run.
+
 ---
 
 ## 9. Validation (targets for local scripts and CI)
@@ -191,3 +212,4 @@ Specifications under **`.knowledge-first-system/specs/`** (including this file) 
 | 1.2 | 2026-05-11 | approved | — | Terminal change log; removed duplicate Document version footer. |
 | 1.3 | 2026-05-12 | approved | — | **`docs/`** paths documented as conventional; guides-only template may omit empty tree (**README**). |
 | 1.4 | 2026-06-05 | approved | 1.3 | Added **`docs/implementation/`** as the lightweight phase/story implementation planning layer. |
+| 1.5 | 2026-06-07 | approved | 1.4 | Added generic multi-repo workspace ownership, contract-owner, and cross-repo validation guidance. |

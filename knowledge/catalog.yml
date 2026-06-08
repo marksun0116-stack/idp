@@ -1,5 +1,7 @@
 - id: FEAT-stock-monitor-001
   path: knowledge/specs/FEAT-stock-monitor-001.yml
+- id: FEAT-shared-finance-service-001
+  path: knowledge/specs/FEAT-shared-finance-service-001.yml
 - id: FEAT-live-quote-widget-001
   path: knowledge/specs/FEAT-live-quote-widget-001.yml
 - id: FEAT-heatmap-widget-001
@@ -28,6 +30,8 @@
   path: knowledge/constraints/CON-intraday-baseline-001.yml
 - id: CON-technical-signals-001
   path: knowledge/constraints/CON-technical-signals-001.yml
+- id: CON-finance-cache-001
+  path: knowledge/constraints/CON-finance-cache-001.yml
 - id: INV-watchlist-ownership-001
   path: knowledge/invariants/INV-watchlist-ownership-001.yml
 - id: INV-heatmap-dedup-001
@@ -40,6 +44,8 @@
   path: knowledge/decisions/DEC-tech-stack-001.yml
 - id: DEC-chart-library-001
   path: knowledge/decisions/DEC-chart-library-001.yml
+- id: DEC-shared-finance-service-001
+  path: knowledge/decisions/DEC-shared-finance-service-001.yml
 - id: CONR-user-api-001
   path: knowledge/contracts/CONR-user-api-001.yml
 - id: CONR-watchlist-api-001
@@ -54,6 +60,14 @@
   path: knowledge/contracts/CONR-market-movers-api-001.yml
 - id: CONR-news-api-001
   path: knowledge/contracts/CONR-news-api-001.yml
+- id: CONR-finance-service-api-001
+  path: knowledge/contracts/CONR-finance-service-api-001.yml
+- id: INV-indicator-accuracy-001
+  path: knowledge/invariants/INV-indicator-accuracy-001.yml
+- id: INV-strategy-validation-001
+  path: knowledge/invariants/INV-strategy-validation-001.yml
+- id: CONR-technical-analysis-api-001
+  path: knowledge/contracts/CONR-technical-analysis-api-001.yml
 # Mobile
 - id: DEC-mobile-pause-swiftui-001
   path: knowledge/decisions/DEC-mobile-pause-swiftui-001.yml

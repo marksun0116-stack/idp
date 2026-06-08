@@ -1074,14 +1074,28 @@ function PriceChart({ strategyHistory, strategyQuotes, selectedHistorySymbol, se
   }
 
   const ranges = ['1w', '1mo', '3mo', '6mo', '1y'];
-  const chartData = (showingStrategy ? performance : selectedSeries.data).map(point => ({
-    date: new Date(point.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    timestamp: point.timestamp,
-    value: parseFloat(showingStrategy ? point.value : point.close) || 0,
-    cash: showingStrategy ? parseFloat(point.cash) || 0 : null,
-    holdingsValue: showingStrategy ? parseFloat(point.holdingsValue) || 0 : null,
-    returnPct: showingStrategy ? parseFloat(point.returnPct) || 0 : null
-  }));
+  const rawData = showingStrategy ? performance : selectedSeries.data;
+
+  const chartData = rawData.map((point, idx) => {
+    const date = new Date(point.timestamp * 1000);
+    const isFirstOfYear = idx === 0 || new Date(rawData[idx - 1].timestamp * 1000).getFullYear() !== date.getFullYear();
+    const dateStr = isFirstOfYear
+      ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })
+      : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
+    const day = date.getDate();
+    const year = String(date.getFullYear()).slice(-2);
+    const tooltipDate = `${weekday} ${day} '${year}`;
+    return {
+      date: dateStr,
+      tooltipDate: tooltipDate,
+      timestamp: point.timestamp,
+      value: parseFloat(showingStrategy ? point.value : point.close) || 0,
+      cash: showingStrategy ? parseFloat(point.cash) || 0 : null,
+      holdingsValue: showingStrategy ? parseFloat(point.holdingsValue) || 0 : null,
+      returnPct: showingStrategy ? parseFloat(point.returnPct) || 0 : null
+    };
+  });
 
   const selectedSymbol = selectedSeries ? strategyQuotes?.symbols?.find((symbol) => symbol.symbol === selectedSeries.symbol) : null;
   const currentValue = showingStrategy
@@ -1185,6 +1199,10 @@ function PriceChart({ strategyHistory, strategyQuotes, selectedHistorySymbol, se
                 padding: '8px'
               }}
               formatter={(value) => [`$${Number(value).toFixed(2)}`, showingStrategy ? 'Value' : 'Price']}
+              labelFormatter={(label) => {
+                const dataPoint = chartData.find(d => d.date === label);
+                return dataPoint?.tooltipDate || label;
+              }}
               labelStyle={{ color: '#20242a' }}
             />
             <Line
@@ -1310,30 +1328,25 @@ function PortfolioView({
           </div>
         </Panel>
         <Panel title="Add Symbol" icon={<Plus />}>
-          {showSymbolForm ? (
-            <form className="symbolForm compactSymbolForm" onSubmit={(e) => { addSymbol(e); setShowSymbolForm(false); }}>
-              <label>
-                Action
-                <select value={symbolForm.action} onChange={(event) => setSymbolForm({ ...symbolForm, action: event.target.value })}>
-                  <option value="watch">Watch</option>
-                  <option value="buy">Buy</option>
-                  <option value="sell">Sell</option>
-                </select>
-              </label>
-              <Field label="Symbol" value={symbolForm.symbol} onChange={(value) => setSymbolForm({ ...symbolForm, symbol: value })} required />
-              {symbolForm.action === 'watch' ? (
-                <Field label="Note" value={symbolForm.note} onChange={(value) => setSymbolForm({ ...symbolForm, note: value })} />
-              ) : (
-                <Field label="Shares" value={symbolForm.quantity} onChange={(value) => setSymbolForm({ ...symbolForm, quantity: value })} required />
-              )}
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <button className="primary compactActionButton" type="submit"><Search size={16} />{symbolForm.action === 'watch' ? 'Watch' : 'Record'}</button>
-                <button className="secondaryCompactButton" type="button" onClick={() => setShowSymbolForm(false)}>Cancel</button>
-              </div>
-            </form>
-          ) : (
-            <button type="button" className="secondaryCompactButton fullWidthCompact" onClick={() => setShowSymbolForm(true)}><Plus size={14} />Add Symbol to Strategy</button>
-          )}
+          <form className="symbolForm compactSymbolForm" onSubmit={(e) => { addSymbol(e); setShowSymbolForm(false); }}>
+            <label>
+              Action
+              <select value={symbolForm.action} onChange={(event) => setSymbolForm({ ...symbolForm, action: event.target.value })}>
+                <option value="watch">Watch</option>
+                <option value="buy">Buy</option>
+                <option value="sell">Sell</option>
+              </select>
+            </label>
+            <Field label="Symbol" value={symbolForm.symbol} onChange={(value) => setSymbolForm({ ...symbolForm, symbol: value })} required />
+            {symbolForm.action === 'watch' ? (
+              <Field label="Note" value={symbolForm.note} onChange={(value) => setSymbolForm({ ...symbolForm, note: value })} />
+            ) : (
+              <Field label="Shares" value={symbolForm.quantity} onChange={(value) => setSymbolForm({ ...symbolForm, quantity: value })} required />
+            )}
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button className="primary compactActionButton" type="submit"><Search size={16} />{symbolForm.action === 'watch' ? 'Watch' : 'Record'}</button>
+            </div>
+          </form>
         </Panel>
       </section>
       <section className="workspaceGrid">

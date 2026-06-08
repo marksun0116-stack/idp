@@ -1,10 +1,19 @@
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/idp}
-    username: ${SPRING_DATASOURCE_USERNAME:idp}
-    password: ${SPRING_DATASOURCE_PASSWORD:idp}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5434/idp}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
   jpa:
     hibernate:
       ddl-auto: update
     open-in-view: false
 
+server:
+  port: 8081
+
+finance-data:
+  base-url: ${FINANCE_DATA_BASE_URL:http://localhost:8082}
+
+idp:
+  market-data:
+    enabled: ${MARKET_DATA_ENABLED:true}

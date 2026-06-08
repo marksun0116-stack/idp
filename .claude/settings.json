@@ -26,7 +26,11 @@
   },
   "permissions": {
     "read": ["**/*.md", "**/*.yml", "**/*.yaml", ".knowledge-first-system/**/*"],
-    "write": ["knowledge/**/*", "docs/**/*", ".claude/settings.json"]
+    "write": ["knowledge/**/*", "docs/**/*", ".claude/settings.json"],
+    "additionalDirectories": [
+      "/home/msun/projects/stock-monitor",
+      "/home/msun/projects/finance-data-service"
+    ]
   },
   "hooks": {
     "before_knowledge_commit": "python3 .knowledge-first-system/scripts/validate_knowledge.py",

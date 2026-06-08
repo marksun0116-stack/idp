@@ -1,0 +1,35 @@
+id: FEAT-shared-finance-service-001
+kind: feature
+title: "Shared Finance Data Service"
+status: planned
+summary: "Standalone Spring Boot service that centralizes Yahoo Finance fetching, local OHLCV caching (daily + intraday), technical indicator computation, and market data research surfaces. IDP and stock-monitor delegate to it via HTTP instead of calling Yahoo directly."
+description: |
+  Extract a new microservice (`finance-data-service`) running on port 8082 with its own PostgreSQL database. This service owns all market-data fetching, caching, and computation logic:
+
+  - Fetches live quotes (price, pre/post market) from Yahoo Finance
+  - Maintains daily OHLCV cache with delta-fetch logic (5-year cold start, then only missing dates)
+  - Maintains 5-minute intraday bar cache with market-aware staleness (≤5 min = serve from DB; >5 min or market closed = fetch and upsert)
+  - Seeds company metadata (sector, industry, company name) from bundled NASDAQ/NYSE/AMEX CSVs
+  - Optionally pre-warms all known symbols' daily price history on startup when bootstrap is enabled
+  - Computes technical indicators: SMA, EMA, RSI, Bollinger, MACD, Stochastic, OBV, MFI using BigDecimal precision
+  - Classifies regimes, detects strategy patterns, finds historical similar setups, scores win-rate via recommendation engine
+  - Serves all data via REST APIs (`/api/finance/*`)
+
+  Introduces a `MarketDataProvider` interface so Yahoo can be swapped for Polygon, Alpha Vantage, or other providers without touching service-layer code.
+
+acceptance_criteria:
+  - Quote, history, intraday, movers, news, indicators, analysis, and metadata endpoints return correct data
+  - Daily OHLCV cache persists across restarts and uses delta-fetch
+  - Intraday cache respects 5-minute staleness rule
+  - Metadata seeded idempotently from exchange CSVs on startup
+  - All symbols in metadata can be pre-warmed in background when bootstrap is enabled; otherwise daily history is populated on demand
+  - No user authentication required (internal backend-to-backend service)
+  - Existing IDP and stock-monitor REST controller signatures remain unchanged after re-wire
+  - All tests green (Testcontainers + real Postgres)
+
+linked_constraints:
+  - CON-finance-cache-001
+linked_decisions:
+  - DEC-shared-finance-service-001
+linked_contracts:
+  - CONR-finance-service-api-001

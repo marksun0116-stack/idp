@@ -1,0 +1,65 @@
+id: DEC-shared-finance-service-001
+kind: decision
+title: "Extract standalone finance data microservice"
+status: pending
+date: 2026-06-07
+decision: |
+  Create `/home/msun/projects/finance-data-service` as a separate Maven project on port 8082 with its own `finance_data` PostgreSQL database, `com.financedata` package, and no user authentication. IDP and stock-monitor will call it over HTTP instead of calling Yahoo Finance directly or maintaining divergent caches.
+
+context: |
+  Both IDP and stock-monitor currently have separate Yahoo Finance integrations:
+  - IDP: no caching, calls Yahoo on every request, `YahooMarketDataService` is the sole `MarketDataService` implementation
+  - stock-monitor: well-designed caching with delta-fetch for daily history and market-aware staleness for intraday, three cache tables, CSV seeding
+
+  This leads to:
+  - Double API usage (cache-miss in IDP hits Yahoo twice, cache-miss in stock-monitor hits Yahoo again)
+  - Divergent indicator implementations (stock-monitor uses `double[]`, IDP uses `BigDecimal`)
+  - Code duplication across two codebases
+  - IDP market data freshness problem (no cache)
+
+alternatives_considered:
+  - option: "Shared library/JAR"
+    outcome: "Rejected"
+    rationale:
+      - "Requires synchronized Maven builds and versioning."
+      - "Cannot serve as a centralized cache; each app would have its own in-memory cache or DB."
+      - "Couples release cycles of IDP, stock-monitor, and library."
+  - option: "Keep duplicated code"
+    outcome: "Rejected"
+    rationale:
+      - "Continued double Yahoo API usage."
+      - "Divergent caching strategies cause consistency issues."
+      - "IDP has zero caching."
+      - "Indicator algorithm bugs would need fixing in two places."
+  - option: "Move Yahoo fetching into a shared PostgreSQL schema within one app database"
+    outcome: "Rejected"
+    rationale:
+      - "Creates tight coupling and shared schema ownership."
+      - "Harder to scale independently later."
+      - "Unclear which app owns the finance data."
+
+decision_rationale: |
+  A standalone microservice provides a clean architectural boundary:
+  - Single source of truth for market data (one cache, one DB)
+  - Decouples IDP and stock-monitor releases (both call shared service via stable HTTP API)
+  - Allows independent scaling (finance service can run on separate hardware/container)
+  - Enables future provider swaps (Polygon, Alpha Vantage) without touching IDP/stock-monitor code
+  - Consolidates indicator logic (adopt IDP's `BigDecimal` precision as canonical)
+
+consequences:
+  - IDP loses `YahooMarketDataService` (replaced with `RemoteFinanceDataService` HTTP client)
+  - stock-monitor loses all its `*ServiceImpl` Yahoo-fetch classes (replaced with HTTP delegation)
+  - Both apps gain a new startup dependency (finance service must be reachable; graceful fallback on unavailable)
+  - One more service to deploy and monitor (finance-data-service on port 8082)
+  - API contract between apps and shared service must be stable (live in CONR-finance-service-api-001)
+
+provider_abstraction: |
+  Introduce `MarketDataProvider` interface in the new service. `YahooFinanceProvider` implements it. Future providers (Polygon, Alpha Vantage) implement the same interface without touching service-layer code or REST controllers.
+
+indicator_precision: |
+  Adopt IDP's `BigDecimal`-based `TechnicalAnalysisService` as canonical for all indicator computation. stock-monitor's `double[]`-based logic will be retired. This ensures precision consistency across both apps.
+
+tracing:
+  - FEAT-shared-finance-service-001
+  - CONR-finance-service-api-001
+  - CON-finance-cache-001

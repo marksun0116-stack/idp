@@ -34,11 +34,12 @@ Skip only for tiny single-slice fixes unless the user explicitly wants tracking.
 3. Break work into phases and user-story-sized slices.
 4. Add a requirements-review gate at the start of each phase (`RR-###`) before implementation stories.
 5. For each story/review gate, record status, dependencies, whether it can run in parallel, and trace IDs.
-6. Before implementing a phase, complete or actively run that phase's requirements review.
-7. Before implementation, mark the active story or phase `in_progress`.
-8. After implementation or validation, update status to `done`, `blocked`, `deferred`, or keep `in_progress` with a progress note.
-9. When order changes, preserve the old decision in `Progress Updates` and update the tables.
-10. Keep `## Change log` as the final heading and update metadata.
+6. For multi-repo work, record the owning repo(s) for each phase/story and the per-repo validation expected.
+7. Before implementing a phase, complete or actively run that phase's requirements review.
+8. Before implementation, mark the active story or phase `in_progress`.
+9. After implementation or validation, update status to `done`, `blocked`, `deferred`, or keep `in_progress` with a progress note.
+10. When order changes, preserve the old decision in `Progress Updates` and update the tables.
+11. Keep `## Change log` as the final heading and update metadata.
 
 ## Phase Requirements Review
 
@@ -81,6 +82,7 @@ Before finishing a tracked implementation turn:
 - Plan status reflects the latest work.
 - Progress update explains material changes.
 - Active blockers are named.
+- Multi-repo plans name repo ownership and per-repo validation status.
 - Trace IDs still exist in `knowledge/catalog.yml`.
 - KFS validation passes when knowledge changed.
 
@@ -90,3 +92,4 @@ Before finishing a tracked implementation turn:
 | --- | --- | --- | --- | --- |
 | 1.0 | 2026-06-05 | approved | — | Initial lightweight project-management skill for KFS. |
 | 1.1 | 2026-06-05 | approved | 1.0 | Added phase-start requirements-review gates. |
+| 1.2 | 2026-06-07 | approved | 1.1 | Added multi-repo ownership and validation tracking expectations. |

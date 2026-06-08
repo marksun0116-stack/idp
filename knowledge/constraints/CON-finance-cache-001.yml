@@ -1,0 +1,47 @@
+id: CON-finance-cache-001
+kind: constraint
+title: "Finance cache freshness and table ownership"
+status: pending
+date: 2026-06-07
+statement: |
+  The shared finance data service owns all three cache tables (`stock_price_history`, `stock_intraday_cache`, `stock_metadata`). Cache freshness rules are:
+
+  **Daily OHLCV history (`stock_price_history`):**
+  - On cold start (symbol has no cached history): fetch 5 years of daily bars from Yahoo Finance.
+  - On subsequent calls: delta-fetch only missing dates (date after last cached date → today). Never re-fetch dates already cached.
+  - Upsert strategy: `ON CONFLICT (symbol, price_date) DO NOTHING` — existing rows are immutable.
+  - Maximum history span: 5 years (drop older data if needed to cap storage).
+
+  **Intraday 5-minute bars (`stock_intraday_cache`):**
+  - Decision: serve from cache vs. fetch is based on **market state** and **cache age**:
+    * If market is CLOSED: always serve from DB cache (no fresh data available).
+    * If market is OPEN: check the most recent bar's timestamp. If age ≤ 5 minutes → serve cache; if age > 5 minutes → fetch fresh and upsert.
+  - Upsert strategy: `ON CONFLICT (symbol, bar_time) DO NOTHING` — existing rows are immutable.
+  - Purge old bars: delete rows where `trading_date < (last trading date) - 2 days` to prevent unbounded storage growth.
+
+  **Metadata (`stock_metadata`):**
+  - Seeded at startup from bundled NASDAQ/NYSE/AMEX CSV files via `StockReferenceDataLoader` on `ApplicationReadyEvent`.
+  - Seeding is idempotent: insert-or-ignore rows; sector/industry always come from CSV (not updated from Yahoo).
+  - Company name (`company_name`) is opportunistically updated from live quote responses using an UPSERT that preserves existing non-null values: `COALESCE(new_name, old_name)`.
+  - No user account concept — metadata is global, owned by the service itself.
+
+  **History bootstrap:**
+  - Background pre-warm for all symbols in `stock_metadata` is supported but disabled by default.
+  - When `finance-data.bootstrap.enabled=true`, the service pre-warms daily history asynchronously with bounded concurrency.
+  - When bootstrap is disabled, symbols are populated on demand through the same cold-start and delta-fetch rules.
+
+enforcement_points:
+  - "`HistoryServiceImpl.refreshIfNeeded()`: logic for cold-start (5y) vs. delta fetch"
+  - "`HistoryServiceImpl.isMarketOpen()`: market state check for intraday cache decision"
+  - "`StockIntradayCacheRepository.deleteByTradingDateBefore()`: purge logic for old intraday bars"
+  - "`StockReferenceDataLoader.loadCsv()`: idempotent CSV seed at startup"
+  - "`HistoryBootstrapRunner.bootstrapOnStartup()`: optional background pre-warm"
+  - "`YahooFinanceProvider.fetchQuote()`: opportunistic metadata updates"
+
+rationale: |
+  Delta-fetch for daily history avoids redundant API calls to Yahoo Finance. Intraday staleness decision (5-min window) balances freshness and API rate limits. Metadata CSV seeding provides a consistent, deterministic universe of symbols. Idempotent seeding allows service restarts without conflicts. Full-universe history bootstrap is opt-in because pre-warming thousands of symbols on every service start can overload the provider, slow local development, and make restarts fragile.
+
+linked_feature:
+  - FEAT-shared-finance-service-001
+linked_decision:
+  - DEC-shared-finance-service-001

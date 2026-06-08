@@ -1,53 +1,35 @@
----
-invariant_id: INV-strategy-validation-001
-title: "Strategy Technical Validation Invariant"
+id: INV-strategy-validation-001
+kind: invariant
+title: "Strategy technical validation"
 status: approved
 version: "0.1"
-traces:
-  - FEAT-indicator-validation-001
-  - CONR-technical-analysis-api-001
----
-
-# Strategy Technical Validation Invariant
-
-## Statement
-
-For any strategy recommendation with detected technical signals, the historical win rate MUST be calculated by backtesting against at least 5 years of prior data with a consistent 20-day forward horizon. Confidence scoring SHALL be based on sample size (min 5 samples) and win rate (min 55% for support, 65% for high confidence).
-
-## Rationale
-
-Users making trading decisions need to know:
-1. **Is this pattern statistically valid?** (sample size ≥ 5)
-2. **How often does it work?** (win rate ≥ 55%)
-3. **How confident should I be?** (Low/Medium/High based on samples and win rate)
-
-Without historical validation, technical signals are just pattern matching with no edge.
-
-## Enforcement
-
-### Mandatory
-
-- All recommendations MUST include `validation.sampleSize` and `validation.winRate`
-- Win rate calculation: (wins / total samples) × 100, where wins match signal direction
-- Confidence levels:
-  - **Low**: sampleSize < 5 OR winRate < 55% OR medianReturn wrong direction
-  - **Medium**: sampleSize ≥ 8 AND winRate ≥ 58%
-  - **High**: sampleSize ≥ 20 AND winRate ≥ 65%
-- Similar setups MUST be regime-compatible (same trend/range/compressed)
-- Forward return calculation uses consistent 20-day horizon across all backtests
-
-### Testing
-
-- Backtest results MUST match stock-monitor's calculations within 0.1% win rate
-- Sample size >= 5 required before displaying recommendation
-- medianReturn must be positive for bullish, negative for bearish
-
-## Related Invariants
-
-- INV-indicator-accuracy-001: Indicator calculations must match stock-monitor
-
-## Change log
-
-| Revision | Date | Status | Notes |
-| --- | --- | --- | --- |
-| 0.1 | 2026-06-07 | approved | Initial invariant defining strategy validation requirements. |
+date: 2026-06-07
+statement: |
+  Strategy technical recommendations with detected signals must include historical validation before being presented as confidence-bearing results. Validation uses a consistent forward horizon and sample-size thresholds so consumers do not treat unvalidated pattern matches as reliable edge.
+scope:
+  domain: "technical recommendation validation"
+  applies_to:
+    - "finance-data-service analysis endpoint"
+    - "IDP strategy analysis consumers"
+    - "stock-monitor technical insight consumers"
+rules:
+  - "Recommendations include sample size and win-rate information when validation is available."
+  - "Confidence is low when sample size is below 5 or win rate is below the support threshold."
+  - "Similar setups are filtered to regime-compatible historical windows."
+  - "Forward return calculations use a consistent 20-trading-day horizon unless a contract explicitly version-changes the horizon."
+enforcement:
+  - "Recommendation engine tests verify sample-size, win-rate, confidence, and horizon calculations."
+  - "Consumers render unavailable validation distinctly from positive validation."
+evidence:
+  - "Planned finance-data-service recommendation regression tests."
+references:
+  - FEAT-shared-finance-service-001
+  - FEAT-technical-indicators-001
+  - CONR-finance-service-api-001
+related_primitives:
+  - INV-indicator-accuracy-001
+change_log:
+  - revision: "0.1"
+    date: 2026-06-07
+    status: approved
+    notes: "Initial invariant defining technical recommendation validation requirements."

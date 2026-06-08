@@ -1,59 +1,39 @@
----
-invariant_id: INV-indicator-accuracy-001
-title: "Technical Indicator Accuracy Invariant"
+id: INV-indicator-accuracy-001
+kind: invariant
+title: "Technical indicator accuracy"
 status: approved
 version: "0.1"
-traces:
-  - FEAT-technical-analysis-001
-  - CONR-technical-analysis-api-001
----
-
-# Technical Indicator Accuracy Invariant
-
-## Statement
-
-All technical indicators calculated in IDP MUST produce results matching stock-monitor's calculations within ±0.01% tolerance across a representative test dataset. Indicator definitions are frozen to stock-monitor's implementations and MUST NOT drift over time.
-
-## Rationale
-
-Technical analysis decisions depend on precise indicator values. Even small calculation differences can change signals and recommendations. By locking to stock-monitor's proven implementations, we ensure:
-1. Consistency across projects
-2. Validated calculation correctness
-3. Predictable user experience
-
-## Indicators Covered
-
-- **SMA20/50**: 20-day and 50-day simple moving averages
-- **Bollinger Bands**: 20-day SMA ± 2× standard deviation (upper, middle, lower)
-- **RSI**: Relative Strength Index (14-period)
-- **MACD**: Moving Average Convergence Divergence (12/26/9 periods)
-  - macdLine, signalLine, histogram
-- **Stochastic**: Stochastic Oscillator (%K/%D, 14/3 periods)
-- **OBV**: On-Balance Volume (cumulative)
-- **MFI**: Money Flow Index (14-period)
-
-## Enforcement
-
-### Mandatory
-
-- Reference implementation: stock-monitor's `buildTechnicalRecommendation.js` and indicator calculations
-- Test against historical data (minimum 2 years, multiple symbols)
-- Tolerance: ±0.01% across all test vectors
-- Fallback behavior: If calculation fails, return null (never estimate/interpolate)
-- Timestamp consistency: All indicators calculated at the same bar
-
-### Testing
-
-- Unit tests comparing IDP vs stock-monitor output on same data
-- Regression tests on quarterly basis to catch drift
-- Acceptance: 100% match within tolerance on test dataset
-
-## Related Invariants
-
-- INV-strategy-validation-001: Uses these indicators for validation
-
-## Change log
-
-| Revision | Date | Status | Notes |
-| --- | --- | --- | --- |
-| 0.1 | 2026-06-07 | approved | Initial invariant defining indicator accuracy requirements. |
+date: 2026-06-07
+statement: |
+  Technical indicators calculated for shared finance analysis must remain numerically stable and consistent across consumers. Indicator outputs should match the canonical implementation within 0.01% tolerance across representative historical datasets.
+scope:
+  domain: "technical analysis"
+  applies_to:
+    - "finance-data-service indicator calculations"
+    - "IDP technical analysis consumers"
+    - "stock-monitor technical analysis consumers"
+covered_indicators:
+  - "SMA20/50"
+  - "Bollinger Bands"
+  - "RSI14"
+  - "MACD 12/26/9"
+  - "Stochastic 14/3"
+  - "OBV"
+  - "MFI14"
+enforcement:
+  - "Use BigDecimal-based indicator calculations as the canonical shared-service implementation."
+  - "Add regression tests with representative multi-symbol historical datasets."
+  - "Return null for unavailable indicator values instead of estimating missing data."
+evidence:
+  - "Planned finance-data-service indicator regression tests."
+references:
+  - FEAT-shared-finance-service-001
+  - FEAT-technical-indicators-001
+  - CONR-finance-service-api-001
+related_primitives:
+  - INV-strategy-validation-001
+change_log:
+  - revision: "0.1"
+    date: 2026-06-07
+    status: approved
+    notes: "Initial invariant defining shared indicator accuracy requirements."

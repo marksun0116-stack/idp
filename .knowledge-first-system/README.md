@@ -1,12 +1,12 @@
 # Knowledge-first system
 
-This package ships the **knowledge-first enforcement layer** for Cursor-based development.
+This package ships the **knowledge-first enforcement layer** for agent-assisted and human development.
 
 ## What's in here
 
 ```
 .knowledge-first-system/
-  rules/          ← Cursor rules (RULE-001 – RULE-013, LEGACY-001)
+  rules/          ← Agent rules (RULE-001 - RULE-015, LEGACY-001)
   skills/         ← Workflow skills (implement, plan, merge, validate, modernize)
   README.md       ← This file
   specs/          ← Official specs for every artifact layer
@@ -62,6 +62,7 @@ These folders are **not** created here — add them when your program captures p
 | RULE-012 | no authoritative rules only in docs | `docs-knowledge-boundary.mdc` |
 | RULE-013 | new project PRD + architecture intent gate | `new-project-intent-gate.mdc` |
 | RULE-014 | lightweight implementation plan management | `implementation-plan-management.mdc` |
+| RULE-015 | multi-repo workspace management | `multi-repo-workspace-management.mdc` |
 | LEGACY-001 | slice-first legacy modernization | `legacy-modernization-slices.mdc` |
 
 ## Change log
@@ -70,3 +71,4 @@ These folders are **not** created here — add them when your program captures p
 | --- | --- | --- | --- | --- |
 | 1.0 | 2026-05-14 | approved | — | Initial transfer package. |
 | 1.1 | 2026-06-05 | approved | 1.0 | Added RULE-014 lightweight implementation-plan management entry points. |
+| 1.2 | 2026-06-07 | approved | 1.1 | Added generic RULE-015 multi-repo workspace management and clarified agent-neutral rule ownership. |

@@ -1,0 +1,75 @@
+---
+description: RULE-015 - multi-repo KFS ownership, workspace plans, and cross-repo traceability
+globs:
+  - docs/**/*
+  - knowledge/**/*
+  - AGENTS.md
+  - CLAUDE.md
+alwaysApply: false
+---
+
+# Multi-Repo Workspace Management - RULE-015
+
+Some workspaces contain multiple repositories that ship together or depend on each other. KFS must remain coherent across the workspace even when each repo has its own source tree, tests, and deployment lifecycle.
+
+This rule is intentionally generic. It applies to any multi-repo workspace, regardless of product domain, language, framework, or AI agent.
+
+## Repository Roles
+
+Before changing knowledge, docs, or implementation in a multi-repo workspace, identify the role of each repo involved:
+
+- **Program repo** or **governance repo** - owns cross-repo architecture, shared decisions, workspace-level implementation plans, and contracts that multiple repos consume.
+- **Service/application repo** - owns its local product docs, implementation, tests, and repo-specific knowledge for behavior that belongs only to that service/application.
+- **Shared-service repo** - owns contracts, runtime behavior, cache/data ownership, and tests for the shared service itself.
+- **Consumer repo** - owns client/adaptor behavior, local user-facing behavior, and tests that prove the consumer handles the shared contract correctly.
+
+A repo can play more than one role. State the role in the implementation plan when it matters.
+
+If no program or governance repo exists yet, choose one explicitly before cross-repo implementation proceeds. Until that choice is made, do not scatter shared decisions and contracts across participating repos.
+
+## Knowledge and Docs Ownership
+
+- Cross-repo decisions, contracts, constraints, invariants, and implementation plans belong in the program/governance repo.
+- Repo-local product behavior belongs in that repo's own `knowledge/` and `docs/`.
+- Shared service API contracts may be mirrored by consumers, but one repo must be named as the contract owner. Consumers should reference or mirror the owning `CONR-*` version instead of inventing incompatible shapes.
+- A shared data/cache ownership change must be captured in a `DEC-*` and any relevant `CON-*` / `INV-*` before implementation code changes.
+- Do not silently fork KFS intent across repos. If two repos need different rules, document the distinction as a decision or constraint.
+- If a repo does not yet have KFS installed, record that fact in the workspace implementation plan and keep shared knowledge in the program/governance repo until ownership is moved intentionally.
+
+## Workspace Implementation Plans
+
+Use `docs/implementation/` in the program/governance repo for plans that coordinate multiple repos. The plan must:
+
+- List every affected repo and its role.
+- Mark which stories are program-level, shared-service-level, and consumer-level.
+- Track cross-repo dependencies explicitly, including contract-owner story before consumer-adaptor stories.
+- Record per-repo validation commands and results.
+- Keep progress status current even when work is performed by different AI agents or humans.
+- State which repo owns each shared contract and whether any consumer mirrors it locally.
+
+Each participating repo may also keep a local implementation plan for its internal work, but the workspace-level plan is the coordination source of truth.
+
+## Workspace Discovery
+
+Before planning or implementing cross-repo work:
+
+1. Identify participating repos and their filesystem paths or remote URLs.
+2. Identify which repo is the program/governance repo.
+3. Identify which repos already have KFS artifacts (`knowledge/`, `docs/`, `.knowledge-first-system/`, `AGENTS.md`, `CLAUDE.md`).
+4. Identify shared contracts and their owning repo.
+5. Record the result in the workspace implementation plan before broad implementation work.
+
+## Agent Parity
+
+All AI agents in the workspace must follow the same KFS order:
+
+1. Load the workspace or repo driving knowledge.
+2. Update knowledge/docs/contracts before implementation when behavior or architecture changes.
+3. Update the implementation plan before and after material work.
+4. Change implementation in the owning repo.
+5. Validate knowledge and run relevant per-repo tests.
+6. Report cross-repo blockers clearly.
+
+Agent-specific files such as `AGENTS.md` and `CLAUDE.md` may add tool instructions, but must not weaken this rule. If both files exist in a repo, they must point to the same KFS process and the same program/governance source of truth.
+
+Procedure and document shape: **`.knowledge-first-system/specs/knowledge_model_spec.md`** and **`.knowledge-first-system/specs/implementation_plan_spec.md`**.

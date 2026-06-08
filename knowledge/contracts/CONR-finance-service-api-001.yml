@@ -1,0 +1,328 @@
+id: CONR-finance-service-api-001
+kind: contract
+title: "Finance Data Service REST API"
+status: final
+version: 1.0
+date: 2026-06-07
+decision_note: |
+  RR-104 resolved quote endpoint shape: consumers use bulk endpoint `/api/finance/quote?symbols={symbol}`
+  for single-symbol lookups (returns wrapped format). Single endpoint still available for simple clients
+  but not used by IDP or stock-monitor (FEAT-investor-development-platform-001, FEAT-stock-monitor-001).
+base_url: "http://localhost:8082"
+description: |
+  REST API contract for the shared finance data service. All endpoints return JSON. No authentication required (internal service). CORS configured to allow localhost:3000 and localhost:3001.
+
+endpoints:
+  - path: "/api/finance/quote/{symbol}"
+    method: GET
+    description: "Fetch live quote for a single symbol"
+    parameters:
+      - name: symbol
+        in: path
+        required: true
+        schema: { type: string, example: "AAPL" }
+    response:
+      status: 200
+      schema:
+        type: object
+        properties:
+          symbol: { type: string }
+          lastPrice: { type: number, format: double }
+          change: { type: number, format: double }
+          percentChange: { type: number, format: double }
+          preMarketPrice: { type: number, format: double, nullable: true }
+          postMarketPrice: { type: number, format: double, nullable: true }
+          marketState: { type: string, enum: ["REGULAR", "PRE", "POST", "CLOSED"] }
+          volume: { type: integer, format: int64 }
+          shortName: { type: string }
+    error_cases:
+      - status: 400
+        description: Invalid symbol format
+
+  - path: "/api/finance/quote"
+    method: GET
+    description: "Fetch live quotes for multiple symbols (comma-separated). Preferred endpoint for all quote requests."
+    parameters:
+      - name: symbols
+        in: query
+        required: true
+        schema: { type: string, example: "AAPL,MSFT,GOOGL" }
+    response:
+      status: 200
+      schema:
+        type: object
+        properties:
+          quotes:
+            type: object
+            additionalProperties: { $ref: "#/components/schemas/Quote" }
+            description: "Map of symbol → Quote object"
+
+  - path: "/api/finance/history/{symbol}"
+    method: GET
+    description: "Fetch historical daily OHLCV bars for a symbol"
+    parameters:
+      - name: symbol
+        in: path
+        required: true
+        schema: { type: string }
+      - name: range
+        in: query
+        required: false
+        schema: { type: string, enum: ["1w", "1mo", "3mo", "6mo", "1y", "2y", "3y", "4y", "5y"], default: "1y" }
+    response:
+      status: 200
+      schema:
+        type: object
+        properties:
+          symbol: { type: string }
+          range: { type: string }
+          bars:
+            type: array
+            items:
+              type: object
+              properties:
+                timestamp: { type: integer, format: int64, description: "Unix epoch seconds" }
+                open: { type: number, format: double }
+                high: { type: number, format: double }
+                low: { type: number, format: double }
+                close: { type: number, format: double }
+                volume: { type: integer, format: int64 }
+
+  - path: "/api/finance/intraday/{symbol}"
+    method: GET
+    description: "Fetch intraday 5-minute OHLCV bars for today"
+    parameters:
+      - name: symbol
+        in: path
+        required: true
+        schema: { type: string }
+    response:
+      status: 200
+      schema:
+        type: object
+        properties:
+          symbol: { type: string }
+          bars:
+            type: array
+            items: { $ref: "#/components/schemas/OhlcvBar" }
+
+  - path: "/api/finance/movers"
+    method: GET
+    description: "Fetch market movers screener results"
+    parameters:
+      - name: tab
+        in: query
+        required: false
+        schema: { type: string, enum: ["active", "gainers", "losers", "smallcap", "aggressive"], default: "gainers" }
+    response:
+      status: 200
+      schema:
+        type: object
+        properties:
+          tab: { type: string }
+          movers:
+            type: array
+            items:
+              type: object
+              properties:
+                symbol: { type: string }
+                shortName: { type: string }
+                lastPrice: { type: number, format: double }
+                change: { type: number, format: double }
+                percentChange: { type: number, format: double }
+                volume: { type: integer, format: int64 }
+                sector: { type: string, nullable: true }
+                industry: { type: string, nullable: true }
+
+  - path: "/api/finance/news"
+    method: GET
+    description: "Fetch news items for one or more symbols"
+    parameters:
+      - name: symbols
+        in: query
+        required: true
+        schema: { type: string, example: "AAPL,MSFT" }
+    response:
+      status: 200
+      schema:
+        type: object
+        properties:
+          items:
+            type: array
+            items:
+              type: object
+              properties:
+                symbol: { type: string }
+                title: { type: string }
+                link: { type: string, format: uri }
+                publishedAt: { type: integer, format: int64, description: "Unix epoch seconds" }
+                source: { type: string, nullable: true }
+                description: { type: string, nullable: true }
+
+  - path: "/api/finance/indicators/{symbol}"
+    method: GET
+    description: "Fetch full technical indicator series (SMA, EMA, RSI, Bollinger, MACD, Stochastic, OBV, MFI)"
+    parameters:
+      - name: symbol
+        in: path
+        required: true
+        schema: { type: string }
+      - name: range
+        in: query
+        required: false
+        schema: { type: string, default: "1y" }
+    response:
+      status: 200
+      schema:
+        type: object
+        properties:
+          symbol: { type: string }
+          range: { type: string }
+          indicators:
+            type: array
+            items:
+              type: object
+              properties:
+                timestamp: { type: integer, format: int64 }
+                close: { type: number, format: double }
+                sma20: { type: number, format: double, nullable: true }
+                sma50: { type: number, format: double, nullable: true }
+                ema12: { type: number, format: double, nullable: true }
+                ema26: { type: number, format: double, nullable: true }
+                rsi14: { type: number, format: double, nullable: true }
+                bollingerUpper: { type: number, format: double, nullable: true }
+                bollingerLower: { type: number, format: double, nullable: true }
+                macd: { type: number, format: double, nullable: true }
+                signal: { type: number, format: double, nullable: true }
+                histogram: { type: number, format: double, nullable: true }
+                stochastic: { type: number, format: double, nullable: true }
+                obv: { type: number, format: double, nullable: true }
+                mfi: { type: number, format: double, nullable: true }
+
+  - path: "/api/finance/analysis/{symbol}"
+    method: GET
+    description: "Fetch indicators + recommendation engine output (regime, strategy pattern, similar setups)"
+    parameters:
+      - name: symbol
+        in: path
+        required: true
+        schema: { type: string }
+      - name: range
+        in: query
+        required: false
+        schema: { type: string, default: "1y" }
+    response:
+      status: 200
+      schema:
+        type: object
+        properties:
+          symbol: { type: string }
+          range: { type: string }
+          indicators: { $ref: "#/components/schemas/IndicatorSeries" }
+          recommendation:
+            type: object
+            properties:
+              regime: { type: string }
+              strategy: { type: string }
+              confidence: { type: string, enum: ["High", "Medium", "Low"] }
+              winRate: { type: number, format: double }
+              medianReturn: { type: number, format: double }
+              similarSetups:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    date: { type: string, format: date }
+                    outcome: { type: string, enum: ["Win", "Loss", "Neutral"] }
+                    return: { type: number, format: double }
+
+  - path: "/api/finance/insights"
+    method: GET
+    description: "Fetch trend verdict, RSI-14, and average volume for symbols"
+    parameters:
+      - name: symbols
+        in: query
+        required: true
+        schema: { type: string, example: "AAPL,MSFT" }
+    response:
+      status: 200
+      schema:
+        type: object
+        properties:
+          insights:
+            type: array
+            items:
+              type: object
+              properties:
+                symbol: { type: string }
+                rsi14: { type: number, format: double, nullable: true }
+                trendVerdict: { type: string, enum: ["Bullish", "Bearish", "Neutral"], nullable: true }
+                avgVolume: { type: number, format: double, nullable: true }
+
+  - path: "/api/finance/metadata"
+    method: GET
+    description: "Fetch metadata (sector, industry, company name, exchange) for symbols"
+    parameters:
+      - name: symbols
+        in: query
+        required: true
+        schema: { type: string, example: "AAPL,MSFT" }
+    response:
+      status: 200
+      schema:
+        type: object
+        properties:
+          metadata:
+            type: array
+            items:
+              type: object
+              properties:
+                symbol: { type: string }
+                companyName: { type: string, nullable: true }
+                exchange: { type: string, nullable: true }
+                sector: { type: string, nullable: true }
+                industry: { type: string, nullable: true }
+                ipoYear: { type: integer, nullable: true }
+
+components:
+  schemas:
+    Quote:
+      type: object
+      properties:
+        symbol: { type: string }
+        lastPrice: { type: number, format: double }
+        change: { type: number, format: double }
+        percentChange: { type: number, format: double }
+        preMarketPrice: { type: number, format: double, nullable: true }
+        postMarketPrice: { type: number, format: double, nullable: true }
+        marketState: { type: string }
+        volume: { type: integer, format: int64 }
+        shortName: { type: string }
+
+    OhlcvBar:
+      type: object
+      properties:
+        timestamp: { type: integer, format: int64 }
+        open: { type: number, format: double }
+        high: { type: number, format: double }
+        low: { type: number, format: double }
+        close: { type: number, format: double }
+        volume: { type: integer, format: int64 }
+
+    IndicatorSeries:
+      type: array
+      items:
+        type: object
+        properties:
+          timestamp: { type: integer, format: int64 }
+          close: { type: number, format: double }
+          sma20: { type: number, format: double, nullable: true }
+          sma50: { type: number, format: double, nullable: true }
+          ema12: { type: number, format: double, nullable: true }
+          ema26: { type: number, format: double, nullable: true }
+          rsi14: { type: number, format: double, nullable: true }
+
+tracing:
+  - FEAT-shared-finance-service-001
+  - DEC-shared-finance-service-001
+  - CON-finance-cache-001
