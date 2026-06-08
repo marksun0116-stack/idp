@@ -1062,6 +1062,8 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
   const [fromDate, setFromDate] = React.useState('');
   const [toDate, setToDate] = React.useState('');
   const [showAdvancedFilters, setShowAdvancedFilters] = React.useState(false);
+  const [selectedDecision, setSelectedDecision] = React.useState(null);
+  const [editForm, setEditForm] = React.useState({});
 
   // Get unique tickers for autocomplete
   const uniqueTickers = React.useMemo(() => {
@@ -1080,6 +1082,17 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
 
     return matchesTicker && matchesType && matchesStatus && matchesFromDate && matchesToDate;
   });
+
+  const handleOpenDecisionDetail = React.useCallback((decision) => {
+    setSelectedDecision(decision);
+    setEditForm({
+      thesis: decision.thesis || '',
+      evidence: decision.evidence || '',
+      risks: decision.risks || '',
+      comments: decision.comments || '',
+      exitCriteria: decision.exitCriteria || []
+    });
+  }, []);
 
   const handleCloseDecision = React.useCallback((decisionId, decision) => {
     // TODO: Call close decision API with exit price from triggered alert
@@ -1241,7 +1254,15 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
           )}
 
 
-          <DecisionJournalTimeline decisions={filteredDecisions} onCloseDecision={handleCloseDecision} showEmpty={filteredDecisions.length === 0} />
+          <DecisionJournalTimeline decisions={filteredDecisions} onCloseDecision={handleCloseDecision} onCardClick={handleOpenDecisionDetail} showEmpty={filteredDecisions.length === 0} />
+          {selectedDecision && (
+            <DecisionDetailModal
+              decision={selectedDecision}
+              onClose={() => setSelectedDecision(null)}
+              editForm={editForm}
+              setEditForm={setEditForm}
+            />
+          )}
           {filteredDecisions.length === 0 && searchTicker === '' && filterType === 'all' && filterStatus === 'all' && !fromDate && !toDate && (
             <Empty text="No decisions yet. Create your first decision to start your journal." />
           )}
@@ -2655,7 +2676,7 @@ function Badge({ label, value }) {
   );
 }
 
-function DecisionJournalTimeline({ decisions, onCloseDecision, showEmpty = true }) {
+function DecisionJournalTimeline({ decisions, onCloseDecision, onCardClick, showEmpty = true }) {
   const [hoveredCardId, setHoveredCardId] = React.useState(null);
   const [flashingCards, setFlashingCards] = React.useState(new Set());
   const [liveQuotes, setLiveQuotes] = React.useState({});
@@ -2816,6 +2837,7 @@ function DecisionJournalTimeline({ decisions, onCloseDecision, showEmpty = true 
                       position: 'relative'
                     }}
                     className="decision-card"
+                    onClick={() => onCardClick && onCardClick(decision)}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
                       e.currentTarget.style.borderColor = '#d7dce2';
@@ -3046,6 +3068,252 @@ function DecisionJournalTimeline({ decisions, onCloseDecision, showEmpty = true 
         </>
       )}
       {showEmpty && decisions.length === 0 && <Empty text="No decisions to display." />}
+    </div>
+  );
+}
+
+function DecisionDetailModal({ decision, onClose, editForm, setEditForm }) {
+  const [isEditing, setIsEditing] = React.useState(decision.status === 'open');
+  const [closeReason, setCloseReason] = React.useState('');
+  const [exitPrice, setExitPrice] = React.useState('');
+
+  if (!decision) return null;
+
+  const thesisSuggestions = [
+    'Stock is undervalued',
+    'Technical breakout signal',
+    'Momentum play',
+    'Mean reversion (RSI < 30)',
+    'Matches my strategy'
+  ];
+
+  const evidenceSuggestions = [
+    'P/E below sector average',
+    'RSI shows oversold (< 30)',
+    'Price above 50-day MA',
+    'Recent earnings beat',
+    'Sector showing strength'
+  ];
+
+  const risksSuggestions = [
+    'Market downturn or correction',
+    'Earnings miss',
+    'Sector rotation',
+    'Valuation compression',
+    'Geopolitical risk'
+  ];
+
+  const handleSaveEdit = async () => {
+    // TODO: Call update decision API
+    console.log('Saving decision edits:', editForm);
+    setIsEditing(false);
+  };
+
+  const handleCloseDecision = async () => {
+    // TODO: Call close decision API
+    console.log('Closing decision with exit price:', exitPrice);
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div className="modal-header">
+          <h2>Decision Details</h2>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="modal-body">
+          {/* Read-only Transaction Details */}
+          <div style={{ background: '#f9fbfb', padding: '12px', borderRadius: '6px', marginBottom: '16px', border: '1px solid #e4e7ec' }}>
+            <div style={{ fontSize: '0.75rem', color: '#9facbd', fontWeight: 600, textTransform: 'uppercase', marginBottom: '8px' }}>
+              Transaction (Locked)
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+              <div>
+                <div style={{ fontSize: '0.7rem', color: '#667085', marginBottom: '4px' }}>Symbol</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#20242a' }}>{decision.symbol || decision.ticker}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.7rem', color: '#667085', marginBottom: '4px' }}>Action</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#20242a' }}>{decision.action}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.7rem', color: '#667085', marginBottom: '4px' }}>Quantity</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#20242a' }}>{decision.quantity} shares</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.7rem', color: '#667085', marginBottom: '4px' }}>Entry Price</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#20242a' }}>${decision.price?.toFixed(2)}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Current Status & P/L */}
+          {decision.status === 'open' && (
+            <div style={{ background: '#f0fdf4', padding: '12px', borderRadius: '6px', marginBottom: '16px', border: '1px solid #dcfce7' }}>
+              <div style={{ fontSize: '0.75rem', color: '#667085', fontWeight: 600, marginBottom: '8px' }}>Current Position</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '0.8rem', color: '#667085' }}>Entry Value</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#20242a' }}>
+                    ${(decision.price * decision.quantity).toFixed(2)}
+                  </div>
+                </div>
+                {decision.currentPnl !== undefined && (
+                  <div>
+                    <div style={{ fontSize: '0.8rem', color: '#667085' }}>Current P/L</div>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 600, color: decision.currentPnl >= 0 ? '#16a34a' : '#dc2626' }}>
+                      {decision.currentPnl >= 0 ? '+' : ''}{decision.currentPnl.toFixed(2)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Edit Form (for open decisions) */}
+          {isEditing && decision.status === 'open' && (
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveEdit(); }}>
+              <div className="form-section">
+                <h3>Thesis</h3>
+                <textarea
+                  placeholder="Why did you make this trade?"
+                  value={editForm.thesis || ''}
+                  onChange={(e) => setEditForm({ ...editForm, thesis: e.target.value })}
+                  className="form-textarea"
+                  rows="2"
+                />
+              </div>
+
+              <div className="form-section">
+                <h3>Evidence</h3>
+                <textarea
+                  placeholder="What data or signals support this decision?"
+                  value={editForm.evidence || ''}
+                  onChange={(e) => setEditForm({ ...editForm, evidence: e.target.value })}
+                  className="form-textarea"
+                  rows="2"
+                />
+              </div>
+
+              <div className="form-section">
+                <h3>Risks</h3>
+                <textarea
+                  placeholder="What could go wrong?"
+                  value={editForm.risks || ''}
+                  onChange={(e) => setEditForm({ ...editForm, risks: e.target.value })}
+                  className="form-textarea"
+                  rows="2"
+                />
+              </div>
+
+              <div className="form-section">
+                <h3>Comments</h3>
+                <textarea
+                  placeholder="Additional notes..."
+                  value={editForm.comments || ''}
+                  onChange={(e) => setEditForm({ ...editForm, comments: e.target.value })}
+                  className="form-textarea"
+                  rows="2"
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                <button type="submit" className="btn-primary" style={{ flex: 1 }}>Save Changes</button>
+                <button type="button" onClick={() => setIsEditing(false)} className="btn-secondary" style={{ flex: 1 }}>Cancel</button>
+              </div>
+            </form>
+          )}
+
+          {/* Read-only View (for closed decisions) */}
+          {!isEditing && (
+            <>
+              {editForm.thesis && (
+                <div style={{ marginBottom: '12px' }}>
+                  <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: '#667085', margin: '0 0 4px 0' }}>Thesis</h3>
+                  <div style={{ fontSize: '0.85rem', color: '#526071', padding: '8px', background: '#f9fbfb', borderRadius: '4px' }}>
+                    {editForm.thesis}
+                  </div>
+                </div>
+              )}
+              {editForm.evidence && (
+                <div style={{ marginBottom: '12px' }}>
+                  <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: '#667085', margin: '0 0 4px 0' }}>Evidence</h3>
+                  <div style={{ fontSize: '0.85rem', color: '#526071', padding: '8px', background: '#f9fbfb', borderRadius: '4px' }}>
+                    {editForm.evidence}
+                  </div>
+                </div>
+              )}
+              {editForm.risks && (
+                <div style={{ marginBottom: '12px' }}>
+                  <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: '#667085', margin: '0 0 4px 0' }}>Risks</h3>
+                  <div style={{ fontSize: '0.85rem', color: '#526071', padding: '8px', background: '#f9fbfb', borderRadius: '4px' }}>
+                    {editForm.risks}
+                  </div>
+                </div>
+              )}
+              {editForm.comments && (
+                <div style={{ marginBottom: '12px' }}>
+                  <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: '#667085', margin: '0 0 4px 0' }}>Comments</h3>
+                  <div style={{ fontSize: '0.85rem', color: '#526071', padding: '8px', background: '#f9fbfb', borderRadius: '4px' }}>
+                    {editForm.comments}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Edit History */}
+          {decision.editHistory && decision.editHistory.length > 0 && (
+            <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e4e7ec' }}>
+              <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: '#667085', margin: '0 0 8px 0' }}>Edit History</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {decision.editHistory.slice(0, 5).map((edit, idx) => (
+                  <div key={idx} style={{ fontSize: '0.75rem', color: '#667085', padding: '6px 8px', background: '#f9fbfb', borderRadius: '4px' }}>
+                    <div style={{ color: '#9facbd', fontSize: '0.7rem', marginBottom: '2px' }}>
+                      {new Date(edit.editedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    <div><strong>{edit.field}</strong>: {edit.newValue?.substring(0, 60)}{edit.newValue?.length > 60 ? '...' : ''}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e4e7ec', display: 'flex', gap: '8px' }}>
+            {decision.status === 'open' && !isEditing && (
+              <>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="btn-secondary"
+                  style={{ flex: 1 }}
+                >
+                  ✏️ Edit Decision
+                </button>
+                <button
+                  onClick={() => {
+                    const shouldClose = confirm('Close this decision? You can set an exit price.');
+                    if (shouldClose) handleCloseDecision();
+                  }}
+                  className="btn-secondary"
+                  style={{ flex: 1, borderColor: '#dc2626', color: '#dc2626' }}
+                >
+                  🔒 Close Decision
+                </button>
+              </>
+            )}
+            <button
+              onClick={onClose}
+              className="btn-primary"
+              style={{ flex: 1 }}
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
