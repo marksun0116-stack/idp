@@ -122,6 +122,36 @@ function App() {
     risksChecked: [],
     exitCriteria: []
   });
+  const [hasSavedDraft, setHasSavedDraft] = useState(false);
+
+  // Auto-save draft to localStorage whenever form changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (showDecisionCaptureModal && Object.values(decisionCaptureForm).some(v => v !== '' && v !== null && (!Array.isArray(v) || v.length > 0))) {
+        localStorage.setItem('idp.decisionDraft', JSON.stringify(decisionCaptureForm));
+        setHasSavedDraft(true);
+      }
+    }, 500); // Debounce 500ms
+    return () => clearTimeout(timer);
+  }, [decisionCaptureForm, showDecisionCaptureModal]);
+
+  // Load draft from localStorage on modal open
+  useEffect(() => {
+    if (showDecisionCaptureModal) {
+      const savedDraft = localStorage.getItem('idp.decisionDraft');
+      if (savedDraft) {
+        try {
+          const draft = JSON.parse(savedDraft);
+          setHasSavedDraft(true);
+        } catch (e) {
+          // Invalid JSON, skip
+        }
+      }
+    } else {
+      // Clear draft indicator when modal closes
+      setHasSavedDraft(false);
+    }
+  }, [showDecisionCaptureModal]);
 
   const authHeaders = useMemo(() => ({
     Authorization: `Bearer ${authToken || ownerId}`,
@@ -777,10 +807,14 @@ function App() {
       {loading && <div className="loading">Refreshing workspace...</div>}
       <DecisionCaptureModal
         isOpen={showDecisionCaptureModal}
-        onClose={() => setShowDecisionCaptureModal(false)}
+        onClose={() => {
+          setShowDecisionCaptureModal(false);
+          handleClearDraft();
+        }}
         pendingDecision={pendingDecisionData}
         formData={decisionCaptureForm}
         onFormChange={setDecisionCaptureForm}
+        hasSavedDraft={hasSavedDraft}
         onSubmit={async (decision, isAutoDecision) => {
           setLoading(true);
           try {
@@ -2796,8 +2830,11 @@ function DecisionCaptureModal({
   formData,
   onFormChange,
   onSubmit,
-  isSubmitting
+  isSubmitting,
+  hasSavedDraft
 }) {
+  const [optionalFieldsVisible, setOptionalFieldsVisible] = React.useState(true);
+
   const thesisSuggestions = [
     'Stock is undervalued',
     'Technical breakout signal',
@@ -2863,8 +2900,27 @@ function DecisionCaptureModal({
       comments
     };
 
+    // Clear draft on successful submit
+    localStorage.removeItem('idp.decisionDraft');
+
     // Add flag for AUTO vs MANUAL to onSubmit handler
     await onSubmit(decisionData, isAutoDecision);
+  };
+
+  const handleLoadDraft = () => {
+    const savedDraft = localStorage.getItem('idp.decisionDraft');
+    if (savedDraft) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        onFormChange(draft);
+      } catch (e) {
+        // Invalid JSON
+      }
+    }
+  };
+
+  const handleClearDraft = () => {
+    localStorage.removeItem('idp.decisionDraft');
   };
 
   return (
@@ -2883,6 +2939,43 @@ function DecisionCaptureModal({
                 Price locked (real-time market price)
               </div>
             )}
+          </div>
+
+          {/* Draft Recovery & Optional Fields Toggle */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid #e0e0e0' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              {hasSavedDraft && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleLoadDraft}
+                    className="btn-secondary"
+                    style={{ fontSize: '12px', padding: '6px 10px' }}
+                    title="Load previously saved draft"
+                  >
+                    📝 Load Draft
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClearDraft}
+                    className="btn-secondary"
+                    style={{ fontSize: '12px', padding: '6px 10px', backgroundColor: '#f5f5f5' }}
+                    title="Clear saved draft"
+                  >
+                    🗑️ Clear
+                  </button>
+                </>
+              )}
+            </div>
+            <label style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={optionalFieldsVisible}
+                onChange={(e) => setOptionalFieldsVisible(e.target.checked)}
+                style={{ cursor: 'pointer' }}
+              />
+              Show optional fields
+            </label>
           </div>
 
           <form onSubmit={handleSubmitDecision} className="decision-form">
@@ -2911,6 +3004,7 @@ function DecisionCaptureModal({
             </div>
 
             {/* Evidence Section */}
+            {optionalFieldsVisible && (
             <div className="form-section">
               <h3>Evidence <span className="label-optional">(optional)</span></h3>
               <div className="checkbox-group">
@@ -2933,8 +3027,10 @@ function DecisionCaptureModal({
                 rows="2"
               />
             </div>
+            )}
 
             {/* Risks Section */}
+            {optionalFieldsVisible && (
             <div className="form-section">
               <h3>Risks <span className="label-optional">(optional)</span></h3>
               <div className="checkbox-group">
@@ -2957,6 +3053,7 @@ function DecisionCaptureModal({
                 rows="2"
               />
             </div>
+            )}
 
             {/* Exit Criteria Section */}
             <div className="form-section">
@@ -3035,6 +3132,7 @@ function DecisionCaptureModal({
             </div>
 
             {/* Comments Section */}
+            {optionalFieldsVisible && (
             <div className="form-section">
               <h3>Comments <span className="label-optional">(optional)</span></h3>
               <textarea
@@ -3045,6 +3143,7 @@ function DecisionCaptureModal({
                 rows="3"
               />
             </div>
+            )}
 
             {/* Action Buttons */}
             <div className="modal-footer">
