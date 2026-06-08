@@ -2657,6 +2657,75 @@ function Badge({ label, value }) {
 
 function DecisionJournalTimeline({ decisions, onCloseDecision, showEmpty = true }) {
   const [hoveredCardId, setHoveredCardId] = React.useState(null);
+  const [flashingCards, setFlashingCards] = React.useState(new Set());
+  const [liveQuotes, setLiveQuotes] = React.useState({});
+
+  // Fetch live quotes for all open positions
+  React.useEffect(() => {
+    const symbols = decisions
+      .filter(d => d.status === 'open' && (d.symbol || d.ticker))
+      .map(d => d.symbol || d.ticker);
+
+    if (symbols.length === 0) return;
+
+    const fetchQuotes = async () => {
+      try {
+        const response = await fetch(`http://localhost:8082/api/finance/quote?symbols=${symbols.join(',')}`);
+        if (response.ok) {
+          const data = await response.json();
+          setLiveQuotes(data.quotes || {});
+        }
+      } catch (error) {
+        console.log('Live quote fetch failed (optional feature):', error);
+      }
+    };
+
+    fetchQuotes();
+    const interval = setInterval(fetchQuotes, 5000); // Update every 5 seconds
+    return () => clearInterval(interval);
+  }, [decisions]);
+
+  // Calculate P/L for a decision
+  const calculatePnL = (decision) => {
+    if (decision.status !== 'open' || !decision.price || !decision.quantity) {
+      return null;
+    }
+
+    const symbol = decision.symbol || decision.ticker;
+    const quote = liveQuotes[symbol];
+    if (!quote?.lastPrice) return null;
+
+    const entryValue = decision.price * decision.quantity;
+    const currentValue = quote.lastPrice * decision.quantity;
+    const pnl = currentValue - entryValue;
+    const pnlPct = (pnl / entryValue) * 100;
+
+    return { pnl, pnlPct, currentPrice: quote.lastPrice };
+  };
+
+  // Track P/L changes for flash effect
+  const prevPnLRef = React.useRef({});
+  React.useEffect(() => {
+    decisions.forEach(d => {
+      if (d.status !== 'open') return;
+
+      const current = calculatePnL(d);
+      const prev = prevPnLRef.current[d.id];
+
+      if (prev && current && Math.abs(current.pnl - prev.pnl) > 50) {
+        setFlashingCards(prev => new Set([...prev, d.id]));
+        setTimeout(() => {
+          setFlashingCards(prev => {
+            const next = new Set(prev);
+            next.delete(d.id);
+            return next;
+          });
+        }, 800);
+      }
+
+      prevPnLRef.current[d.id] = current;
+    });
+  }, [liveQuotes, decisions]);
 
   // Group decisions by date (newest first)
   const decisionsByDate = decisions.reduce((acc, decision) => {
@@ -2845,27 +2914,43 @@ function DecisionJournalTimeline({ decisions, onCloseDecision, showEmpty = true 
                     )}
 
                     {/* P/L Display for Open Positions */}
-                    {decision.status === 'open' && decision.currentPnl !== undefined && (
-                      <div style={{
-                        background: decision.currentPnl >= 0 ? '#f0fdf4' : '#fef2f2',
-                        border: `1px solid ${decision.currentPnl >= 0 ? '#dcfce7' : '#fee2e2'}`,
-                        borderRadius: '6px',
-                        padding: '8px',
-                        marginTop: '8px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}>
-                        <span style={{ fontSize: '0.75rem', color: '#667085' }}>Current P/L</span>
+                    {decision.status === 'open' && (() => {
+                      const liveData = calculatePnL(decision);
+                      const displayPnl = liveData || decision.currentPnl;
+                      const isFlashing = flashingCards.has(decision.id);
+
+                      if (!displayPnl) return null;
+
+                      const pnlValue = liveData?.pnl ?? displayPnl;
+                      const pnlPct = liveData?.pnlPct ?? (typeof displayPnl === 'object' ? displayPnl.pnlPct : 0);
+
+                      return (
                         <div style={{
-                          fontSize: '0.9rem',
-                          fontWeight: 700,
-                          color: decision.currentPnl >= 0 ? '#16a34a' : '#dc2626'
+                          background: pnlValue >= 0 ? '#f0fdf4' : '#fef2f2',
+                          border: `1px solid ${pnlValue >= 0 ? '#dcfce7' : '#fee2e2'}`,
+                          borderRadius: '6px',
+                          padding: '8px',
+                          marginTop: '8px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          transition: 'all 0.3s ease',
+                          animation: isFlashing ? 'pnl-flash 0.8s ease-out' : 'none',
+                          boxShadow: isFlashing ? `0 0 12px ${pnlValue >= 0 ? '#16a34a' : '#dc2626'}40` : 'none'
                         }}>
-                          {decision.currentPnl >= 0 ? '+' : ''}{decision.currentPnl.toFixed(2)} ({decision.currentPnlPct ? (decision.currentPnlPct >= 0 ? '+' : '') + decision.currentPnlPct.toFixed(1) : '0.0'}%)
+                          <span style={{ fontSize: '0.75rem', color: '#667085' }}>
+                            Current P/L {liveData && '(Live)'}
+                          </span>
+                          <div style={{
+                            fontSize: '0.9rem',
+                            fontWeight: 700,
+                            color: pnlValue >= 0 ? '#16a34a' : '#dc2626'
+                          }}>
+                            {pnlValue >= 0 ? '+' : ''}{Number(pnlValue).toFixed(2)} ({pnlPct >= 0 ? '+' : ''}{Number(pnlPct).toFixed(1)}%)
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     {/* Alert Indicators */}
                     {decision.alerts && decision.alerts.length > 0 && decision.status === 'open' && (
