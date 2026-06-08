@@ -110,6 +110,17 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [showStrategyForm, setShowStrategyForm] = useState(false);
   const [showSymbolForm, setShowSymbolForm] = useState(false);
+  const [showDecisionCaptureModal, setShowDecisionCaptureModal] = useState(false);
+  const [pendingDecisionData, setPendingDecisionData] = useState(null);
+  const [decisionCaptureForm, setDecisionCaptureForm] = useState({
+    thesis: '',
+    evidence: '',
+    risks: '',
+    comments: '',
+    thesisChecked: [],
+    evidenceChecked: [],
+    risksChecked: []
+  });
 
   const authHeaders = useMemo(() => ({
     Authorization: `Bearer ${authToken || ownerId}`,
@@ -486,8 +497,28 @@ function App() {
           manualPrice: holdingForm.manualPrice === '' ? null : Number(holdingForm.manualPrice)
         })
       });
-      setHoldingForm((current) => ({ ...emptyHolding, accountId: current.accountId }));
       setNotice('Holding added.');
+
+      // Show decision capture modal with transaction details
+      setPendingDecisionData({
+        symbol: holdingForm.symbol.toUpperCase(),
+        action: 'BUY',
+        shares: Number(holdingForm.shares),
+        price: holdingForm.costBasis === '' ? null : Number(holdingForm.costBasis) / Number(holdingForm.shares),
+        transactionDate: holdingForm.purchaseDate || new Date().toISOString().split('T')[0]
+      });
+      setShowDecisionCaptureModal(true);
+      setDecisionCaptureForm({
+        thesis: '',
+        evidence: '',
+        risks: '',
+        comments: '',
+        thesisChecked: [],
+        evidenceChecked: [],
+        risksChecked: []
+      });
+
+      setHoldingForm((current) => ({ ...emptyHolding, accountId: current.accountId }));
       await refreshWorkspace();
     } catch (error) {
       setNotice(error.message);
@@ -693,6 +724,49 @@ function App() {
         </main>
       </div>
       {loading && <div className="loading">Refreshing workspace...</div>}
+      <DecisionCaptureModal
+        isOpen={showDecisionCaptureModal}
+        onClose={() => setShowDecisionCaptureModal(false)}
+        pendingDecision={pendingDecisionData}
+        formData={decisionCaptureForm}
+        onFormChange={setDecisionCaptureForm}
+        onSubmit={async (decision) => {
+          setLoading(true);
+          try {
+            const payload = {
+              symbol: decision.symbol,
+              action: decision.action,
+              quantity: decision.shares,
+              price: decision.price,
+              transaction_date: decision.transactionDate,
+              thesis: decision.thesis || null,
+              evidence: decision.evidence || null,
+              risks: decision.risks || null,
+              comments: decision.comments || null
+            };
+            await api('/api/decisions/manual', {
+              method: 'POST',
+              body: JSON.stringify(payload)
+            });
+            setShowDecisionCaptureModal(false);
+            setDecisionCaptureForm({
+              thesis: '',
+              evidence: '',
+              risks: '',
+              comments: '',
+              thesisChecked: [],
+              evidenceChecked: [],
+              risksChecked: []
+            });
+            setNotice('Decision captured.');
+          } catch (error) {
+            setNotice(error.message);
+          } finally {
+            setLoading(false);
+          }
+        }}
+        isSubmitting={loading}
+      />
     </div>
   );
 }
@@ -2643,6 +2717,194 @@ function generateMockCommunityProfiles(currentProfile) {
       },
       publishedStrategies: { length: Math.floor(Math.random() * 4) + 1 }
     }));
+}
+
+function DecisionCaptureModal({
+  isOpen,
+  onClose,
+  pendingDecision,
+  formData,
+  onFormChange,
+  onSubmit,
+  isSubmitting
+}) {
+  const thesisSuggestions = [
+    'Stock is undervalued',
+    'Technical breakout signal',
+    'Momentum play',
+    'Mean reversion (RSI < 30)',
+    'Matches my strategy'
+  ];
+
+  const evidenceSuggestions = [
+    'P/E below sector average',
+    'RSI shows oversold (< 30)',
+    'Price above 50-day MA',
+    'Recent earnings beat',
+    'Sector showing strength'
+  ];
+
+  const risksSuggestions = [
+    'Market downturn or correction',
+    'Earnings miss',
+    'Sector rotation',
+    'Valuation compression',
+    'Geopolitical risk'
+  ];
+
+  if (!isOpen || !pendingDecision) return null;
+
+  const transactionTitle = `${pendingDecision.action} ${pendingDecision.shares} shares of ${pendingDecision.symbol} at $${pendingDecision.price?.toFixed(2) || '—'}`;
+
+  const handleCheckChange = (category, index) => {
+    const key = `${category}Checked`;
+    const current = formData[key] || [];
+    const updated = current.includes(index)
+      ? current.filter(i => i !== index)
+      : [...current, index];
+    onFormChange({ ...formData, [key]: updated });
+  };
+
+  const getSelectedSuggestions = (category, suggestions) => {
+    const key = `${category}Checked`;
+    return (formData[key] || []).map(i => suggestions[i]).filter(Boolean);
+  };
+
+  const combinedText = (category, suggestions) => {
+    const selected = getSelectedSuggestions(category, suggestions);
+    const custom = formData[category] || '';
+    return [...selected, custom].filter(Boolean).join('; ');
+  };
+
+  const handleSubmitDecision = async (e) => {
+    e.preventDefault();
+
+    const thesis = combinedText('thesis', thesisSuggestions);
+    const evidence = combinedText('evidence', evidenceSuggestions);
+    const risks = combinedText('risks', risksSuggestions);
+    const comments = formData.comments || '';
+
+    await onSubmit({
+      ...pendingDecision,
+      thesis,
+      evidence,
+      risks,
+      comments
+    });
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Log Investment Decision</h2>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="modal-body">
+          <div className="decision-summary">
+            <strong>{transactionTitle}</strong>
+          </div>
+
+          <form onSubmit={handleSubmitDecision} className="decision-form">
+            {/* Thesis Section */}
+            <div className="form-section">
+              <h3>Thesis <span className="label-optional">(optional)</span></h3>
+              <div className="checkbox-group">
+                {thesisSuggestions.map((suggestion, idx) => (
+                  <label key={idx} className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={(formData.thesisChecked || []).includes(idx)}
+                      onChange={() => handleCheckChange('thesis', idx)}
+                    />
+                    {suggestion}
+                  </label>
+                ))}
+              </div>
+              <textarea
+                placeholder="Add custom thesis..."
+                value={formData.thesis || ''}
+                onChange={(e) => onFormChange({ ...formData, thesis: e.target.value })}
+                className="form-textarea"
+                rows="2"
+              />
+            </div>
+
+            {/* Evidence Section */}
+            <div className="form-section">
+              <h3>Evidence <span className="label-optional">(optional)</span></h3>
+              <div className="checkbox-group">
+                {evidenceSuggestions.map((suggestion, idx) => (
+                  <label key={idx} className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={(formData.evidenceChecked || []).includes(idx)}
+                      onChange={() => handleCheckChange('evidence', idx)}
+                    />
+                    {suggestion}
+                  </label>
+                ))}
+              </div>
+              <textarea
+                placeholder="Add custom evidence..."
+                value={formData.evidence || ''}
+                onChange={(e) => onFormChange({ ...formData, evidence: e.target.value })}
+                className="form-textarea"
+                rows="2"
+              />
+            </div>
+
+            {/* Risks Section */}
+            <div className="form-section">
+              <h3>Risks <span className="label-optional">(optional)</span></h3>
+              <div className="checkbox-group">
+                {risksSuggestions.map((suggestion, idx) => (
+                  <label key={idx} className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={(formData.risksChecked || []).includes(idx)}
+                      onChange={() => handleCheckChange('risks', idx)}
+                    />
+                    {suggestion}
+                  </label>
+                ))}
+              </div>
+              <textarea
+                placeholder="Add custom risks..."
+                value={formData.risks || ''}
+                onChange={(e) => onFormChange({ ...formData, risks: e.target.value })}
+                className="form-textarea"
+                rows="2"
+              />
+            </div>
+
+            {/* Comments Section */}
+            <div className="form-section">
+              <h3>Comments <span className="label-optional">(optional)</span></h3>
+              <textarea
+                placeholder="Add any additional notes..."
+                value={formData.comments || ''}
+                onChange={(e) => onFormChange({ ...formData, comments: e.target.value })}
+                className="form-textarea"
+                rows="3"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="modal-footer">
+              <button type="button" onClick={onClose} className="btn-secondary">
+                Skip for now
+              </button>
+              <button type="submit" disabled={isSubmitting} className="btn-primary">
+                {isSubmitting ? 'Saving...' : 'Save Decision'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 createRoot(document.getElementById('root')).render(<App />);
