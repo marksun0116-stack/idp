@@ -495,8 +495,9 @@ If user clicks "Add Details":
 | US-DJL-603 | Show locked fields (title/action) as read-only | 1d | ✅ Done |
 | US-DJL-604 | Display edit history with timestamps | 1d | ✅ Done |
 | US-DJL-605 | Implement close decision flow (final P/L, read-only) | 1d | ✅ Done |
+| US-DJL-606 | Wire API integration for save and close operations | 1d | ✅ Done |
 
-**Phase 6 Total: 7 days — 86% Complete (6 of 7 days)**
+**Phase 6 Total: 8 days — ✅ COMPLETE**
 
 **Completed Features:**
 
@@ -543,6 +544,15 @@ If user clicks "Add Details":
      - \"Decision is read-only\" message
      - No edit buttons for closed decisions
    - Payload prepared for API integration
+
+6. **API Integration** (US-DJL-606)
+   - Edit Decision: PUT /api/decisions/{id} with thesis, evidence, risks, comments
+   - Close Decision: POST /api/decisions/{id}/close with exit_price, exit_pnl, close_reason
+   - Backend model updated with closeReason field (persisted to database)
+   - Loading state during API calls (disabled buttons, \"Saving...\" / \"Closing...\" text)
+   - Error handling with user-friendly alerts
+   - Refresh decision journal after successful save/close
+   - DecisionDetailModal receives api client and callback props
 
 ### Phase 7: Testing & Validation
 
