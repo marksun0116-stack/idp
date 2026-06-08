@@ -1,0 +1,86 @@
+id: DEC-contract-ownership-and-mirroring-001
+kind: decision
+title: "Shared Service Contract Ownership and Consumer Mirroring"
+status: decided
+decision_date: 2026-06-07
+owner: idp-program-team
+
+context: >
+  The Finance Data Service publishes a REST API contract (CONR-finance-service-api-001)
+  that is consumed by IDP and stock-monitor. When API changes are made, both consumers
+  must be aware. We need a clear governance model to avoid:
+  1. Duplicated contract definitions (truth divergence)
+  2. Stale contract references in consumers
+  3. Accidental breaking changes without consumer notification
+
+decision: >
+  IDP is the permanent owner and source of truth for CONR-finance-service-api-001.
+  finance-data-service and stock-monitor maintain local mirrors of the contract
+  for reference (copy-on-change), but the canonical version lives in IDP.
+
+rationale: |
+  1. Single source of truth: Eliminates duplicate definitions and sync burden
+  2. Workspace authority: IDP is the program repo that governs workspace contracts
+  3. Consumer coordination: IDP is also a consumer, so it stays aware of contract changes
+  4. Clear ownership: No ambiguity about who owns the contract
+  5. Breaking change visibility: IDP governance ensures consumers are notified before changes
+
+contract_ownership_rules: |
+  Ownership of CONR-finance-service-api-001:
+  - Owner: IDP program repo (idp/knowledge/contracts/)
+  - Source of truth: IDP
+  - Consumer repos: finance-data-service, stock-monitor
+  - Status updates: Owner (IDP) is responsible for status (proposed, implemented, etc.)
+  - Version bumps: Owner (IDP) increments version in contract
+  - Breaking changes: Owner (IDP) requires consumer acknowledgment before merging
+
+consumer_mirroring_rules: |
+  How consumers (finance-data-service, stock-monitor) reference the contract:
+
+  Option A: Copy-on-Change (Recommended)
+  - Consumers maintain a local copy in their knowledge/ directory
+  - Copy is updated whenever contract changes in IDP
+  - Copy includes a "source_of_truth" field pointing to IDP location
+  - Test data and local contract tests use the local copy
+  - Breaking changes: Consumer must update local copy and fix tests before IDP merge completes
+
+  Option B: Reference (Alternative)
+  - Consumers reference the IDP contract via relative path
+  - No local copy maintained
+  - Validation: Consumer can reference but cannot have outdated local version
+  - Requires tools that understand relative cross-repo references
+
+  Chosen: Option A (Copy-on-Change)
+  Rationale: Clearer intent, faster CI/test, easier to track changes per repo
+
+governance_workflow: |
+  1. IDP makes API change to CONR-finance-service-api-001
+  2. IDP bumps contract version (0.1 -> 0.2)
+  3. IDP updates acceptance_criteria and response_schema fields
+  4. IDP merges change
+  5. finance-data-service and stock-monitor each pull and mirror the contract
+  6. Consumers update their local copies and tests if contract changed
+  7. Consumers merge their updates
+
+  Validation: Each repo validates independently with .knowledge-first-system/scripts/validate_knowledge.py
+
+change_notification: |
+  Breaking changes (method, path, response shape):
+  - IDP owner must create GitHub issue @mentioning consumer teams
+  - Consumer teams must ACK before IDP merges breaking change
+  - Typical turnaround: 1 business day
+
+  Non-breaking changes (adding optional fields, new endpoints):
+  - IDP owner can merge immediately
+  - Consumer teams are notified but don't need to ACK
+  - Consumers update at their own pace
+
+future_evolution: |
+  If workspace grows to 4+ repos, consider:
+  - Separate contracts repo with IDP as owner (maintains CONR-*,  coordinates updates)
+  - Pub/Sub notification system when contracts change
+  - Automated contract mirroring (CI job copies CONR from contracts repo)
+
+linked_primitives:
+  - CONR-finance-service-api-001
+  - FEAT-shared-finance-service-001

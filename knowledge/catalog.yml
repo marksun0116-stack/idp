@@ -46,6 +46,8 @@
   path: knowledge/decisions/DEC-chart-library-001.yml
 - id: DEC-shared-finance-service-001
   path: knowledge/decisions/DEC-shared-finance-service-001.yml
+- id: DEC-contract-ownership-and-mirroring-001
+  path: knowledge/decisions/DEC-contract-ownership-and-mirroring-001.yml
 - id: CONR-user-api-001
   path: knowledge/contracts/CONR-user-api-001.yml
 - id: CONR-watchlist-api-001
