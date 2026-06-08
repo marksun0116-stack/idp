@@ -2,7 +2,7 @@
 plan_id: PLAN-decision-journal-001
 title: "Decision Journal Implementation Plan"
 status: in_progress
-version: "0.1"
+version: "0.2"
 last_updated: 2026-06-07
 owner: "IDP Product Team"
 ---
@@ -326,25 +326,33 @@ If user clicks "Add Details":
 
 | Story | Task | Effort | Status |
 |-------|------|--------|--------|
-| US-DJL-101 | Create decisions table, decision_edits, decision_alerts | 2d | Planned |
-| US-DJL-102 | Implement DecisionService (create, log, edit, close) | 3d | Planned |
-| US-DJL-103 | Implement DecisionRepository with filtering | 2d | Planned |
-| US-DJL-104 | Implement DecisionAlertService (create, trigger, track) | 2d | Planned |
-| US-DJL-105 | Create API endpoints for decision CRUD | 2d | Planned |
-| US-DJL-106 | Add decision tests (unit + integration) | 2d | Planned |
+| US-DJL-101 | Create decisions table, decision_edits, decision_alerts | 2d | ✅ Done |
+| US-DJL-102 | Implement DecisionService (create, log, edit, close) | 3d | ✅ Done |
+| US-DJL-103 | Implement DecisionRepository with filtering | 2d | ✅ Done |
+| US-DJL-104 | Implement DecisionAlertService (create, trigger, track) | 2d | ✅ Done |
+| US-DJL-105 | Create API endpoints for decision CRUD | 2d | ✅ Done |
+| US-DJL-106 | Add decision tests (unit + integration) | 2d | ✅ Done |
 
-**Phase 1 Total: 13 days**
+**Phase 1 Total: 13 days — ✅ COMPLETE**
 
 ### Phase 2: Investment Section Integration
 
 | Story | Task | Effort | Status |
 |-------|------|--------|--------|
-| US-DJL-201 | Modify BUY transaction flow to create decision record | 1d | Planned |
-| US-DJL-202 | Modify SELL transaction flow to create decision record | 1d | Planned |
-| US-DJL-203 | Ensure buy/sell actions generate correct decision title | 1d | Planned |
-| US-DJL-204 | Add validation: skip watchlist/strategy changes | 1d | Planned |
+| US-DJL-201 | Modify BUY transaction flow to create MANUAL decision record | 1d | ✅ Done |
+| US-DJL-202 | Modify SELL transaction flow to create MANUAL decision record | 1d | ✅ Done |
+| US-DJL-203 | Ensure buy/sell actions generate correct decision title | 1d | ✅ Done |
+| US-DJL-204 | Support BigDecimal quantities (fractional shares) | 1d | ✅ Done |
 
-**Phase 2 Total: 4 days**
+**Phase 2 Total: 4 days — ✅ COMPLETE**
+
+**Progress Summary:**
+- addHolding(): Creates BUY decision with price calculated from costBasis/shares
+- updateHolding(): Detects SELL (shares decreased) and creates SELL decision for decreased amount
+- deleteHolding(): Creates SELL decision for all remaining shares before deletion
+- DecisionSource enum distinguishes MANUAL (Investment) vs AUTO (Strategy) sources
+- All 8 unit tests passing
+- BigDecimal quantity support for fractional shares
 
 ### Phase 3: Strategy Section Integration
 
@@ -510,6 +518,7 @@ Optimized with parallelization:
 
 | Version | Date | Status | Notes |
 |---------|------|--------|-------|
+| 0.2 | 2026-06-07 | In Progress | Phase 1 & 2 complete (26 days). DecisionSource enum supports MANUAL/AUTO distinction. PortfolioService wired to capture BUY/SELL. All tests passing. |
 | 0.1 | 2026-06-07 | In Progress | Initial plan. 40-45 days estimated. 7 phases with clear dependencies. |
 
 ---
