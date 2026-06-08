@@ -2656,6 +2656,8 @@ function Badge({ label, value }) {
 }
 
 function DecisionJournalTimeline({ decisions, onCloseDecision, showEmpty = true }) {
+  const [hoveredCardId, setHoveredCardId] = React.useState(null);
+
   // Group decisions by date (newest first)
   const decisionsByDate = decisions.reduce((acc, decision) => {
     const dateStr = decision.createdAt ? new Date(decision.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown';
@@ -2665,6 +2667,12 @@ function DecisionJournalTimeline({ decisions, onCloseDecision, showEmpty = true 
   }, {});
 
   const sortedDates = Object.keys(decisionsByDate).sort((a, b) => new Date(b) - new Date(a));
+
+  const formatEditTime = (timestamp) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
 
   const getActionColor = (type) => {
     switch (type) {
@@ -2742,12 +2750,53 @@ function DecisionJournalTimeline({ decisions, onCloseDecision, showEmpty = true 
                     onMouseEnter={(e) => {
                       e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
                       e.currentTarget.style.borderColor = '#d7dce2';
+                      setHoveredCardId(decision.id);
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.boxShadow = 'none';
                       e.currentTarget.style.borderColor = '#e4e7ec';
+                      setHoveredCardId(null);
                     }}
                   >
+                    {/* Edit History Tooltip */}
+                    {hoveredCardId === decision.id && decision.editHistory && decision.editHistory.length > 0 && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '-12px',
+                        right: '16px',
+                        background: '#1f2937',
+                        color: '#ffffff',
+                        padding: '10px 12px',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem',
+                        zIndex: 100,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        minWidth: '200px',
+                        maxWidth: '300px',
+                        lineHeight: '1.4'
+                      }}>
+                        <div style={{ fontWeight: 600, marginBottom: '6px', borderBottom: '1px solid #4b5563', paddingBottom: '6px' }}>
+                          Edit History
+                        </div>
+                        {decision.editHistory.slice(0, 5).map((edit, idx) => (
+                          <div key={idx} style={{ marginBottom: '4px', fontSize: '0.7rem', opacity: 0.9 }}>
+                            <div style={{ color: '#9ca3af', fontSize: '0.65rem' }}>
+                              {formatEditTime(edit.editedAt)}
+                            </div>
+                            <div>
+                              <strong>{edit.field}</strong>: {edit.newValue?.substring(0, 50)}
+                              {edit.newValue?.length > 50 ? '...' : ''}
+                            </div>
+                          </div>
+                        ))}
+                        {decision.editHistory.length > 5 && (
+                          <div style={{ marginTop: '6px', fontSize: '0.7rem', color: '#9ca3af', fontStyle: 'italic' }}>
+                            +{decision.editHistory.length - 5} more edits
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* Card Header: Action + Ticker */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
