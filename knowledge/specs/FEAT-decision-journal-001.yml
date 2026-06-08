@@ -10,9 +10,14 @@ description: |
   of action (when buying/selling holdings or executing strategy adjustments) rather than
   as a separate manual task.
 
-  **Decision Capture Flow** (at moment of action):
-  1. User takes action in Investment or Strategy section (e.g., "Buy 200 shares of AAPL at $150")
-  2. System creates decision record with auto-generated title
+  **Decision Capture Trigger** (buy/sell transactions only):
+  - Investment section: BUY or SELL transaction → capture decision
+  - Strategy section: BUY or SELL execution → capture decision
+  - NOT captured: Add/remove from watchlist, add/remove from strategy, adjust quantity (without selling), etc.
+
+  **Decision Capture Flow** (at moment of buy/sell transaction):
+  1. User completes buy or sell transaction in Investment or Strategy section
+  2. System creates decision record with auto-generated title (e.g., "Buy 200 shares of AAPL at $150")
   3. Optional prompt: "Log decision details for learning?" (user can skip)
   4. If user chooses to log:
      - Title: Auto-populated from action (read-only or editable)
@@ -40,15 +45,20 @@ description: |
   4. If closed, decision shows final P/L and outcome status
 
 acceptance_criteria:
-  - Decision capture triggered at moment of action in Investment/Strategy sections
-  - Title auto-generated from action (e.g., "Buy 200 shares of AAPL at $150")
+  - Decision capture triggered ONLY on buy/sell transactions (not add/remove watchlist/strategy)
+  - Investment BUY → decision capture prompt
+  - Investment SELL → decision capture prompt
+  - Strategy execution (buy/sell) → decision capture prompt
+  - Watchlist add/remove → NO decision capture
+  - Strategy add/remove from strategy → NO decision capture
+  - Title auto-generated from transaction (e.g., "Buy 200 shares of AAPL at $150")
   - Thesis, Evidence, Risks each have 5 pre-populated suggestions with option to add custom
   - Exit criteria defined as alert conditions and auto-created as alerts
-  - Decision journal displays all decisions in chronological order
+  - Decision journal displays all buy/sell decisions in chronological order
   - Per-transaction (each buy/sell separate decision)
   - Visual indicator when exit alerts trigger
   - User prompted to close or leave open when exit alert triggers
-  - All decision fields except title/thesis/evidence/risks/comments are optional
+  - All decision fields except title are optional
   - Journal timeline shows P/L for open positions
   - Filterable by symbol, date, outcome, thesis, risk
   - Reviews available at 30/90/180 days and 1 year after entry
