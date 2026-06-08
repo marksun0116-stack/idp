@@ -423,14 +423,31 @@ If user clicks "Add Details":
 
 | Story | Task | Effort | Status |
 |-------|------|--------|--------|
-| US-DJL-501 | Create DecisionJournalView timeline component | 2d | Planned |
-| US-DJL-502 | Implement decision card display (title, thesis, status, P/L) | 1d | Planned |
-| US-DJL-503 | Add filtering (symbol, date range, status) | 1d | Planned |
+| US-DJL-501 | Create DecisionJournalView timeline component | 2d | ✅ Done |
+| US-DJL-502 | Implement decision card display (title, thesis, status, P/L) | 1d | ✅ Done |
+| US-DJL-503 | Add filtering (symbol, date range, status) | 1d | 🔄 In Progress |
 | US-DJL-504 | Show alert triggers with [Close]/[Leave Open] buttons | 1d | Planned |
 | US-DJL-505 | Display edit history on card hover | 1d | Planned |
 | US-DJL-506 | Show open position current P/L in real-time | 1d | Planned |
 
-**Phase 5 Total: 7 days**
+**Phase 5 Total: 7 days — 29% Complete (2 of 7 days)**
+
+**Completed Features:**
+
+1. **DecisionJournalTimeline Component** (US-DJL-501)
+   - Chronological timeline with date groupings
+   - Vertical line connecting date groups
+   - Date header with timeline dots
+   - Organized newest-first
+
+2. **Decision Card Display** (US-DJL-502)
+   - Transaction summary: symbol, action (BUY/SELL), shares, price
+   - Color-coded action badges + status indicators
+   - Thesis/title display in italics
+   - Open position P/L (amount + percentage, colored by sign)
+   - Exit criteria list with alert status
+   - Hover effects for interactivity
+   - Support for edit history (prepared for US-DJL-505)
 
 ### Phase 6: Frontend - Decision Detail & Edit
 
