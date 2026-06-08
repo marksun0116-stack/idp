@@ -56,10 +56,10 @@ class InvestmentDecisionServiceTest {
     @Test
     void testCreateDecision_GeneratesCorrectTitle() {
         // Arrange
-        Integer quantity = 200;
+        BigDecimal quantity = new BigDecimal("200");
         BigDecimal price = new BigDecimal("150.00");
         when(decisionRepository.findByUserIdAndSymbolAndTransactionDateAndActionAndQuantityAndPrice(
-            userId, symbol, transactionDate, DecisionType.BUY, quantity, price))
+            userId, symbol, transactionDate, DecisionType.BUY, 200, price))
             .thenReturn(Optional.empty());
         when(decisionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -79,13 +79,13 @@ class InvestmentDecisionServiceTest {
     @Test
     void testCreateDecision_PreventsDuplicates() {
         // Arrange
-        Integer quantity = 200;
+        BigDecimal quantity = new BigDecimal("200");
         BigDecimal price = new BigDecimal("150.00");
         InvestmentDecision existing = new InvestmentDecision();
         existing.setSymbol(symbol);
         existing.setAction(DecisionType.BUY);
         when(decisionRepository.findByUserIdAndSymbolAndTransactionDateAndActionAndQuantityAndPrice(
-            userId, symbol, transactionDate, DecisionType.BUY, quantity, price))
+            userId, symbol, transactionDate, DecisionType.BUY, 200, price))
             .thenReturn(Optional.of(existing));
 
         // Act
@@ -193,6 +193,7 @@ class InvestmentDecisionServiceTest {
     @Test
     void testSellDecisionTitle() {
         // Arrange
+        BigDecimal quantity = new BigDecimal("100");
         when(decisionRepository.findByUserIdAndSymbolAndTransactionDateAndActionAndQuantityAndPrice(
             userId, symbol, transactionDate, DecisionType.SELL, 100, new BigDecimal("160.00")))
             .thenReturn(Optional.empty());
@@ -200,7 +201,7 @@ class InvestmentDecisionServiceTest {
 
         // Act
         InvestmentDecision decision = service.createDecision(
-            userId, symbol, DecisionType.SELL, 100, new BigDecimal("160.00"), transactionDate);
+            userId, symbol, DecisionType.SELL, quantity, new BigDecimal("160.00"), transactionDate);
 
         // Assert
         assertEquals("Sell 100 shares of AAPL at $160.00", decision.getTitle());

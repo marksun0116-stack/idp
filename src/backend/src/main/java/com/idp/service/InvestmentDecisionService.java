@@ -49,11 +49,12 @@ public class InvestmentDecisionService {
      */
     @Transactional
     public InvestmentDecision createManualDecision(String userId, String symbol, DecisionType action,
-                                                   Integer quantity, BigDecimal price, LocalDate transactionDate) {
+                                                   BigDecimal quantity, BigDecimal price, LocalDate transactionDate) {
         // Check for duplicate
+        Integer quantityInt = quantity.intValue();
         Optional<InvestmentDecision> existing = decisionRepository
             .findByUserIdAndSymbolAndTransactionDateAndActionAndQuantityAndPrice(
-                userId, symbol, transactionDate, action, quantity, price);
+                userId, symbol, transactionDate, action, quantityInt, price);
         if (existing.isPresent()) {
             return existing.get();
         }
@@ -62,14 +63,15 @@ public class InvestmentDecisionService {
         decision.setUserId(userId);
         decision.setSymbol(symbol);
         decision.setAction(action);
-        decision.setQuantity(quantity);
+        decision.setQuantity(quantityInt);
         decision.setPrice(price);
         decision.setTransactionDate(transactionDate);
         decision.setSource(DecisionSource.MANUAL);
 
         // Auto-generate title
         String actionStr = action == DecisionType.BUY ? "Buy" : "Sell";
-        decision.setTitle(String.format("%s %d shares of %s at $%.2f", actionStr, quantity, symbol, price));
+        String quantityStr = quantity.stripTrailingZeros().toPlainString();
+        decision.setTitle(String.format("%s %s shares of %s at $%.2f", actionStr, quantityStr, symbol, price));
 
         decision.setStatus(DecisionStatus.ACTIVE);
 
@@ -83,11 +85,12 @@ public class InvestmentDecisionService {
      */
     @Transactional
     public InvestmentDecision createAutoDecision(String userId, String symbol, DecisionType action,
-                                                 Integer quantity, BigDecimal latestPrice, LocalDate transactionDate) {
+                                                 BigDecimal quantity, BigDecimal latestPrice, LocalDate transactionDate) {
         // Check for duplicate (same symbol, action, quantity, price, date)
+        Integer quantityInt = quantity.intValue();
         Optional<InvestmentDecision> existing = decisionRepository
             .findByUserIdAndSymbolAndTransactionDateAndActionAndQuantityAndPrice(
-                userId, symbol, transactionDate, action, quantity, latestPrice);
+                userId, symbol, transactionDate, action, quantityInt, latestPrice);
         if (existing.isPresent()) {
             return existing.get();
         }
@@ -96,14 +99,15 @@ public class InvestmentDecisionService {
         decision.setUserId(userId);
         decision.setSymbol(symbol);
         decision.setAction(action);
-        decision.setQuantity(quantity);
+        decision.setQuantity(quantityInt);
         decision.setPrice(latestPrice); // Latest market price, not user-overridable
         decision.setTransactionDate(transactionDate);
         decision.setSource(DecisionSource.AUTO);
 
         // Auto-generate title with market price
         String actionStr = action == DecisionType.BUY ? "Buy" : "Sell";
-        decision.setTitle(String.format("%s %d shares of %s at $%.2f", actionStr, quantity, symbol, latestPrice));
+        String quantityStr = quantity.stripTrailingZeros().toPlainString();
+        decision.setTitle(String.format("%s %s shares of %s at $%.2f", actionStr, quantityStr, symbol, latestPrice));
 
         decision.setStatus(DecisionStatus.ACTIVE);
 
@@ -116,7 +120,7 @@ public class InvestmentDecisionService {
      */
     @Transactional
     public InvestmentDecision createDecision(String userId, String symbol, DecisionType action,
-                                            Integer quantity, BigDecimal price, LocalDate transactionDate) {
+                                            BigDecimal quantity, BigDecimal price, LocalDate transactionDate) {
         return createManualDecision(userId, symbol, action, quantity, price, transactionDate);
     }
 

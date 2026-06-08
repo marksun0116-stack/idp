@@ -8,6 +8,7 @@ import com.idp.dto.PortfolioSummaryResponse;
 import com.idp.dto.UpdateHoldingRequest;
 import com.idp.exception.PortfolioConflictException;
 import com.idp.exception.PortfolioNotFoundException;
+import com.idp.model.DecisionType;
 import com.idp.model.Holding;
 import com.idp.model.InvestmentAccount;
 import com.idp.repository.HoldingRepository;
@@ -15,8 +16,11 @@ import com.idp.repository.InvestmentAccountRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -29,15 +33,18 @@ public class PortfolioService {
     private final InvestmentAccountRepository accountRepository;
     private final HoldingRepository holdingRepository;
     private final MarketDataService marketDataService;
+    private final InvestmentDecisionService decisionService;
 
     public PortfolioService(
         InvestmentAccountRepository accountRepository,
         HoldingRepository holdingRepository,
-        MarketDataService marketDataService
+        MarketDataService marketDataService,
+        InvestmentDecisionService decisionService
     ) {
         this.accountRepository = accountRepository;
         this.holdingRepository = holdingRepository;
         this.marketDataService = marketDataService;
+        this.decisionService = decisionService;
     }
 
     @Transactional
@@ -73,7 +80,17 @@ public class PortfolioService {
         holding.setCostBasis(request.costBasis());
         holding.setPurchaseDate(request.purchaseDate());
         holding.setManualPrice(request.manualPrice());
-        return holdingRepository.save(holding);
+        holding = holdingRepository.save(holding);
+
+        // Capture BUY decision in investment decision journal
+        if (request.costBasis() != null && request.shares().signum() > 0) {
+            BigDecimal price = request.costBasis().divide(request.shares(), 2, java.math.RoundingMode.HALF_UP);
+            LocalDate transactionDate = request.purchaseDate() != null ? request.purchaseDate() : LocalDate.now();
+            decisionService.createManualDecision(
+                ownerId, symbol, DecisionType.BUY, request.shares(), price, transactionDate);
+        }
+
+        return holding;
     }
 
     @Transactional
@@ -81,11 +98,27 @@ public class PortfolioService {
         findOwnedAccount(ownerId, accountId);
         Holding holding = holdingRepository.findByIdAndAccountId(holdingId, accountId)
             .orElseThrow(PortfolioNotFoundException::new);
+
+        BigDecimal sharesDecreased = holding.getShares().subtract(request.shares());
+        boolean isSell = sharesDecreased.signum() > 0;
+
         holding.setShares(request.shares());
         holding.setCostBasis(request.costBasis());
         holding.setPurchaseDate(request.purchaseDate());
         holding.setManualPrice(request.manualPrice());
-        return holdingRepository.save(holding);
+        holding = holdingRepository.save(holding);
+
+        // Capture SELL decision if shares decreased
+        if (isSell && sharesDecreased.signum() > 0) {
+            BigDecimal sellPrice = request.costBasis() != null && request.shares().signum() > 0
+                ? request.costBasis().divide(request.shares(), 2, java.math.RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+            LocalDate transactionDate = request.purchaseDate() != null ? request.purchaseDate() : LocalDate.now();
+            decisionService.createManualDecision(
+                ownerId, holding.getSymbol(), DecisionType.SELL, sharesDecreased, sellPrice, transactionDate);
+        }
+
+        return holding;
     }
 
     @Transactional
@@ -93,6 +126,17 @@ public class PortfolioService {
         findOwnedAccount(ownerId, accountId);
         Holding holding = holdingRepository.findByIdAndAccountId(holdingId, accountId)
             .orElseThrow(PortfolioNotFoundException::new);
+
+        // Capture SELL decision for all shares before deletion
+        if (holding.getShares().signum() > 0) {
+            BigDecimal sellPrice = holding.getCostBasis() != null && holding.getShares().signum() > 0
+                ? holding.getCostBasis().divide(holding.getShares(), 2, java.math.RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+            LocalDate transactionDate = holding.getPurchaseDate() != null ? holding.getPurchaseDate() : LocalDate.now();
+            decisionService.createManualDecision(
+                ownerId, holding.getSymbol(), DecisionType.SELL, holding.getShares(), sellPrice, transactionDate);
+        }
+
         holdingRepository.delete(holding);
     }
 

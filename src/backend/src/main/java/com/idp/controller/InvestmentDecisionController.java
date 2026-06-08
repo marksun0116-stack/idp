@@ -45,7 +45,7 @@ public class InvestmentDecisionController {
         String userId = auth.getName();
         String symbol = (String) request.get("symbol");
         String actionStr = (String) request.get("action");
-        Integer quantity = ((Number) request.get("quantity")).intValue();
+        BigDecimal quantity = new BigDecimal(request.get("quantity").toString());
         BigDecimal price = new BigDecimal(request.get("price").toString());
         LocalDate transactionDate = LocalDate.parse((String) request.get("transaction_date"));
 
@@ -69,7 +69,7 @@ public class InvestmentDecisionController {
         String userId = auth.getName();
         String symbol = (String) request.get("symbol");
         String actionStr = (String) request.get("action");
-        Integer quantity = ((Number) request.get("quantity")).intValue();
+        BigDecimal quantity = new BigDecimal(request.get("quantity").toString());
         BigDecimal latestPrice = new BigDecimal(request.get("latest_price").toString());
         LocalDate transactionDate = LocalDate.parse((String) request.get("transaction_date"));
 
