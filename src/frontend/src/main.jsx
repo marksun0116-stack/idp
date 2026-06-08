@@ -525,9 +525,34 @@ function App() {
     }
   }
 
-  async function deleteHolding(accountId, holdingId) {
+  async function deleteHolding(accountId, holdingId, holding) {
     setNotice('');
     try {
+      // Capture SELL decision before deleting holding
+      if (holding && holding.shares > 0) {
+        const sellPrice = holding.costBasis && holding.shares > 0
+          ? holding.costBasis / holding.shares
+          : null;
+
+        setPendingDecisionData({
+          symbol: holding.symbol,
+          action: 'SELL',
+          shares: holding.shares,
+          price: sellPrice,
+          transactionDate: new Date().toISOString().split('T')[0]
+        });
+        setShowDecisionCaptureModal(true);
+        setDecisionCaptureForm({
+          thesis: '',
+          evidence: '',
+          risks: '',
+          comments: '',
+          thesisChecked: [],
+          evidenceChecked: [],
+          risksChecked: []
+        });
+      }
+
       await api(`/api/portfolio/accounts/${accountId}/holdings/${holdingId}`, { method: 'DELETE' });
       setNotice('Holding removed.');
       await refreshWorkspace();
@@ -1642,7 +1667,7 @@ function InvestmentWorkspaceView({
                   <strong>{currencyPrecise(holding.gain)}</strong>
                   <small>{signedPercentLabel(holding.gainPct)}</small>
                 </span>
-                <button type="button" onClick={() => deleteHolding(holding.accountId, holding.id)}>Remove</button>
+                <button type="button" onClick={() => deleteHolding(holding.accountId, holding.id, holding)}>Remove</button>
               </article>
             ))}
             {holdings.length === 0 && <Empty text="No holdings yet." />}
