@@ -1,0 +1,106 @@
+package com.idp.model;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+
+import java.time.Instant;
+
+/**
+ * Tracks edits to an InvestmentDecision.
+ * Records field name, old value, new value, and timestamp.
+ * Used to maintain learning history and show when thesis/evidence/risks changed.
+ */
+@Entity
+@Table(name = "investment_decision_edits")
+public class InvestmentDecisionEdit {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "decision_id", nullable = false)
+    private InvestmentDecision decision;
+
+    @Column(nullable = false, length = 50)
+    private String fieldName; // 'thesis', 'evidence', 'risks', 'comments', 'exit_criteria'
+
+    @Column(length = 2000)
+    private String oldValue;
+
+    @Column(length = 2000)
+    private String newValue;
+
+    @Column(nullable = false)
+    private Instant editedAt;
+
+    @PrePersist
+    void prePersist() {
+        if (editedAt == null) {
+            editedAt = Instant.now();
+        }
+    }
+
+    // Constructors
+    public InvestmentDecisionEdit() {
+    }
+
+    public InvestmentDecisionEdit(InvestmentDecision decision, String fieldName, String oldValue, String newValue) {
+        this.decision = decision;
+        this.fieldName = fieldName;
+        this.oldValue = oldValue;
+        this.newValue = newValue;
+        this.editedAt = Instant.now();
+    }
+
+    // Getters and Setters
+    public Long getId() {
+        return id;
+    }
+
+    public InvestmentDecision getDecision() {
+        return decision;
+    }
+
+    public void setDecision(InvestmentDecision decision) {
+        this.decision = decision;
+    }
+
+    public String getFieldName() {
+        return fieldName;
+    }
+
+    public void setFieldName(String fieldName) {
+        this.fieldName = fieldName;
+    }
+
+    public String getOldValue() {
+        return oldValue;
+    }
+
+    public void setOldValue(String oldValue) {
+        this.oldValue = oldValue;
+    }
+
+    public String getNewValue() {
+        return newValue;
+    }
+
+    public void setNewValue(String newValue) {
+        this.newValue = newValue;
+    }
+
+    public Instant getEditedAt() {
+        return editedAt;
+    }
+
+    public void setEditedAt(Instant editedAt) {
+        this.editedAt = editedAt;
+    }
+}
