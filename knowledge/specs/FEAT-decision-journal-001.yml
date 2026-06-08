@@ -1,0 +1,84 @@
+id: FEAT-decision-journal-001
+kind: feature
+title: "Decision Journal: Capture & Review Investment Decisions"
+status: in_progress
+summary: "Users log investment decisions at the moment of action (buy/sell/adjust) to build a decision journal for skill and discipline improvement"
+
+description: |
+  The Decision Journal helps investors track and review their investment decisions over time,
+  enabling skill development and discipline measurement. Decisions are captured at the moment
+  of action (when buying/selling holdings or executing strategy adjustments) rather than
+  as a separate manual task.
+
+  **Decision Capture Flow** (at moment of action):
+  1. User takes action in Investment or Strategy section (e.g., "Buy 200 shares of AAPL at $150")
+  2. System creates decision record with auto-generated title
+  3. Optional prompt: "Log decision details for learning?" (user can skip)
+  4. If user chooses to log:
+     - Title: Auto-populated from action (read-only or editable)
+     - Thesis: Pick from 5 suggested options or add custom
+     - Evidence: Pick from 5 suggested options or add custom
+     - Risks: Pick from 5 suggested options or add custom
+     - Comments: Optional free-text area
+     - Exit Criteria: Define as alert conditions (price targets, P/L ratios, etc.)
+  5. System auto-creates alerts from exit criteria
+
+  **Decision Journal View** (read-only timeline):
+  - Chronological timeline of all decisions
+  - Per-transaction (each buy/sell is separate decision)
+  - Shows: Date, symbol, action, thesis, evidence, risks, current status
+  - If position open: shows entry price, current price, P/L
+  - If exit alert triggered: visual indicator asking to close or leave open
+  - Filterable by: symbol, date range, outcome (open/closed), thesis, risk
+
+  **Decision Close Flow**:
+  1. When exit alert triggers (price ≥ target, P/L ≥ threshold, etc.)
+  2. Visual indicator in journal: "Exit alert triggered"
+  3. User can:
+     - Close decision (mark completed with outcome)
+     - Leave open (ignore alert, continue holding)
+  4. If closed, decision shows final P/L and outcome status
+
+acceptance_criteria:
+  - Decision capture triggered at moment of action in Investment/Strategy sections
+  - Title auto-generated from action (e.g., "Buy 200 shares of AAPL at $150")
+  - Thesis, Evidence, Risks each have 5 pre-populated suggestions with option to add custom
+  - Exit criteria defined as alert conditions and auto-created as alerts
+  - Decision journal displays all decisions in chronological order
+  - Per-transaction (each buy/sell separate decision)
+  - Visual indicator when exit alerts trigger
+  - User prompted to close or leave open when exit alert triggers
+  - All decision fields except title/thesis/evidence/risks/comments are optional
+  - Journal timeline shows P/L for open positions
+  - Filterable by symbol, date, outcome, thesis, risk
+  - Reviews available at 30/90/180 days and 1 year after entry
+  - No export functionality required (future enhancement)
+
+suggested_thesis_options:
+  - "Stock is undervalued (P/E or price/book below peers)"
+  - "Technical breakout signal (price breaks resistance)"
+  - "Momentum play (trend continuation)"
+  - "Mean reversion (oversold indicator like RSI < 30)"
+  - "Matches my investment strategy or watchlist criteria"
+
+suggested_evidence_options:
+  - "P/E ratio below sector average"
+  - "RSI shows oversold conditions (< 30)"
+  - "Price above 50-day moving average"
+  - "Recent earnings beat or positive catalyst"
+  - "Sector/industry showing relative strength"
+
+suggested_risks_options:
+  - "Market downturn or sector correction"
+  - "Company earnings miss or guidance cut"
+  - "Sector rotation or fund flows shifting"
+  - "Valuation multiple compression"
+  - "Geopolitical or macro risk event"
+
+linked_constraints:
+  - CON-decision-review-cadence-001
+linked_invariants:
+  - INV-decision-record-integrity-001
+linked_contracts:
+  - CONR-decision-record-api-001
+  - CONR-decision-review-api-001

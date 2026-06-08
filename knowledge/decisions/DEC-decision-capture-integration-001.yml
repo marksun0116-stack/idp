@@ -1,0 +1,61 @@
+id: DEC-decision-capture-integration-001
+kind: decision
+title: "Integrate Decision Capture into Action Workflows"
+status: decided
+decision_date: 2026-06-07
+owner: idp-product-team
+
+context: >
+  Users need to build investment discipline and skill through reviewing past decisions.
+  However, creating decisions as a standalone manual task results in low engagement,
+  forgotten context, and incomplete decision records. The timing of decision capture
+  (when context is fresh) is critical to quality.
+
+decision: >
+  Embed decision capture at the moment of action (buy/sell/adjust holdings or execute
+  strategy) rather than as a separate workflow. Prompt users optionally to log thesis,
+  evidence, risks, and exit criteria when they take an action. Make entry easy with
+  auto-populated titles, suggested answers (5 per category), and optional fields.
+  Move decision journal to read-only timeline view for review and learning.
+
+rationale: |
+  1. **Timing**: Capture decisions when context is fresh, not hours/days later
+  2. **Engagement**: Optional integration reduces friction vs. mandatory form
+  3. **Completeness**: Auto-generated title and suggestions help fill gaps
+  4. **Learning**: Journal becomes passive review, not data-entry task
+  5. **Clarity**: Exit criteria (alerts) are explicit, measurable, actionable
+
+  Without integration, decision capture would be a separate ~5 minute task per
+  decision, likely skipped or delayed. By embedding at the moment of action,
+  we capture the decision naturally and can guide the user to add details.
+
+consequences: |
+  - Must refactor Investment and Strategy UX to show decision capture prompt
+  - Exit criteria (alerts) tightly coupled to decisions
+  - Decision journal becomes read-only summary (no manual CRUD)
+  - Requires design work to make prompts non-intrusive
+  - Testing must cover decision capture at multiple action points
+
+alternatives_considered: |
+  1. Standalone decision form (like standalone journal)
+     - Pro: Clear separation, lower code complexity
+     - Con: Low engagement, forgotten context, incomplete records
+     - Rejected
+
+  2. Auto-create decisions with no user prompt
+     - Pro: No friction, always capturing
+     - Con: Low quality, missing thesis/evidence, alert spam
+     - Rejected
+
+  3. AI-inferred thesis/evidence from market data
+     - Pro: Minimal user input, smart defaults
+     - Con: Over-prescriptive, reduces user reflection
+     - Rejected (current: user picks from suggested 5)
+
+evolution: |
+  2026-06-07: Decided. Integration planned for Investment and Strategy sections.
+  Future: Could add AI-assisted thesis suggestions based on market fundamentals.
+
+linked_primitives:
+  - FEAT-decision-journal-001
+  - CON-decision-review-cadence-001

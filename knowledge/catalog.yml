@@ -14,6 +14,8 @@
   path: knowledge/specs/FEAT-market-movers-widget-001.yml
 - id: FEAT-stock-news-001
   path: knowledge/specs/FEAT-stock-news-001.yml
+- id: FEAT-decision-journal-001
+  path: knowledge/specs/FEAT-decision-journal-001.yml
 - id: CON-user-registration-001
   path: knowledge/constraints/CON-user-registration-001.yml
 - id: CON-watchlist-access-001
@@ -48,6 +50,8 @@
   path: knowledge/decisions/DEC-shared-finance-service-001.yml
 - id: DEC-contract-ownership-and-mirroring-001
   path: knowledge/decisions/DEC-contract-ownership-and-mirroring-001.yml
+- id: DEC-decision-capture-integration-001
+  path: knowledge/decisions/DEC-decision-capture-integration-001.yml
 - id: CONR-user-api-001
   path: knowledge/contracts/CONR-user-api-001.yml
 - id: CONR-watchlist-api-001
