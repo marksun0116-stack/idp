@@ -1059,12 +1059,26 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
   const [searchTicker, setSearchTicker] = React.useState('');
   const [filterType, setFilterType] = React.useState('all');
   const [filterStatus, setFilterStatus] = React.useState('all');
+  const [fromDate, setFromDate] = React.useState('');
+  const [toDate, setToDate] = React.useState('');
+  const [showAdvancedFilters, setShowAdvancedFilters] = React.useState(false);
+
+  // Get unique tickers for autocomplete
+  const uniqueTickers = React.useMemo(() => {
+    return [...new Set(decisions.map(d => d.ticker || d.symbol).filter(Boolean))].sort();
+  }, [decisions]);
 
   const filteredDecisions = decisions.filter(d => {
-    const matchesTicker = searchTicker === '' || d.ticker.toUpperCase().includes(searchTicker.toUpperCase());
+    const matchesTicker = searchTicker === '' || (d.ticker || d.symbol || '').toUpperCase().includes(searchTicker.toUpperCase());
     const matchesType = filterType === 'all' || d.decisionType === filterType;
     const matchesStatus = filterStatus === 'all' || d.status === filterStatus;
-    return matchesTicker && matchesType && matchesStatus;
+
+    // Date range filtering
+    const decisionDate = new Date(d.createdAt);
+    const matchesFromDate = !fromDate || decisionDate >= new Date(fromDate);
+    const matchesToDate = !toDate || decisionDate <= new Date(toDate + 'T23:59:59');
+
+    return matchesTicker && matchesType && matchesStatus && matchesFromDate && matchesToDate;
   });
 
   const decisionStats = {
@@ -1103,6 +1117,7 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
             </div>
           </div>
 
+          {/* Filter Row 1: Search + Quick Filters */}
           <div style={{ marginBottom: '12px', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '8px', width: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: '#ffffff', borderRadius: '6px', border: '1px solid #d7dce2' }}>
               <Search size={16} style={{ color: '#9facbd', flexShrink: 0 }} />
@@ -1111,8 +1126,14 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
                 placeholder="Search by ticker..."
                 value={searchTicker}
                 onChange={(e) => setSearchTicker(e.target.value)}
+                list="ticker-list"
                 style={{ flex: 1, border: 'none', background: 'transparent', fontSize: '0.9rem', outline: 'none', color: '#20242a', padding: 0, width: '100%' }}
               />
+              <datalist id="ticker-list">
+                {uniqueTickers.map(ticker => (
+                  <option key={ticker} value={ticker} />
+                ))}
+              </datalist>
             </div>
             <select
               value={filterType}
@@ -1120,9 +1141,11 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
               style={{ padding: '10px 11px', background: '#ffffff', border: '1px solid #d7dce2', borderRadius: '7px', fontSize: '0.9rem', color: '#20242a' }}
             >
               <option value="all">All types</option>
+              <option value="BUY">Buy</option>
+              <option value="SELL">Sell</option>
               <option value="watch">Watch</option>
-              <option value="buy">Buy</option>
-              <option value="sell">Sell</option>
+              <option value="buy">Buy (Manual)</option>
+              <option value="sell">Sell (Manual)</option>
               <option value="avoid">Avoid</option>
             </select>
             <select
@@ -1131,18 +1154,90 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
               style={{ padding: '10px 11px', background: '#ffffff', border: '1px solid #d7dce2', borderRadius: '7px', fontSize: '0.9rem', color: '#20242a' }}
             >
               <option value="all">All status</option>
+              <option value="open">Open</option>
               <option value="active">Active</option>
               <option value="closed">Closed</option>
               <option value="archived">Archived</option>
             </select>
           </div>
 
+          {/* Advanced Filters Toggle */}
+          <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <button
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                color: '#13a79a',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                fontWeight: 500,
+                padding: '4px 0',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              {showAdvancedFilters ? '▼' : '▶'} Date Range Filter
+            </button>
+            {(fromDate || toDate) && (
+              <button
+                onClick={() => {
+                  setFromDate('');
+                  setToDate('');
+                }}
+                style={{
+                  border: 'none',
+                  background: '#fef2f2',
+                  color: '#dc2626',
+                  cursor: 'pointer',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  padding: '4px 8px',
+                  borderRadius: '4px'
+                }}
+              >
+                Clear dates
+              </button>
+            )}
+          </div>
+
+          {/* Advanced Filters: Date Range */}
+          {showAdvancedFilters && (
+            <div style={{ marginBottom: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '8px', padding: '12px', background: '#f9fbfb', borderRadius: '6px', border: '1px solid #e4e7ec' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#667085', textTransform: 'uppercase' }}>From</label>
+                <input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  style={{ padding: '8px 10px', background: '#ffffff', border: '1px solid #d7dce2', borderRadius: '6px', fontSize: '0.9rem', color: '#20242a' }}
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#667085', textTransform: 'uppercase' }}>To</label>
+                <input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                  style={{ padding: '8px 10px', background: '#ffffff', border: '1px solid #d7dce2', borderRadius: '6px', fontSize: '0.9rem', color: '#20242a' }}
+                />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                <span style={{ fontSize: '0.8rem', color: '#9facbd' }}>
+                  {filteredDecisions.length} decision{filteredDecisions.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+            </div>
+          )}
+
+
           <DecisionJournalTimeline decisions={filteredDecisions} showEmpty={filteredDecisions.length === 0} />
-          {filteredDecisions.length === 0 && searchTicker === '' && filterType === 'all' && filterStatus === 'all' && (
+          {filteredDecisions.length === 0 && searchTicker === '' && filterType === 'all' && filterStatus === 'all' && !fromDate && !toDate && (
             <Empty text="No decisions yet. Create your first decision to start your journal." />
           )}
-          {filteredDecisions.length === 0 && (searchTicker !== '' || filterType !== 'all' || filterStatus !== 'all') && (
-            <Empty text="No decisions match your filters. Try adjusting your search." />
+          {filteredDecisions.length === 0 && (searchTicker !== '' || filterType !== 'all' || filterStatus !== 'all' || fromDate || toDate) && (
+            <Empty text="No decisions match your filters. Try adjusting your search or date range." />
           )}
         </Panel>
       </section>
