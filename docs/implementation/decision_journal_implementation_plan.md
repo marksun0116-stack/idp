@@ -425,12 +425,12 @@ If user clicks "Add Details":
 |-------|------|--------|--------|
 | US-DJL-501 | Create DecisionJournalView timeline component | 2d | ✅ Done |
 | US-DJL-502 | Implement decision card display (title, thesis, status, P/L) | 1d | ✅ Done |
-| US-DJL-503 | Add filtering (symbol, date range, status) | 1d | 🔄 In Progress |
-| US-DJL-504 | Show alert triggers with [Close]/[Leave Open] buttons | 1d | Planned |
+| US-DJL-503 | Add filtering (symbol, date range, status) | 1d | ✅ Done |
+| US-DJL-504 | Show alert triggers with [Close]/[Leave Open] buttons | 1d | 🔄 In Progress |
 | US-DJL-505 | Display edit history on card hover | 1d | Planned |
 | US-DJL-506 | Show open position current P/L in real-time | 1d | Planned |
 
-**Phase 5 Total: 7 days — 29% Complete (2 of 7 days)**
+**Phase 5 Total: 7 days — 57% Complete (4 of 7 days)**
 
 **Completed Features:**
 
@@ -448,6 +448,16 @@ If user clicks "Add Details":
    - Exit criteria list with alert status
    - Hover effects for interactivity
    - Support for edit history (prepared for US-DJL-505)
+
+3. **Enhanced Filtering** (US-DJL-503)
+   - Date range picker (From/To with inclusive end-of-day)
+   - Symbol autocomplete via HTML5 datalist (all unique tickers)
+   - Status filter with all variants (open, active, closed, archived)
+   - Action type filter (BUY, SELL, manual variants)
+   - Collapsible advanced filter section (clean UI by default)
+   - Clear dates button with visual feedback
+   - Live decision count in filter section
+   - Improved empty state messages for filtered results
 
 ### Phase 6: Frontend - Decision Detail & Edit
 
