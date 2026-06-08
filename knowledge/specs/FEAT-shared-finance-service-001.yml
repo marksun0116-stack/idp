@@ -27,6 +27,17 @@ acceptance_criteria:
   - Existing IDP and stock-monitor REST controller signatures remain unchanged after re-wire
   - All tests green (Testcontainers + real Postgres)
 
+implementation_notes: >
+  Detailed implementation is documented in finance-data-service repository.
+  See knowledge/specs/ for independent feature breakdowns:
+  - FEAT-finance-daily-history-cache-001
+  - FEAT-finance-intraday-cache-001
+  - FEAT-finance-technical-indicators-001
+  - FEAT-finance-metadata-001
+  - FEAT-finance-market-movers-001
+  - FEAT-finance-news-001
+  - FEAT-finance-pattern-matching-001
+
 linked_constraints:
   - CON-finance-cache-001
 linked_decisions:
