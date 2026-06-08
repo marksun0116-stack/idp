@@ -1,0 +1,3 @@
+CREATE DATABASE idp;
+CREATE DATABASE finance_data;
+CREATE DATABASE stock_monitor;

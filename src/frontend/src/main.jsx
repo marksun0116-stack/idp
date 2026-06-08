@@ -1261,6 +1261,11 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
               onClose={() => setSelectedDecision(null)}
               editForm={editForm}
               setEditForm={setEditForm}
+              api={api}
+              onSaveSuccess={() => {
+                setSelectedDecision(null);
+                loadDecisions();
+              }}
             />
           )}
           {filteredDecisions.length === 0 && searchTicker === '' && filterType === 'all' && filterStatus === 'all' && !fromDate && !toDate && (
@@ -3072,11 +3077,12 @@ function DecisionJournalTimeline({ decisions, onCloseDecision, onCardClick, show
   );
 }
 
-function DecisionDetailModal({ decision, onClose, editForm, setEditForm }) {
+function DecisionDetailModal({ decision, onClose, editForm, setEditForm, api, onSaveSuccess }) {
   const [isEditing, setIsEditing] = React.useState(decision.status === 'open');
   const [isClosing, setIsClosing] = React.useState(false);
   const [closeReason, setCloseReason] = React.useState('');
   const [exitPrice, setExitPrice] = React.useState('');
+  const [isSaving, setIsSaving] = React.useState(false);
 
   if (!decision) return null;
 
@@ -3105,9 +3111,27 @@ function DecisionDetailModal({ decision, onClose, editForm, setEditForm }) {
   ];
 
   const handleSaveEdit = async () => {
-    // TODO: Call update decision API
-    console.log('Saving decision edits:', editForm);
-    setIsEditing(false);
+    try {
+      setIsSaving(true);
+      const payload = {
+        thesis: editForm.thesis || '',
+        evidence: editForm.evidence || '',
+        risks: editForm.risks || '',
+        comments: editForm.comments || ''
+      };
+
+      await api(`/api/decisions/${decision.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+      });
+
+      setIsEditing(false);
+      if (onSaveSuccess) onSaveSuccess();
+    } catch (error) {
+      alert(`Failed to save decision: ${error.message}`);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCloseDecision = async () => {
@@ -3116,28 +3140,33 @@ function DecisionDetailModal({ decision, onClose, editForm, setEditForm }) {
       return;
     }
 
-    const exitPriceValue = parseFloat(exitPrice);
-    const entryValue = decision.price * decision.quantity;
-    const exitValue = exitPriceValue * decision.quantity;
-    const finalPnL = exitValue - entryValue;
-    const finalPnLPct = (finalPnL / entryValue) * 100;
+    try {
+      setIsSaving(true);
+      const exitPriceValue = parseFloat(exitPrice);
+      const entryValue = decision.price * decision.quantity;
+      const exitValue = exitPriceValue * decision.quantity;
+      const finalPnL = exitValue - entryValue;
+      const finalPnLPct = (finalPnL / entryValue) * 100;
 
-    const closePayload = {
-      decisionId: decision.id,
-      exitPrice: exitPriceValue,
-      exitValue: exitValue,
-      finalPnL: finalPnL,
-      finalPnLPct: finalPnLPct,
-      closeReason: closeReason || 'User closed decision',
-      closedAt: new Date().toISOString()
-    };
+      const closePayload = {
+        exit_price: exitPriceValue,
+        exit_pnl: finalPnL,
+        close_reason: closeReason || ''
+      };
 
-    console.log('Closing decision:', closePayload);
-    // TODO: Call close decision API
-    // await closeDecision(closePayload);
+      await api(`/api/decisions/${decision.id}/close`, {
+        method: 'POST',
+        body: JSON.stringify(closePayload)
+      });
 
-    alert(`Decision closed at $${exitPriceValue.toFixed(2)}\nFinal P/L: ${finalPnL >= 0 ? '+' : ''}$${finalPnL.toFixed(2)} (${finalPnLPct >= 0 ? '+' : ''}${finalPnLPct.toFixed(1)}%)`);
-    onClose();
+      alert(`Decision closed at $${exitPriceValue.toFixed(2)}\nFinal P/L: ${finalPnL >= 0 ? '+' : ''}$${finalPnL.toFixed(2)} (${finalPnLPct >= 0 ? '+' : ''}${finalPnLPct.toFixed(1)}%)`);
+      if (onSaveSuccess) onSaveSuccess();
+      onClose();
+    } catch (error) {
+      alert(`Failed to close decision: ${error.message}`);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -3299,8 +3328,10 @@ function DecisionDetailModal({ decision, onClose, editForm, setEditForm }) {
               </div>
 
               <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-                <button type="submit" className="btn-primary" style={{ flex: 1 }}>Save Changes</button>
-                <button type="button" onClick={() => setIsEditing(false)} className="btn-secondary" style={{ flex: 1 }}>Cancel</button>
+                <button type="submit" className="btn-primary" style={{ flex: 1 }} disabled={isSaving}>
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button type="button" onClick={() => setIsEditing(false)} className="btn-secondary" style={{ flex: 1 }} disabled={isSaving}>Cancel</button>
               </div>
             </form>
           )}
@@ -3450,13 +3481,15 @@ function DecisionDetailModal({ decision, onClose, editForm, setEditForm }) {
                   onClick={handleCloseDecision}
                   className="btn-primary"
                   style={{ flex: 1, background: '#dc2626' }}
+                  disabled={isSaving}
                 >
-                  ✓ Confirm Close
+                  {isSaving ? 'Closing...' : '✓ Confirm Close'}
                 </button>
                 <button
                   onClick={() => setIsClosing(false)}
                   className="btn-secondary"
                   style={{ flex: 1 }}
+                  disabled={isSaving}
                 >
                   Cancel
                 </button>

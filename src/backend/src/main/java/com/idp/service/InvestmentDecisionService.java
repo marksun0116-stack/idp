@@ -206,12 +206,13 @@ public class InvestmentDecisionService {
      * Marks as CLOSED and prevents further edits.
      */
     @Transactional
-    public InvestmentDecision closeDecision(Long decisionId, BigDecimal exitPrice, BigDecimal exitPnl) {
+    public InvestmentDecision closeDecision(Long decisionId, BigDecimal exitPrice, BigDecimal exitPnl, String closeReason) {
         InvestmentDecision decision = getDecision(decisionId);
 
         decision.setStatus(DecisionStatus.CLOSED);
         decision.setExitPrice(exitPrice);
         decision.setExitPnl(exitPnl);
+        decision.setCloseReason(closeReason);
         decision.setClosedAt(Instant.now());
 
         // Mark all alerts as closed

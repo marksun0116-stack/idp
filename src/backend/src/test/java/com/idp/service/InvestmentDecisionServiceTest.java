@@ -162,7 +162,7 @@ class InvestmentDecisionServiceTest {
 
         // Act
         InvestmentDecision closed = service.closeDecision(
-            1L, new BigDecimal("165.00"), new BigDecimal("3000.00"));
+            1L, new BigDecimal("165.00"), new BigDecimal("3000.00"), "target_hit");
 
         // Assert
         assertEquals(DecisionStatus.CLOSED, closed.getStatus());

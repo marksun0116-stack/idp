@@ -1,128 +1,277 @@
-# Investor Development Platform
+# Investor Development Platform (IDP)
 
-Local prototype for the Investor Development Platform. The current app includes a React frontend, a Spring Boot API, and PostgreSQL.
+Unified multi-service development platform featuring:
+- **IDP** - Investment decision & strategy platform (React + Spring Boot)
+- **Stock Monitor** - Stock tracking & portfolio management (React + Spring Boot)
+- **Finance Data Service** - Shared market data provider (Spring Boot)
+- **PostgreSQL 16** - Single unified database with 3 schemas (idp, finance_data, stock_monitor)
 
-## Run Locally With Docker Compose In WSL
+## Prerequisites
 
-Prerequisites:
+- WSL2 or Linux/Mac
+- Docker Desktop with WSL integration, or Docker Engine
+- Run commands from repository root (`/home/msun/projects/idp`)
 
-- WSL2
-- Docker Desktop with WSL integration enabled, or Docker Engine installed inside WSL
-- Run commands from the repository root
+## Quick Start
 
-Start the app:
-
+### Start All Services
 ```bash
 ./scripts/dev-up.sh
 ```
 
-The first run downloads the Postgres image, Maven builder image, JRE runtime image, and Maven dependencies, so it can take a few minutes.
+First run takes a few minutes to download images and build containers.
 
-The compose stack starts:
+### Access Applications
 
-- `postgres` on `localhost:5433`
-- `backend` on `http://localhost:8081`
-- `frontend` on `http://localhost:3000`
+| Service | URL | Port |
+|---------|-----|------|
+| IDP Frontend | http://localhost:3000 | 3000 |
+| Stock Monitor Frontend | http://localhost:3001 | 3001 |
+| IDP Backend | http://localhost:8081 | 8081 |
+| Stock Monitor Backend | http://localhost:8080 | 8080 |
+| Finance Data Service | http://localhost:8082 | 8082 |
+| PostgreSQL | localhost:5432 | 5432 |
 
-Open the UI:
+### View Logs
 
-```text
-http://localhost:3000
-```
-
-The frontend proxies `/api` requests to the backend inside Docker Compose.
-
-Follow backend logs:
-
+Follow logs for any service:
 ```bash
-./scripts/dev-logs.sh
+./scripts/dev-logs.sh stock-monitor    # Follow stock-monitor logs
+./scripts/dev-logs.sh finance-data-service
+./scripts/dev-logs.sh idp
 ```
 
-Stop the stack:
-
+### Stop Services
 ```bash
 ./scripts/dev-down.sh
 ```
 
-Delete the local database volume and stop the stack:
-
+### Reset Database (Delete All Data)
 ```bash
 ./scripts/dev-reset-db.sh
 ```
 
-Rebuild the backend image from scratch:
-
+### Rebuild Services
 ```bash
 ./scripts/dev-rebuild.sh
 ```
 
-The local database uses these default credentials:
+## Database
 
-```text
-database: idp
-username: idp
-password: idp
+### Unified PostgreSQL Setup
+
+Single PostgreSQL 16 instance with 3 databases:
+
+```
+postgres-shared (port 5432)
+├── idp (IDP application data)
+├── finance_data (Market data & quotes cache)
+└── stock_monitor (Watchlists, portfolios, alerts)
 ```
 
-If you want to expose Postgres on a different host port:
-
-```bash
-IDP_POSTGRES_PORT=5434 ./scripts/dev-up.sh
+**Default credentials:**
+```
+username: postgres
+password: postgres
 ```
 
-If you want to expose the backend on a different host port:
+This matches cloud deployment architecture (single RDS with multiple databases).
 
+## Backup & Restore
+
+### Backup All Databases
 ```bash
-IDP_BACKEND_PORT=8082 ./scripts/dev-up.sh
+# Simple backup
+./scripts/backup-database.sh
+
+# Compressed backup (recommended - reduces size by 90%)
+./scripts/backup-database.sh --compress
+
+# Custom retention (keep 60 days instead of 30)
+./scripts/backup-database.sh --compress --retain-days 60
 ```
 
-If you want to expose the frontend on a different host port:
+Backups are stored in `backups/` with timestamps.
 
+### Restore from Backup
 ```bash
-IDP_FRONTEND_PORT=3001 ./scripts/dev-up.sh
+# List available backups
+ls -lh backups/
+
+# Restore specific database
+./scripts/restore-database.sh idp ./backups/idp_20260608_103727.sql.gz
+./scripts/restore-database.sh stock_monitor ./backups/stock_monitor_20260608_103727.sql.gz
+./scripts/restore-database.sh finance_data ./backups/finance_data_20260608_103727.sql.gz
 ```
 
-Spring Boot uses `ddl-auto: update`, so tables are created automatically in the local Postgres volume.
+### Automated Daily Backups
 
-## Quick API Smoke Test
-
-Private API endpoints use the development bearer-subject auth filter. Any bearer token becomes the local user id.
+Set up cron for automatic backups at 2 AM daily:
 
 ```bash
-curl -i http://localhost:8081/api/decisions \
-  -H "Authorization: Bearer alice"
+crontab -e
+
+# Add this line:
+0 2 * * * cd /home/msun/projects/idp && ./scripts/backup-database.sh --compress --retain-days 30 >> backups/cron.log 2>&1
 ```
 
-Create a decision:
+See `scripts/BACKUP_RESTORE.md` for detailed backup documentation.
 
+## Scripts Reference
+
+All utility scripts are in the `scripts/` directory:
+
+| Script | Purpose |
+|--------|---------|
+| `dev-up.sh` | Start all services with Docker Compose |
+| `dev-down.sh` | Stop all services |
+| `dev-logs.sh` | View logs for a specific service |
+| `dev-rebuild.sh` | Rebuild services from scratch |
+| `dev-reset-db.sh` | Delete database volume and stop services |
+| `backup-database.sh` | Backup all databases (compressed recommended) |
+| `restore-database.sh` | Restore database from backup |
+
+## API Testing
+
+### Stock Monitor API
 ```bash
-curl -i -X POST http://localhost:8081/api/decisions \
-  -H "Authorization: Bearer alice" \
+# Get watchlist for a user
+curl -H "Authorization: Bearer testuser" \
+  http://localhost:8080/api/watchlists
+
+# Add stock to watchlist
+curl -X POST http://localhost:8080/api/watchlists \
+  -H "Authorization: Bearer testuser" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Tech Stocks"}'
+```
+
+### Finance Data Service API
+```bash
+# Get live quote
+curl http://localhost:8082/api/finance/quote?symbols=AAPL
+
+# Get market movers
+curl http://localhost:8082/api/finance/movers/gainers
+```
+
+### IDP API
+```bash
+# Get decisions
+curl -H "Authorization: Bearer testuser" \
+  http://localhost:8081/api/decisions
+
+# Create decision
+curl -X POST http://localhost:8081/api/decisions \
+  -H "Authorization: Bearer testuser" \
   -H "Content-Type: application/json" \
   -d '{
     "ticker": "NVDA",
     "decisionType": "watch",
     "title": "NVDA infrastructure thesis",
     "thesis": "AI infrastructure demand may support durable revenue growth.",
-    "evidence": ["Data center demand", "GPU supply constraints easing"],
-    "riskFactors": ["Valuation compression"],
-    "confidence": 8,
-    "timeHorizon": "6 months",
-    "exitCriteria": ["Thesis invalidated"],
-    "visibility": "private"
+    "confidence": 8
   }'
 ```
 
-Public strategy endpoints are unauthenticated under `/api/public/**`.
-
-## Useful Docker Compose Commands
+## Useful Docker Commands
 
 ```bash
+# Check service status
 docker compose ps
-docker compose logs -f frontend
-docker compose logs -f backend
+
+# View service logs
+docker compose logs -f stock-monitor
 docker compose logs -f postgres
+docker compose logs -f idp
+
+# Connect to database directly
+docker exec -it postgres-shared psql -U postgres -d idp
+
+# Inspect container
+docker inspect postgres-shared
+
+# Stop without removing
+docker compose stop
+
+# Full reset with volume deletion
 docker compose down -v
 ```
 
-Use `docker compose down -v` only when you want to delete the local Postgres data volume.
+## Project Structure
+
+```
+idp/
+├── docker-compose.yml          # Orchestrates all services
+├── src/
+│   ├── backend/               # IDP Spring Boot backend
+│   ├── frontend/              # IDP React frontend
+│   └── ...
+├── scripts/                   # Utility scripts
+│   ├── dev-up.sh
+│   ├── dev-down.sh
+│   ├── backup-database.sh
+│   ├── restore-database.sh
+│   └── ...
+├── backups/                   # Database backups (created on first backup)
+├── docker-compose.yml         # Main orchestration file
+└── README.md                  # This file
+```
+
+## Knowledge-First System
+
+This project follows the Knowledge-First System (KFS) for development. Before making implementation changes:
+
+1. Check `knowledge/catalog.yml` for knowledge primitives
+2. Update relevant knowledge files if behavior changes
+3. Update architecture/design docs as needed
+4. Then implement code changes
+5. Run validation: `python3 .knowledge-first-system/scripts/validate_knowledge.py`
+
+See `CLAUDE.md` for detailed KFS instructions.
+
+## Troubleshooting
+
+**"Address already in use" error:**
+```bash
+# Port is already in use, change it via environment variable
+IDP_BACKEND_PORT=8082 ./scripts/dev-up.sh
+```
+
+**Database connection fails:**
+```bash
+# Verify postgres is running
+docker compose ps
+
+# Check postgres logs
+./scripts/dev-logs.sh postgres
+
+# Reset database
+./scripts/dev-reset-db.sh
+./scripts/dev-up.sh
+```
+
+**Services won't start:**
+```bash
+# Clean up and restart
+docker compose down
+docker compose up --build
+```
+
+**Need to access database directly:**
+```bash
+docker exec -it postgres-shared psql -U postgres
+
+# In psql:
+\l                    # List databases
+\c idp                # Connect to idp database
+\dt                   # List tables
+```
+
+## Development Notes
+
+- All services run in Docker containers
+- Services communicate via Docker network (not localhost)
+- Database credentials are hardcoded for local development only
+- Change in `docker-compose.yml` requires rebuild: `./scripts/dev-rebuild.sh`
+- Database schema auto-creates via Spring Boot (ddl-auto: update)

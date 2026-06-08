@@ -3,57 +3,21 @@ version: '3.8'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: postgres-idp
+    container_name: postgres-shared
     environment:
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5435:5432"
+      - "5432:5432"
     volumes:
-      - postgres_idp_data:/var/lib/postgresql/data
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_shared_data:/var/lib/postgresql/data
+      - ./init-databases.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - idp-network
-
-  postgres-finance:
-    image: postgres:16-alpine
-    container_name: postgres-finance
-    environment:
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5434:5432"
-    volumes:
-      - postgres_finance_data:/var/lib/postgresql/data
-      - ../finance-data-service/init-db.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - idp-network
-
-  postgres-stock-monitor:
-    image: postgres:16-alpine
-    container_name: postgres-stock-monitor
-    environment:
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5436:5432"
-    volumes:
-      - postgres_stock_monitor_data:/var/lib/postgresql/data
-      - ../stock-monitor/init-db.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - idp-network
+      - shared-network
 
   idp:
     build: .
@@ -71,7 +35,7 @@ services:
       finance-data-service:
         condition: service_healthy
     networks:
-      - idp-network
+      - shared-network
 
   finance-data-service:
     build:
@@ -80,11 +44,11 @@ services:
     ports:
       - "8082:8082"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-finance:5432/finance_data
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finance_data
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
     depends_on:
-      postgres-finance:
+      postgres:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
@@ -92,7 +56,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - idp-network
+      - shared-network
 
   stock-monitor:
     build:
@@ -101,12 +65,12 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-stock-monitor:5432/stock_monitor
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/stock_monitor
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       FINANCE_DATA_BASE_URL: http://finance-data-service:8082
     depends_on:
-      postgres-stock-monitor:
+      postgres:
         condition: service_healthy
       finance-data-service:
         condition: service_healthy
@@ -116,7 +80,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - idp-network
+      - shared-network
 
   idp-frontend:
     build:
@@ -128,7 +92,7 @@ services:
       - idp
       - finance-data-service
     networks:
-      - idp-network
+      - shared-network
 
   stock-monitor-frontend:
     build:
@@ -140,13 +104,11 @@ services:
       - stock-monitor
       - finance-data-service
     networks:
-      - idp-network
+      - shared-network
 
 volumes:
-  postgres_idp_data:
-  postgres_finance_data:
-  postgres_stock_monitor_data:
+  postgres_shared_data:
 
 networks:
-  idp-network:
+  shared-network:
     driver: bridge

@@ -89,6 +89,9 @@ public class InvestmentDecision {
     @Column(precision = 10, scale = 2)
     private BigDecimal exitPnl; // Final P/L when closed
 
+    @Column(length = 100)
+    private String closeReason; // e.g., "target_hit", "stop_loss", "thesis_broke", etc.
+
     @Column(nullable = false)
     private Instant createdAt;
 
@@ -267,6 +270,14 @@ public class InvestmentDecision {
 
     public void setClosedAt(Instant closedAt) {
         this.closedAt = closedAt;
+    }
+
+    public String getCloseReason() {
+        return closeReason;
+    }
+
+    public void setCloseReason(String closeReason) {
+        this.closeReason = closeReason;
     }
 
     public boolean isClosed() {

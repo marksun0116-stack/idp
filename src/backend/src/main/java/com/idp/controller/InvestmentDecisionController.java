@@ -173,8 +173,9 @@ public class InvestmentDecisionController {
 
         BigDecimal exitPrice = new BigDecimal(request.get("exit_price").toString());
         BigDecimal exitPnl = new BigDecimal(request.get("exit_pnl").toString());
+        String closeReason = (String) request.get("close_reason");
 
-        InvestmentDecision decision = decisionService.closeDecision(id, exitPrice, exitPnl);
+        InvestmentDecision decision = decisionService.closeDecision(id, exitPrice, exitPnl, closeReason);
 
         return ResponseEntity.ok(decision);
     }
