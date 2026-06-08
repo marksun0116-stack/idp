@@ -1,8 +1,8 @@
 ---
 plan_id: PLAN-decision-journal-001
 title: "Decision Journal Implementation Plan"
-status: in_progress
-version: "0.6"
+status: phase_5_complete
+version: "0.7"
 last_updated: 2026-06-08
 owner: "IDP Product Team"
 ---
@@ -428,9 +428,9 @@ If user clicks "Add Details":
 | US-DJL-503 | Add filtering (symbol, date range, status) | 1d | ✅ Done |
 | US-DJL-504 | Show alert triggers with [Close]/[Leave Open] buttons | 1d | ✅ Done |
 | US-DJL-505 | Display edit history on card hover | 1d | ✅ Done |
-| US-DJL-506 | Show open position current P/L in real-time | 1d | Planned |
+| US-DJL-506 | Show open position current P/L in real-time | 1d | ✅ Done |
 
-**Phase 5 Total: 7 days — 86% Complete (6 of 7 days)**
+**Phase 5 Total: 7 days — ✅ COMPLETE**
 
 **Completed Features:**
 
@@ -474,6 +474,17 @@ If user clicks "Add Details":
    - Indicator for additional edits if > 5
    - Smooth hover reveal animation
    - Formatted timestamps (Month Day, HH:MM)
+
+6. **Real-time P/L Updates** (US-DJL-506)
+   - Live quote fetching every 5 seconds from finance-data-service
+   - Real-time P/L calculation (current value - entry value)
+   - P/L percentage displayed to 1 decimal place
+   - Flash animation on significant changes (>$50)
+   - Animation: 800ms glow + scale effect
+   - Green glow for gains, red for losses
+   - "(Live)" indicator shows real-time data in use
+   - Graceful fallback to static P/L if quotes unavailable
+   - Change detection triggers visual feedback
 
 ### Phase 6: Frontend - Decision Detail & Edit
 
@@ -603,6 +614,7 @@ Optimized with parallelization:
 
 | Version | Date | Status | Notes |
 |---------|------|--------|-------|
+| 0.7 | 2026-06-08 | Complete (Phase 5) | Phase 5 COMPLETE (100%, 7 of 7 days). All 6 user stories done: Timeline component, card display, enhanced filtering, alert actions, edit history, real-time P/L. Live quote fetching every 5s, P/L flash animation on >$50 changes. Decision Journal fully functional for capture, review, filtering, and monitoring. Ready for Phase 6: Decision Detail & Edit view. |
 | 0.6 | 2026-06-08 | In Progress | Phase 4 complete (100%). US-DJL-406 finished: local storage draft persistence + optional field toggle. Drafts auto-save (500ms debounce) and recover on modal reopen. Optional fields collapsible. Phase 5 starting: Decision Journal Timeline view. |
 | 0.5 | 2026-06-07 | Complete | Phase 4 nearly complete (7 of 8 days, 87%). Exit criteria input added. Strategy execution wired to AUTO decision modal. MANUAL vs AUTO routing implemented. Backend/frontend fully integrated. |
 | 0.4 | 2026-06-07 | In Progress | Phase 4 in progress (4 of 8 days). DecisionCaptureModal component built and wired to addHolding (BUY) and deleteHolding (SELL). Modal shows suggestions + custom text for thesis/evidence/risks. Responsive UI with animations. |
