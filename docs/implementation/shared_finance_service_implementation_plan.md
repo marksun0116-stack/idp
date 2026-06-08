@@ -75,9 +75,9 @@ Out of scope for this plan:
 | Phase C - Provider and services | Centralize Yahoo provider and quote/history/movers/news service logic in the shared service. | done | finance-data-service | Phase B schema | Phase D | DEC-shared-finance-service-001 |
 | Phase D - Technical analysis | Move canonical BigDecimal indicators and recommendation logic into the shared service. | done | finance-data-service | Phase B repos | Phase C | FEAT-shared-finance-service-001 |
 | Phase E - REST API and shared-service tests | Publish `/api/finance/*` endpoints and verify with meaningful service tests. | done | finance-data-service, idp | Phase C, Phase D | None | CONR-finance-service-api-001 |
-| Phase F - IDP consumer re-wire | Make IDP consume shared service correctly and remove direct Yahoo fallback implementation. | in_progress | idp, finance-data-service | Phase E endpoint contract | Phase G after contract stabilizes | CONR-finance-service-api-001, FEAT-investor-development-platform-001 |
-| Phase G - stock-monitor consumer re-wire | Make stock-monitor consume shared service and retire local shared-cache/Yahoo ownership. | in_progress | stock-monitor, finance-data-service, idp | Phase E endpoint contract, RR-106 | Phase F | CONR-finance-service-api-001, FEAT-stock-monitor-001 |
-| Phase H - Shared-service KFS independence | Add local KFS/docs to finance-data-service and clarify shared contract ownership/mirroring. | planned | idp, finance-data-service | Phase A, RR-104 | Phase E tests | FEAT-shared-finance-service-001, CONR-finance-service-api-001 |
+| Phase F - IDP consumer re-wire | Make IDP consume shared service correctly and remove direct Yahoo fallback implementation. | done | idp, finance-data-service | Phase E endpoint contract | Phase G after contract stabilizes | CONR-finance-service-api-001, FEAT-investor-development-platform-001 |
+| Phase G - stock-monitor consumer re-wire | Make stock-monitor consume shared service and retire local shared-cache/Yahoo ownership. | done | stock-monitor, finance-data-service, idp | Phase E endpoint contract, RR-106 | Phase F | CONR-finance-service-api-001, FEAT-stock-monitor-001 |
+| Phase H - Shared-service KFS independence | Add local KFS/docs to finance-data-service and clarify shared contract ownership/mirroring. | in_progress | idp, finance-data-service | Phase A, RR-104 | Phase E tests | FEAT-shared-finance-service-001, CONR-finance-service-api-001 |
 | Phase I - Workspace hardening | Align docs, implementation plan, validation, smoke flows, and repo handoff readiness. | planned | idp, finance-data-service, stock-monitor | Phases A-H | None | FEAT-shared-finance-service-001 |
 
 ## 5. User Story Plan
@@ -116,10 +116,10 @@ Out of scope for this plan:
 | US-122 | Phase G | stock-monitor | Add HTTP-delegating stock-monitor services for quote, history, movers, news, and insights/metadata as required. | done | RR-106 | Yes, with US-120 after contract fixed | CONR-finance-service-api-001 | All tests passing | Created RemoteStockHistoryService, RemoteMarketMoversService, RemoteStockNewsService. All delegate to finance-data-service. |
 | US-123 | Phase G | stock-monitor | Retire or supersede local Yahoo-fetching and shared-cache ownership in stock-monitor. | done | US-122 | No | CONR-finance-service-api-001, CON-finance-cache-001 | All tests passing | Deleted 10 files: 6 service implementations, 2 model classes, 2 repository interfaces. Updated ForecastController and InsightsServiceImpl to use RemoteStockHistoryService. |
 | US-124 | Phase G | stock-monitor | Restore stock-monitor backend test pass after metadata/cache handoff. | done | RR-106, US-122 | No | FEAT-stock-monitor-001 | `mvn test -q` passed | Fixed by disabling StockReferenceDataLoader in test context (stock-monitor.enable-metadata-seeding: false). Metadata seeding now delegated to shared service. |
-| RR-107 | Phase H | idp, finance-data-service | Review shared-service KFS independence: which primitives move, which remain workspace-owned, and how consumers reference the contract. | planned | RR-104 | No | FEAT-shared-finance-service-001, CONR-finance-service-api-001 | Not run | Decide whether `CONR-finance-service-api-001` owner moves to finance-data-service now or after endpoint tests pass. |
-| US-125 | Phase H | finance-data-service | Add local agent instructions and KFS/docs scaffold to finance-data-service. | planned | RR-107 | No | FEAT-shared-finance-service-001 | Not run | Add `AGENTS.md`, `CLAUDE.md`, `knowledge/catalog.yml`, service-local `docs/`, and optionally `.knowledge-first-system/` validation tooling. |
-| US-126 | Phase H | finance-data-service, idp | Create or migrate service-owned primitives into finance-data-service without forking workspace truth. | planned | US-125 | No | FEAT-shared-finance-service-001, CON-finance-cache-001, CONR-finance-service-api-001 | Not run | Service-local knowledge should own cache/provider/service tests; workspace repo keeps cross-repo migration plan until governance changes. |
-| US-127 | Phase H | idp, finance-data-service, stock-monitor | Define shared contract ownership and consumer mirroring/reference rules. | planned | US-126, RR-104 | No | CONR-finance-service-api-001 | Not run | Preferred future: finance-data-service owns API contract; IDP and stock-monitor reference or mirror the contract version. |
+| RR-107 | Phase H | idp, finance-data-service | Review shared-service KFS independence: which primitives move, which remain workspace-owned, and how consumers reference the contract. | done | RR-104 | No | FEAT-shared-finance-service-001, CONR-finance-service-api-001 | Decisions made | **Decided:** CONR stays IDP-owned; full .knowledge-first-system copy; move service-owned primitives locally. |
+| US-125 | Phase H | finance-data-service | Add local agent instructions and KFS/docs scaffold to finance-data-service. | done | RR-107 | No | FEAT-shared-finance-service-001 | KFS validation passed | Added `AGENTS.md`, `CLAUDE.md`, `knowledge/catalog.yml`, service-local `docs/` (PRD, architecture, design, test plan), and full `.knowledge-first-system/` copy. |
+| US-126 | Phase H | finance-data-service, idp | Create or migrate service-owned primitives into finance-data-service without forking workspace truth. | in_progress | US-125 | No | FEAT-shared-finance-service-001, CON-finance-cache-001, CONR-finance-service-api-001 | In progress | Service-local knowledge should own cache/provider/service tests; workspace repo keeps cross-repo migration plan until governance changes. |
+| US-127 | Phase H | idp, finance-data-service, stock-monitor | Define shared contract ownership and consumer mirroring/reference rules. | ready | US-126, RR-104 | No | CONR-finance-service-api-001 | Ready to start | Preferred future: finance-data-service owns API contract; IDP and stock-monitor reference or mirror the contract version. |
 | US-130 | Phase I | idp | Fix KFS validation for finance primitives and existing orphan primitives. | done | US-100 | No | FEAT-shared-finance-service-001 | KFS validation passed | Completed while closing Phase A. |
 | US-131 | Phase I | idp, finance-data-service, stock-monitor | Update PRD/architecture/design docs in each affected repo to describe shared-service ownership and remove stale direct-Yahoo claims. | planned | US-130, RR-104, RR-106, US-127 | Yes, after contract owner resolved | FEAT-shared-finance-service-001 | Not run | stock-monitor docs still contain direct Yahoo/local cache statements. |
 | US-132 | Phase I | idp, finance-data-service, stock-monitor | Run end-to-end smoke with all services and verify IDP strategy quotes and stock-monitor watchlist quotes. | planned | US-119, US-121, US-124 | No | CONR-finance-service-api-001 | Not run | Requires finance service, IDP, stock-monitor, and DBs running. |
@@ -188,13 +188,31 @@ Out of scope for this plan:
 - 2026-06-07: **Enhanced similar setup matching**: Relaxed `indicatorValuesMatch()` thresholds and changed to count-based N-1 of N matching. All tests passing.
 - 2026-06-07: **Completed RR-106**: RemoteStockMetadataService compiles successfully; delegates all metadata to shared service with local ConcurrentHashMap cache.
 
-## 9. Open Questions
+## 9. Phase H Decisions (RR-107 Complete)
 
-1. Which repo permanently owns `CONR-finance-service-api-001`: IDP program repo, finance-data-service, or a future governance repo?
-2. Should `finance-data-service` install a copied `.knowledge-first-system/` validation toolchain now, or start with lightweight local `knowledge/`, `docs/`, `AGENTS.md`, and `CLAUDE.md` that reference the program repo?
-3. Should stock-monitor retain local `stock_metadata` for portfolio/segment features, delegate all metadata to `/api/finance/metadata`, or use a hybrid?
-4. Should IDP delete `YahooMarketDataService` immediately after adapter tests pass, or keep it temporarily as a non-primary emergency fallback behind explicit config?
-5. Should single quote endpoint return a plain quote object or a `quotes` map wrapper? Consumers and contract must agree.
+**Contract Ownership:**
+- ✓ CONR-finance-service-api-001 permanently owned by IDP program repo
+- Rationale: Maintains single source of truth for workspace API contracts
+- finance-data-service and stock-monitor reference/mirror from IDP
+
+**KFS Bootstrap Approach:**
+- ✓ Full copy of .knowledge-first-system/ into finance-data-service
+- Rationale: Independence; validates service-local behavior; can diverge validation rules later if needed
+- Creates: finance-data-service/AGENTS.md, CLAUDE.md, knowledge/, docs/
+
+**Primitive Ownership:**
+- ✓ Move service-owned primitives locally to finance-data-service
+- FEAT-shared-finance-service-001 → copied to finance-data-service
+- CON-finance-cache-001 → copied to finance-data-service
+- DEC-shared-finance-service-001 → copied to finance-data-service
+- CONR-finance-service-api-001 → IDP owns, finance-data-service mirrors version ref
+- IDP remains source of truth for mirroring rules (can update once, propagate refs)
+
+## 10. Open Questions (Future Phases)
+
+1. Should stock-monitor retain local `stock_metadata` for portfolio/segment features, delegate all metadata to `/api/finance/metadata`, or use a hybrid?
+2. Should IDP delete `YahooMarketDataService` immediately after adapter tests pass, or keep it temporarily as a non-primary emergency fallback behind explicit config?
+3. When workspace grows to 4+ repos, should governance move to separate contracts repo or stay workspace-owned?
 
 ## Change log
 
@@ -211,3 +229,4 @@ Out of scope for this plan:
 | 0.9 | 2026-06-07 | in_progress | 0.8 | **Completed Phases D & E**: Completed RR-104 (quote shape), US-119 (integration tests), RR-103 (indicator validation), and RR-106 (metadata delegation). Phase D & E done. Phase F/G in progress. |
 | 1.0 | 2026-06-07 | in_progress | 0.9 | **Completed US-122 & US-124**: Created remote adapters (RemoteStockHistoryService, RemoteMarketMoversService, RemoteStockNewsService). Fixed test failures by disabling metadata seeding in tests. Phase G 50% complete. |
 | 1.1 | 2026-06-07 | in_progress | 1.0 | **Completed US-123**: Cleaned up 10 old implementation files (service impls, models, repositories). Updated ForecastController and InsightsServiceImpl to use remote services. Phase G 100% complete. Ready for Phase H (KFS independence). |
+| 1.2 | 2026-06-07 | in_progress | 1.1 | **Completed RR-107 & US-125**: Made Phase H decisions (CONR owned by IDP, full .knowledge-first-system copy, move service-owned primitives). Added finance-data-service/AGENTS.md, CLAUDE.md, knowledge/, and docs/ scaffold with KFS validation passing. Phase H 25% complete. |
