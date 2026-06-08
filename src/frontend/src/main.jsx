@@ -3074,6 +3074,7 @@ function DecisionJournalTimeline({ decisions, onCloseDecision, onCardClick, show
 
 function DecisionDetailModal({ decision, onClose, editForm, setEditForm }) {
   const [isEditing, setIsEditing] = React.useState(decision.status === 'open');
+  const [isClosing, setIsClosing] = React.useState(false);
   const [closeReason, setCloseReason] = React.useState('');
   const [exitPrice, setExitPrice] = React.useState('');
 
@@ -3110,8 +3111,32 @@ function DecisionDetailModal({ decision, onClose, editForm, setEditForm }) {
   };
 
   const handleCloseDecision = async () => {
+    if (!exitPrice || parseFloat(exitPrice) <= 0) {
+      alert('Please enter a valid exit price');
+      return;
+    }
+
+    const exitPriceValue = parseFloat(exitPrice);
+    const entryValue = decision.price * decision.quantity;
+    const exitValue = exitPriceValue * decision.quantity;
+    const finalPnL = exitValue - entryValue;
+    const finalPnLPct = (finalPnL / entryValue) * 100;
+
+    const closePayload = {
+      decisionId: decision.id,
+      exitPrice: exitPriceValue,
+      exitValue: exitValue,
+      finalPnL: finalPnL,
+      finalPnLPct: finalPnLPct,
+      closeReason: closeReason || 'User closed decision',
+      closedAt: new Date().toISOString()
+    };
+
+    console.log('Closing decision:', closePayload);
     // TODO: Call close decision API
-    console.log('Closing decision with exit price:', exitPrice);
+    // await closeDecision(closePayload);
+
+    alert(`Decision closed at $${exitPriceValue.toFixed(2)}\nFinal P/L: ${finalPnL >= 0 ? '+' : ''}$${finalPnL.toFixed(2)} (${finalPnLPct >= 0 ? '+' : ''}${finalPnLPct.toFixed(1)}%)`);
     onClose();
   };
 
@@ -3264,6 +3289,127 @@ function DecisionDetailModal({ decision, onClose, editForm, setEditForm }) {
             </>
           )}
 
+          {/* Close Decision Form */}
+          {isClosing && decision.status === 'open' && (
+            <div style={{ background: '#fef2f2', padding: '14px', borderRadius: '6px', marginBottom: '16px', border: '1px solid #fee2e2' }}>
+              <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#dc2626', margin: '0 0 12px 0' }}>Close Decision</h3>
+
+              {/* Entry vs Exit Summary */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                <div style={{ padding: '10px', background: '#ffffff', borderRadius: '4px', border: '1px solid #fee2e2' }}>
+                  <div style={{ fontSize: '0.7rem', color: '#9facbd', fontWeight: 600, marginBottom: '4px' }}>Entry Value</div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#20242a' }}>
+                    ${(decision.price * decision.quantity).toFixed(2)}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: '#667085', marginTop: '2px' }}>
+                    {decision.quantity} @ ${decision.price.toFixed(2)}
+                  </div>
+                </div>
+                <div style={{ padding: '10px', background: '#ffffff', borderRadius: '4px', border: '1px solid #fee2e2' }}>
+                  <div style={{ fontSize: '0.7rem', color: '#9facbd', fontWeight: 600, marginBottom: '4px' }}>Exit Value</div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#20242a' }}>
+                    {exitPrice ? `$${(parseFloat(exitPrice) * decision.quantity).toFixed(2)}` : '—'}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: '#667085', marginTop: '2px' }}>
+                    {exitPrice ? `${decision.quantity} @ $${parseFloat(exitPrice).toFixed(2)}` : 'Enter exit price'}
+                  </div>
+                </div>
+              </div>
+
+              {/* P/L Preview */}
+              {exitPrice && parseFloat(exitPrice) > 0 && (() => {
+                const pnl = (parseFloat(exitPrice) - decision.price) * decision.quantity;
+                const pnlPct = ((parseFloat(exitPrice) - decision.price) / decision.price) * 100;
+                return (
+                  <div style={{
+                    padding: '10px',
+                    background: pnl >= 0 ? '#f0fdf4' : '#fef2f2',
+                    border: `1px solid ${pnl >= 0 ? '#dcfce7' : '#fee2e2'}`,
+                    borderRadius: '4px',
+                    marginBottom: '12px'
+                  }}>
+                    <div style={{ fontSize: '0.7rem', color: '#667085', fontWeight: 600, marginBottom: '4px' }}>Final P/L</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 600, color: pnl >= 0 ? '#16a34a' : '#dc2626' }}>
+                        {pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}
+                      </div>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 600, color: pnl >= 0 ? '#16a34a' : '#dc2626' }}>
+                        {pnlPct >= 0 ? '+' : ''}{pnlPct.toFixed(1)}%
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Exit Price Input */}
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ fontSize: '0.75rem', color: '#667085', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                  Exit Price (required)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={exitPrice}
+                  onChange={(e) => setExitPrice(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    border: '1px solid #fee2e2',
+                    borderRadius: '4px',
+                    fontSize: '0.9rem',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Close Reason */}
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ fontSize: '0.75rem', color: '#667085', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                  Reason (optional)
+                </label>
+                <select
+                  value={closeReason}
+                  onChange={(e) => setCloseReason(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    border: '1px solid #fee2e2',
+                    borderRadius: '4px',
+                    fontSize: '0.9rem',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  <option value="">Select a reason...</option>
+                  <option value="target_hit">Target hit</option>
+                  <option value="stop_loss">Stop loss triggered</option>
+                  <option value="thesis_broke">Thesis broke down</option>
+                  <option value="opportunity_cost">Opportunity cost</option>
+                  <option value="rebalancing">Portfolio rebalancing</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={handleCloseDecision}
+                  className="btn-primary"
+                  style={{ flex: 1, background: '#dc2626' }}
+                >
+                  ✓ Confirm Close
+                </button>
+                <button
+                  onClick={() => setIsClosing(false)}
+                  className="btn-secondary"
+                  style={{ flex: 1 }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Edit History */}
           {decision.editHistory && decision.editHistory.length > 0 && (
             <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e4e7ec' }}>
@@ -3282,36 +3428,35 @@ function DecisionDetailModal({ decision, onClose, editForm, setEditForm }) {
           )}
 
           {/* Action Buttons */}
-          <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e4e7ec', display: 'flex', gap: '8px' }}>
-            {decision.status === 'open' && !isEditing && (
-              <>
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="btn-secondary"
-                  style={{ flex: 1 }}
-                >
-                  ✏️ Edit Decision
-                </button>
-                <button
-                  onClick={() => {
-                    const shouldClose = confirm('Close this decision? You can set an exit price.');
-                    if (shouldClose) handleCloseDecision();
-                  }}
-                  className="btn-secondary"
-                  style={{ flex: 1, borderColor: '#dc2626', color: '#dc2626' }}
-                >
-                  🔒 Close Decision
-                </button>
-              </>
-            )}
-            <button
-              onClick={onClose}
-              className="btn-primary"
-              style={{ flex: 1 }}
-            >
-              Done
-            </button>
-          </div>
+          {!isClosing && (
+            <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e4e7ec', display: 'flex', gap: '8px' }}>
+              {decision.status === 'open' && !isEditing && (
+                <>
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="btn-secondary"
+                    style={{ flex: 1 }}
+                  >
+                    ✏️ Edit Decision
+                  </button>
+                  <button
+                    onClick={() => setIsClosing(true)}
+                    className="btn-secondary"
+                    style={{ flex: 1, borderColor: '#dc2626', color: '#dc2626' }}
+                  >
+                    🔒 Close Decision
+                  </button>
+                </>
+              )}
+              <button
+                onClick={onClose}
+                className="btn-primary"
+                style={{ flex: 1 }}
+              >
+                Done
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
