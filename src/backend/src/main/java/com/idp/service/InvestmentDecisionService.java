@@ -1,5 +1,6 @@
 package com.idp.service;
 
+import com.idp.model.DecisionSource;
 import com.idp.model.DecisionStatus;
 import com.idp.model.DecisionType;
 import com.idp.model.InvestmentDecision;
@@ -42,12 +43,13 @@ public class InvestmentDecisionService {
     }
 
     /**
-     * Create a new decision from a buy/sell transaction.
-     * Auto-generates title and sets status to ACTIVE.
+     * Create a manual decision from Investment section.
+     * User specifies the price (from costBasis / shares).
+     * Can be added at any time (not restricted to market hours).
      */
     @Transactional
-    public InvestmentDecision createDecision(String userId, String symbol, DecisionType action,
-                                            Integer quantity, BigDecimal price, LocalDate transactionDate) {
+    public InvestmentDecision createManualDecision(String userId, String symbol, DecisionType action,
+                                                   Integer quantity, BigDecimal price, LocalDate transactionDate) {
         // Check for duplicate
         Optional<InvestmentDecision> existing = decisionRepository
             .findByUserIdAndSymbolAndTransactionDateAndActionAndQuantityAndPrice(
@@ -63,6 +65,7 @@ public class InvestmentDecisionService {
         decision.setQuantity(quantity);
         decision.setPrice(price);
         decision.setTransactionDate(transactionDate);
+        decision.setSource(DecisionSource.MANUAL);
 
         // Auto-generate title
         String actionStr = action == DecisionType.BUY ? "Buy" : "Sell";
@@ -71,6 +74,50 @@ public class InvestmentDecisionService {
         decision.setStatus(DecisionStatus.ACTIVE);
 
         return decisionRepository.save(decision);
+    }
+
+    /**
+     * Create an automatic decision from Strategy section.
+     * System uses latest market price (user cannot override).
+     * Strategy executor calls this when a trade is executed.
+     */
+    @Transactional
+    public InvestmentDecision createAutoDecision(String userId, String symbol, DecisionType action,
+                                                 Integer quantity, BigDecimal latestPrice, LocalDate transactionDate) {
+        // Check for duplicate (same symbol, action, quantity, price, date)
+        Optional<InvestmentDecision> existing = decisionRepository
+            .findByUserIdAndSymbolAndTransactionDateAndActionAndQuantityAndPrice(
+                userId, symbol, transactionDate, action, quantity, latestPrice);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+
+        InvestmentDecision decision = new InvestmentDecision();
+        decision.setUserId(userId);
+        decision.setSymbol(symbol);
+        decision.setAction(action);
+        decision.setQuantity(quantity);
+        decision.setPrice(latestPrice); // Latest market price, not user-overridable
+        decision.setTransactionDate(transactionDate);
+        decision.setSource(DecisionSource.AUTO);
+
+        // Auto-generate title with market price
+        String actionStr = action == DecisionType.BUY ? "Buy" : "Sell";
+        decision.setTitle(String.format("%s %d shares of %s at $%.2f", actionStr, quantity, symbol, latestPrice));
+
+        decision.setStatus(DecisionStatus.ACTIVE);
+
+        return decisionRepository.save(decision);
+    }
+
+    /**
+     * Create a decision from a buy/sell transaction (legacy method for backward compatibility).
+     * Defaults to MANUAL source.
+     */
+    @Transactional
+    public InvestmentDecision createDecision(String userId, String symbol, DecisionType action,
+                                            Integer quantity, BigDecimal price, LocalDate transactionDate) {
+        return createManualDecision(userId, symbol, action, quantity, price, transactionDate);
     }
 
     /**

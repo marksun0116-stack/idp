@@ -57,6 +57,10 @@ public class InvestmentDecision {
     @Column(nullable = false, length = 500)
     private String title; // Auto-generated: "Buy 200 shares of AAPL at $150"
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private DecisionSource source; // MANUAL (Investment) or AUTO (Strategy)
+
     @Column(length = 2000)
     private String thesis;
 
@@ -167,6 +171,14 @@ public class InvestmentDecision {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public DecisionSource getSource() {
+        return source;
+    }
+
+    public void setSource(DecisionSource source) {
+        this.source = source;
     }
 
     public String getThesis() {

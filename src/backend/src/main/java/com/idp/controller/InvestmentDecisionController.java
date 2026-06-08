@@ -34,10 +34,11 @@ public class InvestmentDecisionController {
     }
 
     /**
-     * POST /api/decisions — Create decision from transaction
+     * POST /api/decisions/manual — Create manual decision from Investment section
+     * User specifies price; can be added anytime
      */
-    @PostMapping
-    public ResponseEntity<InvestmentDecision> createDecision(
+    @PostMapping("/manual")
+    public ResponseEntity<InvestmentDecision> createManualDecision(
             Authentication auth,
             @RequestBody Map<String, Object> request) {
 
@@ -50,10 +51,45 @@ public class InvestmentDecisionController {
 
         DecisionType action = DecisionType.fromValue(actionStr);
 
-        InvestmentDecision decision = decisionService.createDecision(
+        InvestmentDecision decision = decisionService.createManualDecision(
             userId, symbol, action, quantity, price, transactionDate);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(decision);
+    }
+
+    /**
+     * POST /api/decisions/auto — Create automatic decision from Strategy execution
+     * System uses latest market price; user cannot override
+     */
+    @PostMapping("/auto")
+    public ResponseEntity<InvestmentDecision> createAutoDecision(
+            Authentication auth,
+            @RequestBody Map<String, Object> request) {
+
+        String userId = auth.getName();
+        String symbol = (String) request.get("symbol");
+        String actionStr = (String) request.get("action");
+        Integer quantity = ((Number) request.get("quantity")).intValue();
+        BigDecimal latestPrice = new BigDecimal(request.get("latest_price").toString());
+        LocalDate transactionDate = LocalDate.parse((String) request.get("transaction_date"));
+
+        DecisionType action = DecisionType.fromValue(actionStr);
+
+        InvestmentDecision decision = decisionService.createAutoDecision(
+            userId, symbol, action, quantity, latestPrice, transactionDate);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(decision);
+    }
+
+    /**
+     * POST /api/decisions — Create decision (legacy endpoint, defaults to manual)
+     */
+    @PostMapping
+    public ResponseEntity<InvestmentDecision> createDecision(
+            Authentication auth,
+            @RequestBody Map<String, Object> request) {
+
+        return createManualDecision(auth, request);
     }
 
     /**

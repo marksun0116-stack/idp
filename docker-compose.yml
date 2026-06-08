@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:14-alpine
+    image: postgres:16-alpine
     container_name: postgres-idp
     environment:
       POSTGRES_PASSWORD: postgres
@@ -11,6 +11,42 @@ services:
     volumes:
       - postgres_idp_data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - idp-network
+
+  postgres-finance:
+    image: postgres:16-alpine
+    container_name: postgres-finance
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_finance_data:/var/lib/postgresql/data
+      - ../finance-data-service/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - idp-network
+
+  postgres-stock-monitor:
+    image: postgres:16-alpine
+    container_name: postgres-stock-monitor
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres_stock_monitor_data:/var/lib/postgresql/data
+      - ../stock-monitor/init-db.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -28,15 +64,88 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/idp
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
-      FINANCE_DATA_BASE_URL: http://host.docker.internal:8082
+      FINANCE_DATA_BASE_URL: http://finance-data-service:8082
     depends_on:
       postgres:
         condition: service_healthy
+      finance-data-service:
+        condition: service_healthy
+    networks:
+      - idp-network
+
+  finance-data-service:
+    build:
+      context: ../finance-data-service
+    container_name: finance-data-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-finance:5432/finance_data
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    depends_on:
+      postgres-finance:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - idp-network
+
+  stock-monitor:
+    build:
+      context: ../stock-monitor
+    container_name: stock-monitor
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-stock-monitor:5432/stock_monitor
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      FINANCE_DATA_BASE_URL: http://finance-data-service:8082
+    depends_on:
+      postgres-stock-monitor:
+        condition: service_healthy
+      finance-data-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:8080/api/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - idp-network
+
+  idp-frontend:
+    build:
+      context: ./src/frontend
+    container_name: idp-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - idp
+      - finance-data-service
+    networks:
+      - idp-network
+
+  stock-monitor-frontend:
+    build:
+      context: ../stock-monitor/src/frontend
+    container_name: stock-monitor-frontend
+    ports:
+      - "3001:80"
+    depends_on:
+      - stock-monitor
+      - finance-data-service
     networks:
       - idp-network
 
 volumes:
   postgres_idp_data:
+  postgres_finance_data:
+  postgres_stock_monitor_data:
 
 networks:
   idp-network:
