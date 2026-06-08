@@ -1137,7 +1137,7 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
             </select>
           </div>
 
-          <DecisionTable decisions={filteredDecisions} showEmpty={filteredDecisions.length === 0} />
+          <DecisionJournalTimeline decisions={filteredDecisions} showEmpty={filteredDecisions.length === 0} />
           {filteredDecisions.length === 0 && searchTicker === '' && filterType === 'all' && filterStatus === 'all' && (
             <Empty text="No decisions yet. Create your first decision to start your journal." />
           )}
@@ -2547,6 +2547,196 @@ function Badge({ label, value }) {
     <div className="badgeBox">
       <span>{label}</span>
       <strong>{value}</strong>
+    </div>
+  );
+}
+
+function DecisionJournalTimeline({ decisions, showEmpty = true }) {
+  // Group decisions by date (newest first)
+  const decisionsByDate = decisions.reduce((acc, decision) => {
+    const dateStr = decision.createdAt ? new Date(decision.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown';
+    if (!acc[dateStr]) acc[dateStr] = [];
+    acc[dateStr].push(decision);
+    return acc;
+  }, {});
+
+  const sortedDates = Object.keys(decisionsByDate).sort((a, b) => new Date(b) - new Date(a));
+
+  const getActionColor = (type) => {
+    switch (type) {
+      case 'BUY': return '#16a34a';
+      case 'SELL': return '#dc2626';
+      case 'buy': return '#16a34a';
+      case 'sell': return '#dc2626';
+      case 'watch': return '#0f766e';
+      case 'avoid': return '#ea580c';
+      default: return '#9facbd';
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'open': return '#16a34a';
+      case 'active': return '#16a34a';
+      case 'closed': return '#9facbd';
+      case 'archived': return '#d1d5db';
+      default: return '#9facbd';
+    }
+  };
+
+  return (
+    <div style={{ position: 'relative' }}>
+      {sortedDates.length > 0 && (
+        <>
+          {/* Timeline line */}
+          <div style={{
+            position: 'absolute',
+            left: '19px',
+            top: '30px',
+            bottom: 0,
+            width: '1px',
+            backgroundColor: '#e4e7ec'
+          }} />
+
+          {/* Decision cards by date */}
+          {sortedDates.map((dateStr) => (
+            <div key={dateStr} style={{ marginBottom: '24px' }}>
+              {/* Date header with timeline dot */}
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', position: 'relative', zIndex: 1 }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  background: '#ffffff',
+                  border: '3px solid #13a79a',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '18px',
+                  marginRight: '12px'
+                }}>
+                  📅
+                </div>
+                <span style={{ fontSize: '0.95rem', fontWeight: 600, color: '#526071' }}>{dateStr}</span>
+              </div>
+
+              {/* Decision cards for this date */}
+              <div style={{ marginLeft: '40px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {decisionsByDate[dateStr].map((decision) => (
+                  <div
+                    key={decision.id}
+                    style={{
+                      background: '#ffffff',
+                      border: '1px solid #e4e7ec',
+                      borderRadius: '8px',
+                      padding: '16px',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer',
+                      position: 'relative'
+                    }}
+                    className="decision-card"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+                      e.currentTarget.style.borderColor = '#d7dce2';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = 'none';
+                      e.currentTarget.style.borderColor = '#e4e7ec';
+                    }}
+                  >
+                    {/* Card Header: Action + Ticker */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{
+                          display: 'inline-block',
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          background: getActionColor(decision.action || decision.decisionType) + '20',
+                          color: getActionColor(decision.action || decision.decisionType),
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>
+                          {decision.action ? decision.action : decision.decisionType}
+                        </span>
+                        <strong style={{ fontSize: '1rem', color: '#20242a' }}>
+                          {decision.symbol || decision.ticker}
+                        </strong>
+                      </div>
+                      <span style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        color: getStatusColor(decision.status),
+                        textTransform: 'uppercase',
+                        background: getStatusColor(decision.status) + '15',
+                        padding: '4px 8px',
+                        borderRadius: '4px'
+                      }}>
+                        {decision.status}
+                      </span>
+                    </div>
+
+                    {/* Card Body: Quantity and Price */}
+                    {decision.quantity !== undefined && decision.price !== undefined && (
+                      <div style={{ fontSize: '0.9rem', color: '#667085', marginBottom: '8px' }}>
+                        {decision.quantity} shares @ ${typeof decision.price === 'number' ? decision.price.toFixed(2) : decision.price}
+                      </div>
+                    )}
+
+                    {/* Thesis / Title */}
+                    {(decision.thesis || decision.title) && (
+                      <div style={{ fontSize: '0.85rem', color: '#526071', marginBottom: '8px', fontStyle: 'italic' }}>
+                        {decision.thesis || decision.title}
+                      </div>
+                    )}
+
+                    {/* P/L Display for Open Positions */}
+                    {decision.status === 'open' && decision.currentPnl !== undefined && (
+                      <div style={{
+                        background: decision.currentPnl >= 0 ? '#f0fdf4' : '#fef2f2',
+                        border: `1px solid ${decision.currentPnl >= 0 ? '#dcfce7' : '#fee2e2'}`,
+                        borderRadius: '6px',
+                        padding: '8px',
+                        marginTop: '8px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}>
+                        <span style={{ fontSize: '0.75rem', color: '#667085' }}>Current P/L</span>
+                        <div style={{
+                          fontSize: '0.9rem',
+                          fontWeight: 700,
+                          color: decision.currentPnl >= 0 ? '#16a34a' : '#dc2626'
+                        }}>
+                          {decision.currentPnl >= 0 ? '+' : ''}{decision.currentPnl.toFixed(2)} ({decision.currentPnlPct ? (decision.currentPnlPct >= 0 ? '+' : '') + decision.currentPnlPct.toFixed(1) : '0.0'}%)
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Alert Indicators */}
+                    {decision.alerts && decision.alerts.length > 0 && decision.status === 'open' && (
+                      <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e4e7ec' }}>
+                        <span style={{ fontSize: '0.7rem', color: '#9facbd', textTransform: 'uppercase', fontWeight: 600 }}>Exit Criteria</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
+                          {decision.alerts.map((alert, idx) => (
+                            <div key={idx} style={{ fontSize: '0.75rem', color: '#667085', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span>{alert.type === 'price_above' ? '↑' : '↓'}</span>
+                              <span>${alert.value}</span>
+                              {alert.triggered && <span style={{ color: '#dc2626', fontWeight: 600 }}>⚠️ Triggered</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+      {showEmpty && decisions.length === 0 && <Empty text="No decisions to display." />}
     </div>
   );
 }
