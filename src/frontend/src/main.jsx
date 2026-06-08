@@ -119,7 +119,8 @@ function App() {
     comments: '',
     thesisChecked: [],
     evidenceChecked: [],
-    risksChecked: []
+    risksChecked: [],
+    exitCriteria: []
   });
 
   const authHeaders = useMemo(() => ({
@@ -515,7 +516,8 @@ function App() {
         comments: '',
         thesisChecked: [],
         evidenceChecked: [],
-        risksChecked: []
+        risksChecked: [],
+        exitCriteria: []
       });
 
       setHoldingForm((current) => ({ ...emptyHolding, accountId: current.accountId }));
@@ -549,7 +551,8 @@ function App() {
           comments: '',
           thesisChecked: [],
           evidenceChecked: [],
-          risksChecked: []
+          risksChecked: [],
+          exitCriteria: []
         });
       }
 
@@ -769,10 +772,25 @@ function App() {
               risks: decision.risks || null,
               comments: decision.comments || null
             };
-            await api('/api/decisions/manual', {
+            const decisionResponse = await api('/api/decisions/manual', {
               method: 'POST',
               body: JSON.stringify(payload)
             });
+
+            // Add exit criteria alerts if provided
+            if (decisionResponse?.id && (formData.exitCriteria || []).length > 0) {
+              for (const criteria of formData.exitCriteria) {
+                await api(`/api/decisions/${decisionResponse.id}/exit-criteria`, {
+                  method: 'POST',
+                  body: JSON.stringify({
+                    condition_type: criteria.type,
+                    condition_value: criteria.value,
+                    description: criteria.description || ''
+                  })
+                });
+              }
+            }
+
             setShowDecisionCaptureModal(false);
             setDecisionCaptureForm({
               thesis: '',
@@ -781,9 +799,10 @@ function App() {
               comments: '',
               thesisChecked: [],
               evidenceChecked: [],
-              risksChecked: []
+              risksChecked: [],
+              exitCriteria: []
             });
-            setNotice('Decision captured.');
+            setNotice('Decision captured with exit criteria.');
           } catch (error) {
             setNotice(error.message);
           } finally {
@@ -2902,6 +2921,82 @@ function DecisionCaptureModal({
                 className="form-textarea"
                 rows="2"
               />
+            </div>
+
+            {/* Exit Criteria Section */}
+            <div className="form-section">
+              <h3>Exit Criteria <span className="label-optional">(optional)</span></h3>
+              <div className="exit-criteria-list">
+                {(formData.exitCriteria || []).map((criteria, idx) => (
+                  <div key={idx} className="exit-criteria-item">
+                    <span className="exit-criteria-text">
+                      {criteria.type === 'price_above' ? '↑ Price ≥' : criteria.type === 'price_below' ? '↓ Price ≤' : criteria.type === 'pnl_above' ? '↑ P/L ≥' : '↓ P/L ≤'}
+                      {' '}${criteria.value} {criteria.description && `(${criteria.description})`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = formData.exitCriteria.filter((_, i) => i !== idx);
+                        onFormChange({ ...formData, exitCriteria: updated });
+                      }}
+                      className="btn-remove"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="exit-criteria-input">
+                <select
+                  id="exitType"
+                  className="form-select"
+                  defaultValue="price_above"
+                >
+                  <option value="price_above">Price ≥ (Take Profit)</option>
+                  <option value="price_below">Price ≤ (Stop Loss)</option>
+                  <option value="pnl_above">P/L ≥ (Profit Target)</option>
+                  <option value="pnl_below">P/L ≤ (Loss Limit)</option>
+                </select>
+                <input
+                  type="number"
+                  id="exitValue"
+                  placeholder="Value"
+                  className="form-input"
+                  step="0.01"
+                />
+                <input
+                  type="text"
+                  id="exitDescription"
+                  placeholder="Description (e.g., take profit)"
+                  className="form-input"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const typeSelect = document.getElementById('exitType');
+                    const valueInput = document.getElementById('exitValue');
+                    const descInput = document.getElementById('exitDescription');
+
+                    if (!valueInput.value) return;
+
+                    const newCriteria = {
+                      type: typeSelect.value,
+                      value: Number(valueInput.value),
+                      description: descInput.value || ''
+                    };
+
+                    const updated = [...(formData.exitCriteria || []), newCriteria];
+                    onFormChange({ ...formData, exitCriteria: updated });
+
+                    valueInput.value = '';
+                    descInput.value = '';
+                  }}
+                  className="btn-secondary"
+                  style={{ padding: '8px 12px', fontSize: '13px' }}
+                >
+                  + Add
+                </button>
+              </div>
             </div>
 
             {/* Comments Section */}

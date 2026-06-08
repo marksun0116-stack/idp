@@ -1376,3 +1376,80 @@ textarea {
 .btn-secondary:hover {
   background: #e5e9ed;
 }
+
+/* Exit Criteria Styles */
+.exit-criteria-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.exit-criteria-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #f5f7f9;
+  border-radius: 6px;
+  border: 1px solid #dce4e9;
+}
+
+.exit-criteria-text {
+  font-size: 13px;
+  color: #20242a;
+  flex: 1;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.btn-remove {
+  background: none;
+  border: none;
+  color: #9facbd;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.btn-remove:hover {
+  background: #e5e9ed;
+  color: #d9434e;
+}
+
+.exit-criteria-input {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.form-select,
+.form-input {
+  padding: 8px 10px;
+  border: 1px solid #dce4e9;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #20242a;
+  transition: border-color 0.2s ease;
+  flex: 1;
+  min-width: 100px;
+}
+
+.form-select:focus,
+.form-input:focus {
+  outline: none;
+  border-color: #13a79a;
+  box-shadow: 0 0 0 3px rgba(19, 167, 154, 0.1);
+}
+
+.form-select {
+  background: white;
+  cursor: pointer;
+}
