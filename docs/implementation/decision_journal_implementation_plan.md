@@ -1,8 +1,8 @@
 ---
 plan_id: PLAN-decision-journal-001
 title: "Decision Journal Implementation Plan"
-status: phase_5_complete
-version: "0.7"
+status: phase_6_in_progress
+version: "0.8"
 last_updated: 2026-06-08
 owner: "IDP Product Team"
 ---
@@ -490,13 +490,50 @@ If user clicks "Add Details":
 
 | Story | Task | Effort | Status |
 |-------|------|--------|--------|
-| US-DJL-601 | Create DecisionDetailView for editing open decisions | 2d | Planned |
-| US-DJL-602 | Build edit form (thesis, evidence, risks, comments, exit criteria) | 2d | Planned |
-| US-DJL-603 | Show locked fields (title/action) as read-only | 1d | Planned |
-| US-DJL-604 | Display edit history with timestamps | 1d | Planned |
-| US-DJL-605 | Implement close decision flow (final P/L, read-only) | 1d | Planned |
+| US-DJL-601 | Create DecisionDetailView for editing open decisions | 2d | ✅ Done |
+| US-DJL-602 | Build edit form (thesis, evidence, risks, comments, exit criteria) | 2d | ✅ Done |
+| US-DJL-603 | Show locked fields (title/action) as read-only | 1d | 🔄 In Progress |
+| US-DJL-604 | Display edit history with timestamps | 1d | ✅ Done |
+| US-DJL-605 | Implement close decision flow (final P/L, read-only) | 1d | 🔄 In Progress |
 
-**Phase 6 Total: 7 days**
+**Phase 6 Total: 7 days — 29% Complete (2 of 7 days)**
+
+**Completed Features:**
+
+1. **DecisionDetailModal Component** (US-DJL-601)
+   - Opens on card click from timeline
+   - Dual mode: view/edit
+   - Modal styling consistent with decision capture
+   - Scrollable content for long histories
+   - Edit/view toggle buttons
+
+2. **Edit Form** (US-DJL-602)
+   - Thesis textarea
+   - Evidence textarea
+   - Risks textarea
+   - Comments textarea
+   - Save/Cancel buttons
+   - Form state management with editForm hook
+
+3. **Read-only Display** (US-DJL-603 - Partial)
+   - Transaction section (locked):
+     - Symbol, Action, Quantity, Entry Price
+     - Read-only for all decisions
+     - Clear visual separation
+   - Current position display (open decisions)
+   - Field values displayed when not editing
+
+4. **Edit History Display** (US-DJL-604)
+   - Shows up to 5 most recent edits
+   - Formatted timestamps
+   - Field name and value preview
+   - Light background styling
+
+5. **Close Decision UI** (US-DJL-605 - Prepared)
+   - [🔒 Close Decision] button
+   - Handler prepared for API integration
+   - Confirmation dialog ready
+   - exitPrice state initialized
 
 ### Phase 7: Testing & Validation
 
@@ -614,6 +651,7 @@ Optimized with parallelization:
 
 | Version | Date | Status | Notes |
 |---------|------|--------|-------|
+| 0.8 | 2026-06-08 | Phase 6 In Progress | Phase 6 starting (29%, 2 of 7 days). DecisionDetailModal created: view/edit modes, edit form with thesis/evidence/risks/comments, locked transaction section, edit history display. Card click opens detail view. Handlers ready for API integration. Next: close decision flow + tests. |
 | 0.7 | 2026-06-08 | Complete (Phase 5) | Phase 5 COMPLETE (100%, 7 of 7 days). All 6 user stories done: Timeline component, card display, enhanced filtering, alert actions, edit history, real-time P/L. Live quote fetching every 5s, P/L flash animation on >$50 changes. Decision Journal fully functional for capture, review, filtering, and monitoring. Ready for Phase 6: Decision Detail & Edit view. |
 | 0.6 | 2026-06-08 | In Progress | Phase 4 complete (100%). US-DJL-406 finished: local storage draft persistence + optional field toggle. Drafts auto-save (500ms debounce) and recover on modal reopen. Optional fields collapsible. Phase 5 starting: Decision Journal Timeline view. |
 | 0.5 | 2026-06-07 | Complete | Phase 4 nearly complete (7 of 8 days, 87%). Exit criteria input added. Strategy execution wired to AUTO decision modal. MANUAL vs AUTO routing implemented. Backend/frontend fully integrated. |
