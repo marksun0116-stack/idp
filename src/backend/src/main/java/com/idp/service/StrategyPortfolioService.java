@@ -15,6 +15,7 @@ import com.idp.exception.DecisionNotFoundException;
 import com.idp.exception.StrategyConflictException;
 import com.idp.exception.StrategyNotFoundException;
 import com.idp.model.DecisionRecord;
+import com.idp.model.DecisionType;
 import com.idp.model.StrategyPortfolio;
 import com.idp.model.StrategyTrackedSymbol;
 import com.idp.model.StrategyTransaction;
@@ -31,6 +32,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -47,19 +50,22 @@ public class StrategyPortfolioService {
     private final StrategyTransactionRepository transactionRepository;
     private final DecisionRecordRepository decisionRecordRepository;
     private final MarketDataService marketDataService;
+    private final InvestmentDecisionService decisionService;
 
     public StrategyPortfolioService(
         StrategyPortfolioRepository strategyPortfolioRepository,
         StrategyTrackedSymbolRepository trackedSymbolRepository,
         StrategyTransactionRepository transactionRepository,
         DecisionRecordRepository decisionRecordRepository,
-        MarketDataService marketDataService
+        MarketDataService marketDataService,
+        InvestmentDecisionService decisionService
     ) {
         this.strategyPortfolioRepository = strategyPortfolioRepository;
         this.trackedSymbolRepository = trackedSymbolRepository;
         this.transactionRepository = transactionRepository;
         this.decisionRecordRepository = decisionRecordRepository;
         this.marketDataService = marketDataService;
+        this.decisionService = decisionService;
     }
 
     @Transactional
@@ -166,7 +172,15 @@ public class StrategyPortfolioService {
         transaction.setPrice(executionPrice);
         transaction.setDecisionId(request.decisionId());
         transaction.setExecutedAt(request.executedAt());
-        return transactionRepository.save(transaction);
+        transaction = transactionRepository.save(transaction);
+
+        // Capture AUTO decision with real-time execution price (user cannot override)
+        DecisionType decisionType = request.side() == TransactionSide.BUY ? DecisionType.BUY : DecisionType.SELL;
+        LocalDate transactionDate = request.executedAt().atZone(ZoneId.systemDefault()).toLocalDate();
+        decisionService.createAutoDecision(
+            strategy.getOwnerId(), symbol, decisionType, request.quantity(), executionPrice, transactionDate);
+
+        return transaction;
     }
 
     @Transactional(readOnly = true)
