@@ -1,0 +1,62 @@
+id: CON-decision-edit-lifecycle-001
+kind: constraint
+title: "Decision Edit Lifecycle: Open → Editable, Closed → Read-Only"
+status: decided
+
+definition: >
+  Decisions follow a strict edit lifecycle based on their status. While open (entry not executed),
+  users may edit the reasoning (thesis, evidence, risks, comments, exit criteria) but cannot
+  change the transaction itself (title/action). Once closed (exit alert triggered and user confirms),
+  the decision becomes permanently read-only.
+
+open_decision_rules:
+  status: "Open (entry executed, exit pending)"
+  editable_fields:
+    - Thesis (can change reason for holding)
+    - Evidence (can add/remove supporting data)
+    - Risks (can add new risks discovered)
+    - Comments (can add notes/observations)
+    - Exit Criteria (can adjust or add new alert conditions)
+  locked_fields:
+    - Title (e.g., "Buy 200 shares of AAPL at $150" is immutable)
+    - Action Type (BUY/SELL is immutable)
+    - Transaction Details (symbol, quantity, price, date are immutable)
+  edit_tracking:
+    - Each edit records timestamp and version history
+    - Used for learning review (when did thesis change and why?)
+
+closed_decision_rules:
+  status: "Closed (exit alert triggered, user confirmed close)"
+  editable_fields: []
+  locked_fields:
+    - ALL fields become read-only (title, thesis, evidence, risks, comments, alerts, outcome)
+  rationale: |
+    Closed decisions represent completed trades with outcome data. Editing them would
+    distort learning history and make outcome tracking unreliable. Users must keep
+    decisions open if they want to make changes.
+
+decision_close_criteria:
+  - User explicitly closes decision when exit alert triggers
+  - OR (future) system auto-closes when full position liquidated
+  - Once closed: decision snapshot frozen for historical accuracy
+
+enforcement:
+  - UI prevents editing of locked fields (grayed out or hidden)
+  - API rejects PUT requests to locked fields with clear error message
+  - Edit history visible to user for open decisions (timestamp of changes)
+  - Audit log tracks all edits for compliance/review
+
+rationale: >
+  Open → Editable supports reflection and thesis adjustment as market conditions evolve.
+  Closed → Read-Only preserves transaction history and prevents rewriting past decisions.
+  This lifecycle supports skill development (can see when thesis changed) and prevents
+  data integrity issues (cannot distort historical P&L by editing closed trades).
+
+exceptions: |
+  None. Once a decision is closed, it cannot be reopened or edited. If user made a
+  mistake closing a decision, they can only view it in the journal and learn from it.
+
+linked_features:
+  - FEAT-decision-journal-001
+linked_invariants:
+  - INV-decision-record-integrity-001

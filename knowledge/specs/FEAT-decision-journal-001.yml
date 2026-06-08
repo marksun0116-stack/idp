@@ -36,13 +36,24 @@ description: |
   - If exit alert triggered: visual indicator asking to close or leave open
   - Filterable by: symbol, date range, outcome (open/closed), thesis, risk
 
+  **Decision Edit** (while open):
+  - User CAN edit: Thesis, Evidence, Risks, Comments, Exit Criteria
+  - User CANNOT edit: Action/Title (e.g., "Buy 200 shares of AAPL at $150" is locked)
+  - Changes tracked with timestamp for learning review
+
   **Decision Close Flow**:
   1. When exit alert triggers (price ≥ target, P/L ≥ threshold, etc.)
-  2. Visual indicator in journal: "Exit alert triggered"
+  2. Visual indicator in journal: "Exit alert triggered - [Close] [Leave Open]"
   3. User can:
-     - Close decision (mark completed with outcome)
+     - Close decision (mark completed with final outcome/P&L)
      - Leave open (ignore alert, continue holding)
-  4. If closed, decision shows final P/L and outcome status
+  4. If closed: decision becomes fully read-only (no further edits)
+
+  **Alert Display** (in journal only):
+  - Alerts shown only in Decision Journal timeline view
+  - Not displayed as separate system notifications or alerts elsewhere
+  - Visual indicator: "Target $165 → TRIGGERED" or "Stop Loss $140 → triggered"
+  - User prompted to close/leave open at that point in timeline
 
 acceptance_criteria:
   - Decision capture triggered ONLY on buy/sell transactions (not add/remove watchlist/strategy)
@@ -56,10 +67,14 @@ acceptance_criteria:
   - Exit criteria defined as alert conditions and auto-created as alerts
   - Decision journal displays all buy/sell decisions in chronological order
   - Per-transaction (each buy/sell separate decision)
-  - Visual indicator when exit alerts trigger
+  - OPEN decisions: user can edit thesis, evidence, risks, comments, exit criteria (NOT title/action)
+  - OPEN decisions: edit timestamp tracked for review history
+  - CLOSED decisions: fully read-only (no edits allowed)
+  - Visual indicator when exit alerts trigger (shown in journal timeline only)
   - User prompted to close or leave open when exit alert triggers
   - All decision fields except title are optional
   - Journal timeline shows P/L for open positions
+  - Alerts only shown in Decision Journal (not as separate system notifications)
   - Filterable by symbol, date, outcome, thesis, risk
   - Reviews available at 30/90/180 days and 1 year after entry
   - No export functionality required (future enhancement)

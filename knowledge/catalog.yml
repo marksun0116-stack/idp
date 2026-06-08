@@ -154,6 +154,8 @@
   path: knowledge/constraints/CON-decision-review-cadence-001.yml
 - id: CON-investment-non-advice-001
   path: knowledge/constraints/CON-investment-non-advice-001.yml
+- id: CON-decision-edit-lifecycle-001
+  path: knowledge/constraints/CON-decision-edit-lifecycle-001.yml
 - id: INV-decision-record-integrity-001
   path: knowledge/invariants/INV-decision-record-integrity-001.yml
 - id: INV-review-schedule-integrity-001
