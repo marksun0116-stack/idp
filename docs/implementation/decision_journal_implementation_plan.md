@@ -2,7 +2,7 @@
 plan_id: PLAN-decision-journal-001
 title: "Decision Journal Implementation Plan"
 status: in_progress
-version: "0.4"
+version: "0.5"
 last_updated: 2026-06-07
 owner: "IDP Product Team"
 ---
@@ -377,22 +377,47 @@ If user clicks "Add Details":
 |-------|------|--------|--------|
 | US-DJL-401 | Create DecisionCaptureModal component | 2d | ✅ Done |
 | US-DJL-402 | Build thesis/evidence/risks checkbox UI with suggestions | 2d | ✅ Done |
-| US-DJL-403 | Build exit criteria input (add/remove alert conditions) | 1d | 🔜 Ready |
+| US-DJL-403 | Build exit criteria input (add/remove alert conditions) | 1d | ✅ Done |
 | US-DJL-404 | Wire modal to Investment section buy/sell flows | 1d | ✅ Done |
-| US-DJL-405 | Wire modal to Strategy section execution flows | 1d | 🔜 Ready |
-| US-DJL-406 | Add optional field toggle + local storage for drafts | 1d | 🔜 Ready |
+| US-DJL-405 | Wire modal to Strategy section execution flows | 1d | ✅ Done |
+| US-DJL-406 | Add optional field toggle + local storage for drafts | 1d | 🟡 Deferred |
 
-**Phase 4 Total: 8 days — IN PROGRESS (4 days done, 4 days remaining)**
+**Phase 4 Total: 8 days — 87% COMPLETE (7 of 8 days done)**
 
-**Completed (US-DJL-401, 402, 404):**
-- DecisionCaptureModal React component with smooth animations
-- 5 suggestions each for thesis/evidence/risks categories
-- Checkbox selection + custom text input for each category
-- Fully styled with responsive design and accessibility
-- wired to addHolding() → BUY decisions
-- Wired to deleteHolding() → SELL decisions (all shares)
-- Posts to /api/decisions/manual with all transaction metadata
-- Loading state and error handling
+**Completed Features:**
+
+1. **DecisionCaptureModal Component** (US-DJL-401)
+   - React component with smooth fade-in/slide-up animations
+   - Transaction summary with price locked indicator for AUTO
+
+2. **Thesis/Evidence/Risks UI** (US-DJL-402)
+   - 5 pre-built suggestions per category
+   - Checkbox selection + custom text input
+   - Combined display: selected suggestions + custom text
+
+3. **Exit Criteria Input** (US-DJL-403)
+   - 4 alert types: Price ≥/≤, P/L ≥/≤
+   - Add/remove buttons for criteria management
+   - Value and description inputs
+   - Monospace display for exact values
+   - Posted to /api/decisions/{id}/exit-criteria
+
+4. **Investment Section Wiring** (US-DJL-404)
+   - addHolding() → BUY decisions (MANUAL source)
+   - deleteHolding() → SELL decisions (all shares)
+   - Modal posts to /api/decisions/manual endpoint
+   - Full transaction metadata passed
+
+5. **Strategy Section Wiring** (US-DJL-405)
+   - Strategy execution → AUTO decisions
+   - Real-time price locked (cannot override)
+   - Modal routes to /api/decisions/auto endpoint
+   - Backend already created decision, frontend adds learning details
+
+**Deferred (US-DJL-406):**
+- Local storage for draft persistence
+- Optional field toggle functionality
+- Rationale: Core functionality complete; drafts are nice-to-have
 
 ### Phase 5: Frontend - Decision Journal View
 
@@ -535,6 +560,7 @@ Optimized with parallelization:
 
 | Version | Date | Status | Notes |
 |---------|------|--------|-------|
+| 0.5 | 2026-06-07 | In Progress | Phase 4 nearly complete (7 of 8 days, 87%). Exit criteria input added. Strategy execution wired to AUTO decision modal. MANUAL vs AUTO routing implemented. Backend/frontend fully integrated. |
 | 0.4 | 2026-06-07 | In Progress | Phase 4 in progress (4 of 8 days). DecisionCaptureModal component built and wired to addHolding (BUY) and deleteHolding (SELL). Modal shows suggestions + custom text for thesis/evidence/risks. Responsive UI with animations. |
 | 0.3 | 2026-06-07 | In Progress | Phase 1, 2 & 3 complete (20 days). StrategyPortfolioService wired to appendTransaction → createAutoDecision. Real-time prices locked (immutable). Ready for Phase 4 frontend. |
 | 0.2 | 2026-06-07 | In Progress | Phase 1 & 2 complete (26 days). DecisionSource enum supports MANUAL/AUTO distinction. PortfolioService wired to capture BUY/SELL. All tests passing. |
