@@ -492,11 +492,11 @@ If user clicks "Add Details":
 |-------|------|--------|--------|
 | US-DJL-601 | Create DecisionDetailView for editing open decisions | 2d | ✅ Done |
 | US-DJL-602 | Build edit form (thesis, evidence, risks, comments, exit criteria) | 2d | ✅ Done |
-| US-DJL-603 | Show locked fields (title/action) as read-only | 1d | 🔄 In Progress |
+| US-DJL-603 | Show locked fields (title/action) as read-only | 1d | ✅ Done |
 | US-DJL-604 | Display edit history with timestamps | 1d | ✅ Done |
-| US-DJL-605 | Implement close decision flow (final P/L, read-only) | 1d | 🔄 In Progress |
+| US-DJL-605 | Implement close decision flow (final P/L, read-only) | 1d | ✅ Done |
 
-**Phase 6 Total: 7 days — 29% Complete (2 of 7 days)**
+**Phase 6 Total: 7 days — 86% Complete (6 of 7 days)**
 
 **Completed Features:**
 
@@ -515,12 +515,13 @@ If user clicks "Add Details":
    - Save/Cancel buttons
    - Form state management with editForm hook
 
-3. **Read-only Display** (US-DJL-603 - Partial)
+3. **Read-only Display** (US-DJL-603)
    - Transaction section (locked):
      - Symbol, Action, Quantity, Entry Price
      - Read-only for all decisions
      - Clear visual separation
    - Current position display (open decisions)
+   - Closed decision summary card (final P/L)
    - Field values displayed when not editing
 
 4. **Edit History Display** (US-DJL-604)
@@ -529,11 +530,19 @@ If user clicks "Add Details":
    - Field name and value preview
    - Light background styling
 
-5. **Close Decision UI** (US-DJL-605 - Prepared)
-   - [🔒 Close Decision] button
-   - Handler prepared for API integration
-   - Confirmation dialog ready
-   - exitPrice state initialized
+5. **Close Decision Flow** (US-DJL-605)
+   - Exit price input field with validation
+   - Real-time P/L preview ($ and % format)
+   - Close reason dropdown (target hit, stop loss, thesis broke, etc.)
+   - Entry vs Exit value summary
+   - Confirmation button with validation
+   - Final P/L alert before closing
+   - Closed decision view (read-only):
+     - Final P/L with color coding (green/red)
+     - Close reason + date display
+     - \"Decision is read-only\" message
+     - No edit buttons for closed decisions
+   - Payload prepared for API integration
 
 ### Phase 7: Testing & Validation
 
