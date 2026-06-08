@@ -426,11 +426,11 @@ If user clicks "Add Details":
 | US-DJL-501 | Create DecisionJournalView timeline component | 2d | ✅ Done |
 | US-DJL-502 | Implement decision card display (title, thesis, status, P/L) | 1d | ✅ Done |
 | US-DJL-503 | Add filtering (symbol, date range, status) | 1d | ✅ Done |
-| US-DJL-504 | Show alert triggers with [Close]/[Leave Open] buttons | 1d | 🔄 In Progress |
-| US-DJL-505 | Display edit history on card hover | 1d | Planned |
+| US-DJL-504 | Show alert triggers with [Close]/[Leave Open] buttons | 1d | ✅ Done |
+| US-DJL-505 | Display edit history on card hover | 1d | ✅ Done |
 | US-DJL-506 | Show open position current P/L in real-time | 1d | Planned |
 
-**Phase 5 Total: 7 days — 57% Complete (4 of 7 days)**
+**Phase 5 Total: 7 days — 86% Complete (6 of 7 days)**
 
 **Completed Features:**
 
@@ -458,6 +458,22 @@ If user clicks "Add Details":
    - Clear dates button with visual feedback
    - Live decision count in filter section
    - Improved empty state messages for filtered results
+
+4. **Alert Actions** (US-DJL-504)
+   - Visual highlighting of triggered alerts (red background)
+   - [✓ Close Decision] button (primary, red)
+   - [← Leave Open] button (secondary, gray)
+   - Buttons appear only when alert is triggered
+   - Close handler with decision context
+   - Ready for API integration
+
+5. **Edit History Tooltip** (US-DJL-505)
+   - Dark tooltip appears on card hover
+   - Shows up to 5 most recent edits
+   - Each edit displays: timestamp, field name, preview of new value
+   - Indicator for additional edits if > 5
+   - Smooth hover reveal animation
+   - Formatted timestamps (Month Day, HH:MM)
 
 ### Phase 6: Frontend - Decision Detail & Edit
 
