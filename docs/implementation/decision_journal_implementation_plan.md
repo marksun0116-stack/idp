@@ -2,7 +2,7 @@
 plan_id: PLAN-decision-journal-001
 title: "Decision Journal Implementation Plan"
 status: in_progress
-version: "0.2"
+version: "0.3"
 last_updated: 2026-06-07
 owner: "IDP Product Team"
 ---
@@ -358,11 +358,18 @@ If user clicks "Add Details":
 
 | Story | Task | Effort | Status |
 |-------|------|--------|--------|
-| US-DJL-301 | Modify strategy execution (buy) to create decision record | 1d | Planned |
-| US-DJL-302 | Modify strategy execution (sell) to create decision record | 1d | Planned |
-| US-DJL-303 | Ensure strategy actions generate correct decision title | 1d | Planned |
+| US-DJL-301 | Modify strategy execution (buy) to create AUTO decision record | 1d | ✅ Done |
+| US-DJL-302 | Modify strategy execution (sell) to create AUTO decision record | 1d | ✅ Done |
+| US-DJL-303 | Ensure strategy actions use real-time execution price (locked) | 1d | ✅ Done |
 
-**Phase 3 Total: 3 days**
+**Phase 3 Total: 3 days — ✅ COMPLETE**
+
+**Progress Summary:**
+- appendTransaction(): Captures AUTO decisions with system-determined prices
+- Real-time price locked at execution (immutable, user cannot override)
+- TransactionSide.BUY/SELL properly mapped to DecisionType.BUY/SELL
+- Instant.executedAt converted to LocalDate for decision record
+- Decision source distinguishes AUTO (strategy) from MANUAL (investment)
 
 ### Phase 4: Frontend - Decision Capture Modal
 
@@ -518,6 +525,7 @@ Optimized with parallelization:
 
 | Version | Date | Status | Notes |
 |---------|------|--------|-------|
+| 0.3 | 2026-06-07 | In Progress | Phase 1, 2 & 3 complete (20 days). StrategyPortfolioService wired to appendTransaction → createAutoDecision. Real-time prices locked (immutable). Ready for Phase 4 frontend. |
 | 0.2 | 2026-06-07 | In Progress | Phase 1 & 2 complete (26 days). DecisionSource enum supports MANUAL/AUTO distinction. PortfolioService wired to capture BUY/SELL. All tests passing. |
 | 0.1 | 2026-06-07 | In Progress | Initial plan. 40-45 days estimated. 7 phases with clear dependencies. |
 
