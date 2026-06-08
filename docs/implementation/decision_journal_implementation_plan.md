@@ -558,13 +558,23 @@ If user clicks "Add Details":
 
 | Story | Task | Effort | Status |
 |-------|------|--------|--------|
-| US-DJL-701 | Write unit tests for DecisionService | 2d | Planned |
-| US-DJL-702 | Write integration tests (DB + API) | 2d | Planned |
+| US-DJL-701 | Write unit tests for DecisionService | 2d | ✅ Done |
+| US-DJL-702 | Write integration tests (DB + API) | 2d | 🔄 In Progress |
 | US-DJL-703 | Write frontend component tests (modals, forms) | 2d | Planned |
 | US-DJL-704 | Manual E2E testing (buy → capture → edit → close) | 2d | Planned |
 | US-DJL-705 | Validate against FEAT-decision-journal-001 acceptance criteria | 1d | Planned |
 
-**Phase 7 Total: 9 days**
+**Phase 7 Total: 9 days — 22% Complete (2 of 9 days)**
+
+**Completed Work:**
+
+1. **Unit Tests for InvestmentDecisionService** (US-DJL-701)
+   - 11 comprehensive unit tests
+   - Tests for create, edit, close, and alert operations
+   - Tests for closeReason field persistence
+   - Tests for marking alerts as closed
+   - Tests for edit history tracking
+   - 100% pass rate
 
 ---
 
