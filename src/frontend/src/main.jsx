@@ -1081,6 +1081,15 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
     return matchesTicker && matchesType && matchesStatus && matchesFromDate && matchesToDate;
   });
 
+  const handleCloseDecision = React.useCallback((decisionId, decision) => {
+    // TODO: Call close decision API with exit price from triggered alert
+    const alertedPrice = decision.alerts?.find(a => a.triggered)?.value;
+    if (alertedPrice) {
+      console.log(`Closing decision ${decisionId} at price $${alertedPrice}`);
+      // API call would go here: closeDecision(decisionId, { exitPrice: alertedPrice })
+    }
+  }, []);
+
   const decisionStats = {
     total: decisions.length,
     active: decisions.filter(d => d.status === 'active').length,
@@ -1232,7 +1241,7 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
           )}
 
 
-          <DecisionJournalTimeline decisions={filteredDecisions} showEmpty={filteredDecisions.length === 0} />
+          <DecisionJournalTimeline decisions={filteredDecisions} onCloseDecision={handleCloseDecision} showEmpty={filteredDecisions.length === 0} />
           {filteredDecisions.length === 0 && searchTicker === '' && filterType === 'all' && filterStatus === 'all' && !fromDate && !toDate && (
             <Empty text="No decisions yet. Create your first decision to start your journal." />
           )}
@@ -2646,7 +2655,7 @@ function Badge({ label, value }) {
   );
 }
 
-function DecisionJournalTimeline({ decisions, showEmpty = true }) {
+function DecisionJournalTimeline({ decisions, onCloseDecision, showEmpty = true }) {
   // Group decisions by date (newest first)
   const decisionsByDate = decisions.reduce((acc, decision) => {
     const dateStr = decision.createdAt ? new Date(decision.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown';
@@ -2813,15 +2822,86 @@ function DecisionJournalTimeline({ decisions, showEmpty = true }) {
                     {decision.alerts && decision.alerts.length > 0 && decision.status === 'open' && (
                       <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e4e7ec' }}>
                         <span style={{ fontSize: '0.7rem', color: '#9facbd', textTransform: 'uppercase', fontWeight: 600 }}>Exit Criteria</span>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
                           {decision.alerts.map((alert, idx) => (
-                            <div key={idx} style={{ fontSize: '0.75rem', color: '#667085', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span>{alert.type === 'price_above' ? '↑' : '↓'}</span>
-                              <span>${alert.value}</span>
-                              {alert.triggered && <span style={{ color: '#dc2626', fontWeight: 600 }}>⚠️ Triggered</span>}
+                            <div
+                              key={idx}
+                              style={{
+                                fontSize: '0.75rem',
+                                color: alert.triggered ? '#dc2626' : '#667085',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '6px 8px',
+                                background: alert.triggered ? '#fef2f2' : '#f9fbfb',
+                                borderRadius: '4px',
+                                border: `1px solid ${alert.triggered ? '#fee2e2' : '#e4e7ec'}`
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span>{alert.type === 'price_above' ? '↑' : '↓'}</span>
+                                <span>${alert.value}</span>
+                                {alert.triggered && <span style={{ fontWeight: 600 }}>⚠️ Hit</span>}
+                              </div>
                             </div>
                           ))}
                         </div>
+
+                        {/* Alert Action Buttons (visible when alert triggered) */}
+                        {decision.alerts.some(a => a.triggered) && onCloseDecision && (
+                          <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onCloseDecision(decision.id, decision);
+                              }}
+                              style={{
+                                flex: 1,
+                                padding: '6px 10px',
+                                background: '#dc2626',
+                                color: '#ffffff',
+                                border: 'none',
+                                borderRadius: '4px',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease'
+                              }}
+                              onMouseEnter={(e) => e.target.style.background = '#b91c1c'}
+                              onMouseLeave={(e) => e.target.style.background = '#dc2626'}
+                            >
+                              ✓ Close Decision
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Leave open - just dismiss the alert indicator
+                              }}
+                              style={{
+                                flex: 1,
+                                padding: '6px 10px',
+                                background: '#f3f4f6',
+                                color: '#667085',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: '4px',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.target.style.background = '#e5e7eb';
+                                e.target.style.borderColor = '#d1d5db';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.background = '#f3f4f6';
+                                e.target.style.borderColor = '#e5e7eb';
+                              }}
+                            >
+                              ← Leave Open
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
