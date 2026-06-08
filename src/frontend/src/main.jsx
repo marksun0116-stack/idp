@@ -3174,7 +3174,7 @@ function DecisionDetailModal({ decision, onClose, editForm, setEditForm }) {
             </div>
           </div>
 
-          {/* Current Status & P/L */}
+          {/* Status & P/L Display */}
           {decision.status === 'open' && (
             <div style={{ background: '#f0fdf4', padding: '12px', borderRadius: '6px', marginBottom: '16px', border: '1px solid #dcfce7' }}>
               <div style={{ fontSize: '0.75rem', color: '#667085', fontWeight: 600, marginBottom: '8px' }}>Current Position</div>
@@ -3194,6 +3194,60 @@ function DecisionDetailModal({ decision, onClose, editForm, setEditForm }) {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Closed Decision Summary */}
+          {decision.status === 'closed' && (
+            <div style={{
+              background: '#f9fbfb',
+              padding: '14px',
+              borderRadius: '6px',
+              marginBottom: '16px',
+              border: '1px solid #e4e7ec',
+              opacity: 0.9
+            }}>
+              <div style={{ fontSize: '0.75rem', color: '#667085', fontWeight: 600, marginBottom: '10px', textTransform: 'uppercase' }}>
+                Decision Closed
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '10px' }}>
+                <div>
+                  <div style={{ fontSize: '0.7rem', color: '#9facbd', marginBottom: '4px' }}>Entry Value</div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#20242a' }}>
+                    ${(decision.price * decision.quantity).toFixed(2)}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.7rem', color: '#9facbd', marginBottom: '4px' }}>Exit Value</div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#20242a' }}>
+                    ${decision.exitValue?.toFixed(2) || '—'}
+                  </div>
+                </div>
+                <div style={{
+                  padding: '8px',
+                  background: decision.finalPnL >= 0 ? '#f0fdf4' : '#fef2f2',
+                  borderRadius: '4px',
+                  border: `1px solid ${decision.finalPnL >= 0 ? '#dcfce7' : '#fee2e2'}`
+                }}>
+                  <div style={{ fontSize: '0.7rem', color: '#667085', marginBottom: '4px' }}>Final P/L</div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: decision.finalPnL >= 0 ? '#16a34a' : '#dc2626' }}>
+                    {decision.finalPnL >= 0 ? '+' : ''}{decision.finalPnL?.toFixed(2) || '—'}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: decision.finalPnL >= 0 ? '#16a34a' : '#dc2626' }}>
+                    {decision.finalPnLPct >= 0 ? '+' : ''}{decision.finalPnLPct?.toFixed(1) || '0.0'}%
+                  </div>
+                </div>
+              </div>
+              {decision.closeReason && (
+                <div style={{ fontSize: '0.75rem', color: '#667085', paddingTop: '8px', borderTop: '1px solid #e4e7ec' }}>
+                  <span style={{ fontWeight: 600 }}>Closed:</span> {decision.closeReason}
+                  {decision.closedAt && (
+                    <span style={{ color: '#9facbd', marginLeft: '8px' }}>
+                      ({new Date(decision.closedAt).toLocaleDateString()})
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -3447,6 +3501,20 @@ function DecisionDetailModal({ decision, onClose, editForm, setEditForm }) {
                     🔒 Close Decision
                   </button>
                 </>
+              )}
+              {decision.status === 'closed' && (
+                <div style={{
+                  fontSize: '0.8rem',
+                  color: '#9facbd',
+                  padding: '8px',
+                  background: '#f9fbfb',
+                  borderRadius: '4px',
+                  flex: 1,
+                  textAlign: 'center',
+                  fontStyle: 'italic'
+                }}>
+                  This decision is closed and read-only
+                </div>
               )}
               <button
                 onClick={onClose}
