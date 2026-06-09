@@ -837,6 +837,19 @@ function App() {
               body: JSON.stringify(payload)
             });
 
+            // Log thesis/evidence/risks details
+            if (decisionResponse?.id && (thesis || evidence || risks)) {
+              await api(`/api/decisions/${decisionResponse.id}/log-details`, {
+                method: 'POST',
+                body: JSON.stringify({
+                  thesis,
+                  evidence,
+                  risks,
+                  comments
+                })
+              });
+            }
+
             // Add exit criteria alerts if provided
             if (decisionResponse?.id && (formData.exitCriteria || []).length > 0) {
               for (const criteria of formData.exitCriteria) {
