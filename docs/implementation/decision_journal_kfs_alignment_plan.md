@@ -717,3 +717,36 @@ If issues arise during implementation, rollback is straightforward:
 4. Daily standup on progress
 5. Update main implementation plan as sprints complete
 
+---
+
+## Progress Tracking
+
+### Sprint 1: Suggestion System (In Progress - 66% complete)
+
+**2026-06-09 Update**:
+
+- ✅ **US-DJL-7A-101** (Backend): Suggestion endpoints complete
+  - Created `DecisionSuggestionService.java` with 5 suggestions per category
+  - Created `SuggestionController.java` with GET `/api/public/suggestions/*` endpoints
+  - Endpoint returns correct JSON format: `{thesis: [...], evidence: [...], risks: [...]}`
+  - Tests: API responds correctly with 200 OK
+
+- 🔄 **US-DJL-7A-102** (Frontend): UI infrastructure ready
+  - Updated `DecisionCaptureModal` to fetch from `/api/public/suggestions/all`
+  - Added `useEffect` hook to load suggestions on modal open
+  - State management in place for thesis/evidence/risks checkbox tracking
+  - Fallback to hardcoded defaults if API fails
+  - Tests: API call succeeds, suggestions load correctly
+
+- ⏳ **US-DJL-7A-103** (Frontend): Wire to submission
+  - Status: Ready to implement
+  - Next: Ensure `combinedText()` function properly concatenates selected + custom suggestions
+
+**Remaining Work for Sprint 1**:
+1. Test decision submission with selected suggestions
+2. Verify suggestions appear correctly in decision history/journal
+3. Test custom text input alongside suggestions
+4. Run integration tests for full capture → save → view flow
+
+**Timeline**: Should complete by end of day 2026-06-09 or start 2026-06-10
+

@@ -3847,30 +3847,52 @@ function DecisionCaptureModal({
   hasSavedDraft
 }) {
   const [optionalFieldsVisible, setOptionalFieldsVisible] = React.useState(true);
+  const [thesisSuggestions, setThesisSuggestions] = React.useState([]);
+  const [evidenceSuggestions, setEvidenceSuggestions] = React.useState([]);
+  const [risksSuggestions, setRisksSuggestions] = React.useState([]);
 
-  const thesisSuggestions = [
-    'Stock is undervalued',
-    'Technical breakout signal',
-    'Momentum play',
-    'Mean reversion (RSI < 30)',
-    'Matches my strategy'
-  ];
+  // Fetch suggestions from backend on mount
+  React.useEffect(() => {
+    const fetchSuggestions = async () => {
+      try {
+        const response = await fetch('/api/public/suggestions/all');
+        if (response.ok) {
+          const data = await response.json();
+          setThesisSuggestions(data.thesis || []);
+          setEvidenceSuggestions(data.evidence || []);
+          setRisksSuggestions(data.risks || []);
+        }
+      } catch (error) {
+        console.error('Failed to load suggestions:', error);
+        // Fallback to defaults if API fails
+        setThesisSuggestions([
+          'Stock is undervalued (P/E or price/book below peers)',
+          'Technical breakout signal (price breaks resistance)',
+          'Momentum play (trend continuation)',
+          'Mean reversion (oversold indicator like RSI < 30)',
+          'Matches my investment strategy or watchlist criteria'
+        ]);
+        setEvidenceSuggestions([
+          'P/E ratio below sector average',
+          'RSI shows oversold conditions (< 30)',
+          'Price above 50-day moving average',
+          'Recent earnings beat or positive catalyst',
+          'Sector/industry showing relative strength'
+        ]);
+        setRisksSuggestions([
+          'Market downturn or sector correction',
+          'Company earnings miss or guidance cut',
+          'Sector rotation or fund flows shifting',
+          'Valuation multiple compression',
+          'Geopolitical or macro risk event'
+        ]);
+      }
+    };
 
-  const evidenceSuggestions = [
-    'P/E below sector average',
-    'RSI shows oversold (< 30)',
-    'Price above 50-day MA',
-    'Recent earnings beat',
-    'Sector showing strength'
-  ];
-
-  const risksSuggestions = [
-    'Market downturn or correction',
-    'Earnings miss',
-    'Sector rotation',
-    'Valuation compression',
-    'Geopolitical risk'
-  ];
+    if (isOpen) {
+      fetchSuggestions();
+    }
+  }, [isOpen]);
 
   if (!isOpen || !pendingDecision) return null;
 
