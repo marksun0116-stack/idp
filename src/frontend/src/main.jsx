@@ -1059,11 +1059,13 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
   const [searchTicker, setSearchTicker] = React.useState('');
   const [filterType, setFilterType] = React.useState('all');
   const [filterStatus, setFilterStatus] = React.useState('all');
+  const [searchThesisRisk, setSearchThesisRisk] = React.useState('');
   const [fromDate, setFromDate] = React.useState('');
   const [toDate, setToDate] = React.useState('');
   const [showAdvancedFilters, setShowAdvancedFilters] = React.useState(false);
   const [selectedDecision, setSelectedDecision] = React.useState(null);
   const [editForm, setEditForm] = React.useState({});
+  const [triggeredAlert, setTriggeredAlert] = React.useState(null);
 
   // Get unique tickers for autocomplete
   const uniqueTickers = React.useMemo(() => {
@@ -1075,12 +1077,19 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
     const matchesType = filterType === 'all' || d.decisionType === filterType;
     const matchesStatus = filterStatus === 'all' || d.status === filterStatus;
 
+    // Thesis/Risk keyword search
+    const searchLower = searchThesisRisk.toLowerCase();
+    const matchesThesisRisk = searchThesisRisk === '' ||
+      (d.thesis && d.thesis.toLowerCase().includes(searchLower)) ||
+      (d.risks && d.risks.toLowerCase().includes(searchLower)) ||
+      (d.evidence && d.evidence.toLowerCase().includes(searchLower));
+
     // Date range filtering
     const decisionDate = new Date(d.createdAt);
     const matchesFromDate = !fromDate || decisionDate >= new Date(fromDate);
     const matchesToDate = !toDate || decisionDate <= new Date(toDate + 'T23:59:59');
 
-    return matchesTicker && matchesType && matchesStatus && matchesFromDate && matchesToDate;
+    return matchesTicker && matchesType && matchesStatus && matchesThesisRisk && matchesFromDate && matchesToDate;
   });
 
   const handleOpenDecisionDetail = React.useCallback((decision) => {
@@ -1183,6 +1192,25 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
             </select>
           </div>
 
+          {/* Filter Row 2: Thesis/Risk Search */}
+          <div style={{ marginBottom: '12px', display: 'flex', gap: '8px', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: '#ffffff', borderRadius: '6px', border: '1px solid #d7dce2', flex: 1 }}>
+              <Search size={16} style={{ color: '#9facbd', flexShrink: 0 }} />
+              <input
+                type="text"
+                placeholder="Search thesis, evidence, or risks..."
+                value={searchThesisRisk}
+                onChange={(e) => setSearchThesisRisk(e.target.value)}
+                style={{ flex: 1, border: 'none', background: 'transparent', fontSize: '0.9rem', outline: 'none', color: '#20242a', padding: 0 }}
+              />
+            </div>
+            {searchThesisRisk && (
+              <button onClick={() => setSearchThesisRisk('')} style={{ padding: '8px 12px', fontSize: '0.8rem', color: '#dc2626', background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '6px', cursor: 'pointer', fontWeight: 500 }}>
+                Clear
+              </button>
+            )}
+          </div>
+
           {/* Advanced Filters Toggle */}
           <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <button
@@ -1265,6 +1293,17 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
               onSaveSuccess={() => {
                 setSelectedDecision(null);
                 loadDecisions();
+              }}
+            />
+          )}
+          {triggeredAlert && (
+            <AlertTriggeredModal
+              alert={triggeredAlert.alert}
+              decision={triggeredAlert.decision}
+              onClose={() => setTriggeredAlert(null)}
+              onCloseDecision={(decision, alert) => {
+                setTriggeredAlert(null);
+                handleCloseDecision(decision.id, decision);
               }}
             />
           )}
@@ -3073,6 +3112,101 @@ function DecisionJournalTimeline({ decisions, onCloseDecision, onCardClick, show
         </>
       )}
       {showEmpty && decisions.length === 0 && <Empty text="No decisions to display." />}
+    </div>
+  );
+}
+
+function AlertTriggeredModal({ alert, decision, onClose, onCloseDecision }) {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '450px' }}>
+        <div className="modal-header">
+          <h2 style={{ color: '#dc2626' }}>🎯 Exit Alert Triggered</h2>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="modal-body">
+          <div style={{ marginBottom: '16px', padding: '12px', background: '#fef2f2', borderRadius: '6px', border: '1px solid #fee2e2' }}>
+            <div style={{ fontSize: '0.85rem', color: '#991b1b', marginBottom: '8px' }}>
+              Your exit alert for <strong>{decision.symbol || decision.ticker}</strong> has been triggered!
+            </div>
+            <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#20242a' }}>
+              {alert.description || `${alert.conditionType} $${alert.conditionValue}`}
+            </div>
+            {alert.triggeredPrice && (
+              <div style={{ fontSize: '0.8rem', color: '#667085', marginTop: '6px' }}>
+                Triggered at: <strong>${alert.triggeredPrice.toFixed(2)}</strong>
+              </div>
+            )}
+          </div>
+
+          <div style={{ marginBottom: '20px', padding: '12px', background: '#f9fbfb', borderRadius: '6px', border: '1px solid #e4e7ec' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#667085', textTransform: 'uppercase', marginBottom: '8px' }}>Current Position</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div>
+                <div style={{ fontSize: '0.7rem', color: '#9facbd' }}>Entry</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#20242a' }}>
+                  ${decision.price?.toFixed(2) || '—'} × {decision.quantity}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.7rem', color: '#9facbd' }}>Entry Value</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#20242a' }}>
+                  ${(decision.price * decision.quantity).toFixed(2)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#667085', marginBottom: '8px' }}>What would you like to do?</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button
+                onClick={() => onCloseDecision(decision, alert)}
+                style={{
+                  padding: '12px 16px',
+                  background: '#dc2626',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => { e.target.style.background = '#b91c1c'; }}
+                onMouseLeave={(e) => { e.target.style.background = '#dc2626'; }}
+              >
+                ✓ Close Decision
+              </button>
+              <button
+                onClick={onClose}
+                style={{
+                  padding: '12px 16px',
+                  background: '#f9fbfb',
+                  color: '#667085',
+                  border: '1px solid #d7dce2',
+                  borderRadius: '6px',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = '#f3f4f6';
+                  e.target.style.borderColor = '#d1d5db';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = '#f9fbfb';
+                  e.target.style.borderColor = '#d7dce2';
+                }}
+              >
+                ← Leave Open
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

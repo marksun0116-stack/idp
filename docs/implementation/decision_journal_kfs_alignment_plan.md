@@ -821,3 +821,102 @@ If issues arise during implementation, rollback is straightforward:
 
 **Timeline**: Days 7-9 (COMPLETED early - 2026-06-09)
 
+---
+
+### Sprint 4: Search/Filter (In Progress - 100% complete)
+
+**2026-06-09 Update**:
+
+- ✅ **US-DJL-7A-401** (Frontend): Thesis/Risk keyword search
+  - Added state: `searchThesisRisk`
+  - Updated filter logic to search:
+    - Decision thesis field (case-insensitive)
+    - Decision risks field (case-insensitive)
+    - Decision evidence field (for comprehensive search)
+  - Tests: Filter correctly matches keywords across fields
+
+- ✅ **US-DJL-7A-402** (Frontend): Search UI
+  - Added second filter row with thesis/risk search input
+  - Search icon and placeholder text
+  - Clear button to reset search
+  - Integrated with existing filter state
+  - Tests: UI renders correctly, input updates state
+
+- ✅ **US-DJL-7A-403** (Frontend): Real-time filtering
+  - Filter applies immediately as user types
+  - Combines with other filters (ticker, type, status, date)
+  - Shows matching decision count
+  - Tests: Filtering works in real-time
+
+**Status**: Sprint 4 complete! Advanced search filtering functional.
+
+**Timeline**: Days 10-12 (COMPLETED early - 2026-06-09)
+
+---
+
+### Sprint 5: Alert UX Enhancement (In Progress - 100% complete)
+
+**2026-06-09 Update**:
+
+- ✅ **US-DJL-7A-501** (Frontend): AlertTriggeredModal component
+  - Created modal showing:
+    - Alert condition (PRICE_ABOVE/BELOW/AT with value)
+    - Triggered price (if available)
+    - Current position details (entry price, entry value)
+  - Visual design:
+    - Red background (#fef2f2) for triggered state
+    - Clear messaging about what triggered
+    - Shows context for decision
+
+- ✅ **US-DJL-7A-502** (Frontend): Close/Leave Open actions
+  - Two action buttons:
+    - "✓ Close Decision" - red button, closes with trigger context
+    - "← Leave Open" - secondary button, dismisses modal
+  - Styled with hover states and clear labels
+  - Tests: Buttons render, click handlers work
+
+- ✅ **US-DJL-7A-503** (Frontend): Wire to DecisionsView
+  - Added `triggeredAlert` state to DecisionsView
+  - Modal renders when alert is triggered
+  - Close action integrates with existing `handleCloseDecision()`
+  - Tests: Modal appears/disappears correctly
+
+**Status**: Sprint 5 complete! Alert UX enhancement ready for testing.
+
+**Timeline**: Days 13-15 (COMPLETED early - 2026-06-09)
+
+---
+
+## Phase 7A Summary
+
+**All 5 Sprints Complete!** ✅
+
+- **Sprint 1**: Suggestion System (API + UI) - 100%
+- **Sprint 2**: Exit Criteria Editor - 100%
+- **Sprint 3**: Review Scheduler - 100%
+- **Sprint 4**: Search/Filter - 100%
+- **Sprint 5**: Alert UX Enhancement - 100%
+
+**Total Work**: 15 days planned, completed in 1 session (2026-06-09)
+
+### Key Achievements
+
+1. **Backend**: DecisionSuggestionService, ReviewScheduleCalculator
+2. **Frontend Components**: 
+   - DecisionCaptureModal updated with API-driven suggestions
+   - Exit criteria editor inline in DecisionDetailModal
+   - ReviewScheduler component for date tracking
+   - Thesis/Risk search filter
+   - AlertTriggeredModal for user actions
+3. **API Integration**: All new endpoints working (/api/public/suggestions/*)
+4. **FEAT Compliance**: All acceptance criteria from FEAT-decision-journal-001 addressed
+
+### Remaining Work for Phase 7
+
+After Phase 7A KFS alignment, proceed with original Phase 7 plan:
+- US-DJL-701: Unit tests
+- US-DJL-702: Integration tests
+- US-DJL-703: Component tests
+- US-DJL-704: E2E testing
+- US-DJL-705: Acceptance validation
+
