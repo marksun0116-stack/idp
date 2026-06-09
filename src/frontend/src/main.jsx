@@ -2696,7 +2696,7 @@ function DecisionJournalTimeline({ decisions, onCloseDecision, onCardClick, show
 
     const fetchQuotes = async () => {
       try {
-        const response = await fetch(`http://localhost:8082/api/finance/quote?symbols=${symbols.join(',')}`);
+        const response = await fetch(`/finance-api/quote?symbols=${symbols.join(',')}`);
         if (response.ok) {
           const data = await response.json();
           setLiveQuotes(data.quotes || {});
