@@ -16,9 +16,14 @@ import java.util.Optional;
 public interface InvestmentDecisionRepository extends JpaRepository<InvestmentDecision, Long> {
 
     /**
-     * Get all decisions for a user, ordered by transaction date (newest first)
+     * Get all decisions for a user, ordered by transaction date (newest first) - paginated
      */
     Page<InvestmentDecision> findByUserIdOrderByTransactionDateDesc(String userId, Pageable pageable);
+
+    /**
+     * Get all decisions for a user, ordered by transaction date (newest first)
+     */
+    List<InvestmentDecision> findByUserIdOrderByTransactionDateDesc(String userId);
 
     /**
      * Get decisions for a user and symbol

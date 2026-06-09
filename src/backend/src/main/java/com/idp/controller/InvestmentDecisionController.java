@@ -246,4 +246,15 @@ public class InvestmentDecisionController {
 
         return ResponseEntity.ok(Map.of("pending_alerts", count));
     }
+
+    /**
+     * GET /api/decisions — Get all decisions for current user
+     */
+    @GetMapping
+    public ResponseEntity<Map<String, Object>> getAllDecisions(Authentication auth) {
+        String userId = auth.getName();
+        var decisions = decisionService.getAllDecisions(userId);
+
+        return ResponseEntity.ok(Map.of("decisions", decisions));
+    }
 }

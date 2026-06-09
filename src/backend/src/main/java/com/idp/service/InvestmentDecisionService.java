@@ -263,6 +263,13 @@ public class InvestmentDecisionService {
     }
 
     /**
+     * Get all decisions for a user.
+     */
+    public List<InvestmentDecision> getAllDecisions(String userId) {
+        return decisionRepository.findByUserIdOrderByTransactionDateDesc(userId);
+    }
+
+    /**
      * Get edit history for a decision.
      */
     public List<InvestmentDecisionEdit> getEditHistory(Long decisionId) {
