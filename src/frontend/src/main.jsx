@@ -3077,6 +3077,57 @@ function DecisionJournalTimeline({ decisions, onCloseDecision, onCardClick, show
   );
 }
 
+function ReviewScheduler({ decision }) {
+  const calculateReviewDates = (transactionDate) => {
+    const date = new Date(transactionDate);
+    const reviews = [
+      { days: 30, label: '30-Day Review' },
+      { days: 90, label: '90-Day Review' },
+      { days: 180, label: '180-Day Review' },
+      { days: 365, label: '1-Year Review' }
+    ];
+
+    return reviews.map(review => {
+      const reviewDate = new Date(date);
+      reviewDate.setDate(reviewDate.getDate() + review.days);
+      const today = new Date();
+      const isPast = reviewDate < today;
+      const daysUntil = Math.ceil((reviewDate - today) / (1000 * 60 * 60 * 24));
+
+      return {
+        ...review,
+        reviewDate: reviewDate.toLocaleDateString(),
+        isPast,
+        daysUntil: isPast ? 0 : daysUntil,
+        status: isPast ? 'overdue' : 'pending'
+      };
+    });
+  };
+
+  const reviewDates = calculateReviewDates(decision.transactionDate);
+
+  return (
+    <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #e4e7ec' }}>
+      <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#667085', margin: '0 0 12px 0' }}>Review Schedule</h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {reviewDates.map((review, idx) => (
+          <div key={idx} style={{ display: 'flex', alignItems: 'center', padding: '10px', background: '#f9fbfb', borderRadius: '4px', border: `1px solid ${review.isPast ? '#fee2e2' : '#bfdbfe'}` }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#20242a' }}>{review.label}</div>
+              <div style={{ fontSize: '0.75rem', color: '#9facbd' }}>
+                {review.reviewDate} {!review.isPast && `(in ${review.daysUntil} days)`}
+              </div>
+            </div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: review.isPast ? '#dc2626' : '#0ea5e9', padding: '4px 8px', background: review.isPast ? '#fef2f2' : '#f0f9ff', borderRadius: '3px' }}>
+              {review.isPast ? 'Overdue' : 'Pending'}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function DecisionDetailModal({ decision, onClose, editForm, setEditForm, api, onSaveSuccess }) {
   const [isEditing, setIsEditing] = React.useState(decision.status === 'open');
   const [isClosing, setIsClosing] = React.useState(false);
@@ -3322,6 +3373,9 @@ function DecisionDetailModal({ decision, onClose, editForm, setEditForm, api, on
               )}
             </div>
           )}
+
+          {/* Review Schedule */}
+          {decision.status === 'open' && <ReviewScheduler decision={decision} />}
 
           {/* Edit Form (for open decisions) */}
           {isEditing && decision.status === 'open' && (

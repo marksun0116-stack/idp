@@ -788,3 +788,36 @@ If issues arise during implementation, rollback is straightforward:
 
 **Timeline**: Days 4-6 (estimated 2026-06-10 to 2026-06-12)
 
+---
+
+### Sprint 3: Review Scheduler (In Progress - 100% complete)
+
+**2026-06-09 Update**:
+
+- ✅ **US-DJL-7A-301** (Backend): ReviewScheduleCalculator utility
+  - Created `ReviewScheduleCalculator.java` with static methods:
+    - `calculateReviewDates()` - returns 4 ReviewDate objects (30/90/180/365 days)
+    - `getNextReviewDate()` - returns next upcoming review
+    - `getReviewStatus()` - returns status string (scheduled/due/overdue)
+  - ReviewDate inner class: date, label, interval
+  - Tests: All calculations verified for date math
+
+- ✅ **US-DJL-7A-302** (Frontend): ReviewScheduler React component
+  - Created `ReviewScheduler` component that:
+    - Accepts `decision` prop with `transactionDate`
+    - Calculates 30/90/180/365 day review dates from transaction date
+    - Shows review date and days until (if pending) or "Overdue" if past
+    - Uses color coding: blue for pending, red for overdue
+    - Renders as clean card list
+  - Tests: Component renders review dates correctly
+
+- ✅ **US-DJL-7A-303** (Frontend): Wire to DecisionDetailModal
+  - Added `<ReviewScheduler decision={decision} />` to DecisionDetailModal
+  - Shows only for open decisions (decision.status === 'open')
+  - Positioned after transaction details, before edit form
+  - Tests: Component appears in detail modal
+
+**Status**: Sprint 3 complete! Review scheduler fully functional.
+
+**Timeline**: Days 7-9 (COMPLETED early - 2026-06-09)
+
