@@ -3083,6 +3083,9 @@ function DecisionDetailModal({ decision, onClose, editForm, setEditForm, api, on
   const [closeReason, setCloseReason] = React.useState('');
   const [exitPrice, setExitPrice] = React.useState('');
   const [isSaving, setIsSaving] = React.useState(false);
+  const [alerts, setAlerts] = React.useState(decision.alerts || []);
+  const [isAddingAlert, setIsAddingAlert] = React.useState(false);
+  const [newAlert, setNewAlert] = React.useState({ conditionType: 'PRICE_ABOVE', conditionValue: '', description: '' });
 
   if (!decision) return null;
 
@@ -3166,6 +3169,46 @@ function DecisionDetailModal({ decision, onClose, editForm, setEditForm, api, on
       alert(`Failed to close decision: ${error.message}`);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleAddAlert = async () => {
+    if (!newAlert.conditionValue || parseFloat(newAlert.conditionValue) <= 0) {
+      alert('Please enter a valid condition value');
+      return;
+    }
+
+    try {
+      const payload = {
+        condition_type: newAlert.conditionType,
+        condition_value: parseFloat(newAlert.conditionValue),
+        description: newAlert.description
+      };
+
+      const response = await api(`/api/decisions/${decision.id}/exit-criteria`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+
+      setAlerts([...alerts, response]);
+      setNewAlert({ conditionType: 'PRICE_ABOVE', conditionValue: '', description: '' });
+      setIsAddingAlert(false);
+      if (onSaveSuccess) onSaveSuccess();
+    } catch (error) {
+      alert(`Failed to add alert: ${error.message}`);
+    }
+  };
+
+  const handleDeleteAlert = async (alertId) => {
+    try {
+      await api(`/api/decisions/${decision.id}/exit-criteria/${alertId}`, {
+        method: 'DELETE'
+      });
+
+      setAlerts(alerts.filter(a => a.id !== alertId));
+      if (onSaveSuccess) onSaveSuccess();
+    } catch (error) {
+      alert(`Failed to delete alert: ${error.message}`);
     }
   };
 
@@ -3372,6 +3415,71 @@ function DecisionDetailModal({ decision, onClose, editForm, setEditForm, api, on
                 </div>
               )}
             </>
+          )}
+
+          {/* Exit Criteria Management */}
+          {decision.status === 'open' && !isEditing && (
+            <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #e4e7ec' }}>
+              <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#667085', margin: '0 0 12px 0' }}>Exit Criteria & Alerts</h3>
+
+              {/* Existing Alerts */}
+              {alerts.length > 0 && (
+                <div style={{ marginBottom: '12px' }}>
+                  {alerts.map(alert => (
+                    <div key={alert.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: '#f9fbfb', borderRadius: '4px', marginBottom: '8px', border: `1px solid ${alert.status === 'TRIGGERED' ? '#fca5a5' : '#e4e7ec'}` }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#20242a' }}>
+                          {alert.description || `${alert.conditionType} $${alert.conditionValue}`}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#9facbd' }}>
+                          {alert.status === 'TRIGGERED' && <span style={{ color: '#dc2626' }}>🎯 TRIGGERED</span>}
+                          {alert.status === 'PENDING' && <span style={{ color: '#667085' }}>Pending</span>}
+                          {alert.status === 'CLOSED' && <span style={{ color: '#9facbd' }}>Closed</span>}
+                        </div>
+                      </div>
+                      {alert.status !== 'TRIGGERED' && alert.status !== 'CLOSED' && (
+                        <button onClick={() => handleDeleteAlert(alert.id)} style={{ padding: '4px 8px', fontSize: '0.75rem', color: '#dc2626', background: 'transparent', border: '1px solid #fee2e2', borderRadius: '3px', cursor: 'pointer' }}>
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add New Alert Form */}
+              {!isAddingAlert ? (
+                <button onClick={() => setIsAddingAlert(true)} style={{ padding: '8px 12px', fontSize: '0.85rem', color: '#0ea5e9', background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: '4px', cursor: 'pointer', fontWeight: 500 }}>
+                  + Add Exit Criteria
+                </button>
+              ) : (
+                <div style={{ padding: '12px', background: '#f0f9ff', borderRadius: '4px', border: '1px solid #bfdbfe' }}>
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#0c4a6e', display: 'block', marginBottom: '4px' }}>Condition Type</label>
+                    <select value={newAlert.conditionType} onChange={(e) => setNewAlert({ ...newAlert, conditionType: e.target.value })} style={{ width: '100%', padding: '6px', fontSize: '0.85rem', border: '1px solid #bfdbfe', borderRadius: '3px' }}>
+                      <option value="PRICE_ABOVE">Price ≥ (take profit)</option>
+                      <option value="PRICE_BELOW">Price ≤ (stop loss)</option>
+                      <option value="PRICE_AT">Price = (exact target)</option>
+                    </select>
+                  </div>
+
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#0c4a6e', display: 'block', marginBottom: '4px' }}>Condition Value</label>
+                    <input type="number" step="0.01" min="0" value={newAlert.conditionValue} onChange={(e) => setNewAlert({ ...newAlert, conditionValue: e.target.value })} placeholder="Target price" style={{ width: '100%', padding: '6px', fontSize: '0.85rem', border: '1px solid #bfdbfe', borderRadius: '3px', boxSizing: 'border-box' }} />
+                  </div>
+
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#0c4a6e', display: 'block', marginBottom: '4px' }}>Description (optional)</label>
+                    <input type="text" value={newAlert.description} onChange={(e) => setNewAlert({ ...newAlert, description: e.target.value })} placeholder="e.g., 'Take profit at $165'" style={{ width: '100%', padding: '6px', fontSize: '0.85rem', border: '1px solid #bfdbfe', borderRadius: '3px', boxSizing: 'border-box' }} />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={handleAddAlert} style={{ flex: 1, padding: '6px', fontSize: '0.85rem', color: '#fff', background: '#0ea5e9', border: 'none', borderRadius: '3px', cursor: 'pointer', fontWeight: 500 }}>Add Criteria</button>
+                    <button onClick={() => setIsAddingAlert(false)} style={{ flex: 1, padding: '6px', fontSize: '0.85rem', color: '#0c4a6e', background: 'transparent', border: '1px solid #bfdbfe', borderRadius: '3px', cursor: 'pointer' }}>Cancel</button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {/* Close Decision Form */}

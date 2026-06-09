@@ -750,3 +750,41 @@ If issues arise during implementation, rollback is straightforward:
 
 **Timeline**: Should complete by end of day 2026-06-09 or start 2026-06-10
 
+---
+
+### Sprint 2: Exit Criteria Editor (In Progress - 50% complete)
+
+**2026-06-09 Update**:
+
+- 🔄 **US-DJL-7A-201** (Frontend): ExitCriteriaForm inline in DecisionDetailModal
+  - Added state management: `alerts`, `isAddingAlert`, `newAlert`
+  - Created UI for displaying existing alerts with status (PENDING/TRIGGERED/CLOSED)
+  - Created inline form for adding new exit criteria with:
+    - Condition type dropdown (PRICE_ABOVE, PRICE_BELOW, PRICE_AT)
+    - Condition value input (numeric with 2 decimal places)
+    - Optional description field
+    - Add/Cancel buttons
+  - Tests: UI renders correctly, form appears/hides on toggle
+
+- 🔄 **US-DJL-7A-202** (Frontend): Wire to API endpoints
+  - Created `handleAddAlert()` to POST to `/api/decisions/{id}/exit-criteria`
+  - Created `handleDeleteAlert()` to DELETE from `/api/decisions/{id}/exit-criteria/{alertId}`
+  - Integrated with existing alert state in DecisionDetailModal
+  - Conditions: only open decisions can add/remove alerts
+  - Tests: API calls should succeed
+
+- ⏳ **US-DJL-7A-203** (Frontend): Validation & Error Handling
+  - Added validation: conditionValue must be > 0
+  - Validation messages shown via alert() (can be improved to toast)
+  - Error handling in try/catch blocks
+  - Status: Basic implementation in place
+
+**Remaining Work for Sprint 2**:
+1. Test add/delete alert flow end-to-end
+2. Verify API endpoints respond correctly
+3. Improve error display (toast instead of alert())
+4. Handle duplicate alerts (same condition type/value)
+5. Test triggered alert visual indicator
+
+**Timeline**: Days 4-6 (estimated 2026-06-10 to 2026-06-12)
+
