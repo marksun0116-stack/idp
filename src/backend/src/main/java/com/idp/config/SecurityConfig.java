@@ -52,6 +52,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/api/users/register", "/api/users/login").permitAll()
                 .requestMatchers("/api/profile/public").permitAll()
+                .requestMatchers("/api/decisions/**").authenticated()
+                .requestMatchers("/api/investment-decisions/**").authenticated()
+                .requestMatchers("/api/decision-records/**").authenticated()
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll())
             .addFilterBefore(bearerFilter, UsernamePasswordAuthenticationFilter.class);
