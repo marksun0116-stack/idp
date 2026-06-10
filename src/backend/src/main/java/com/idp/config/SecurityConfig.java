@@ -51,6 +51,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/api/users/register", "/api/users/login").permitAll()
+                .requestMatchers("/api/profile/public").permitAll()
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll())
             .addFilterBefore(bearerFilter, UsernamePasswordAuthenticationFilter.class);

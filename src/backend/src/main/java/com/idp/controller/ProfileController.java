@@ -24,6 +24,9 @@ public class ProfileController {
 
     @GetMapping
     public PublicProfileResponse get(Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            return null;
+        }
         return publicProfileService.getOwned(authentication.getName());
     }
 
