@@ -1,57 +1,59 @@
 id: CONR-technical-analysis-api-001
 kind: contract
-title: "Technical analysis API contract"
+title: "Strategy Technical Analysis Display Contract"
 status: draft
-version: "0.1"
-date: 2026-06-07
+version: "0.2"
+date: 2026-06-09
 summary: |
-  Defines the strategy-scoped technical analysis response shape used before the shared finance service extraction. The shared finance service contract supersedes this for cross-repo finance analysis endpoints, but this contract remains as historical IDP strategy-analysis intent until consumers are fully migrated.
+  IDP strategy UI expects this shape when displaying technical analysis and recommendation for a tracked symbol.
+  The underlying data is sourced from the shared finance-data-service `/api/finance/analysis/{symbol}` endpoint
+  (CONR-finance-service-api-001). This contract defines how IDP transforms and displays that data for strategy research.
 owner: "IDP"
 schema:
   endpoint:
     method: GET
     path: "/api/strategies/{id}/analysis/{symbol}"
+    description: "IDP proxy/adapter for strategy-scoped technical analysis"
   response:
     symbol: string
     strategyId: number
     range: string
     timestamp: string
     indicators:
+      timestamps: "number[]"
       closes: "number[]"
-      volumes: "number[]"
       sma20: "number[]"
       sma50: "number[]"
-      bollinger: "array<{upper:number,middle:number,lower:number}>"
-      rsi: "number[]"
-      macdLine: "number[]"
-      signalLine: "number[]"
-      histogram: "number[]"
       ema12: "number[]"
       ema26: "number[]"
-      pctK: "number[]"
-      pctD: "number[]"
+      rsi14: "number[]"
+      bollingerUpper: "number[]"
+      bollingerLower: "number[]"
+      macd: "number[]"
+      signal: "number[]"
+      histogram: "number[]"
+      stochastic: "number[]"
       obv: "number[]"
       mfi: "number[]"
     recommendation:
-      label: string
-      displayLabel: string
-      confidence: string
+      regime: string
       strategy: string
-      validation:
-        sampleSize: number
-        winRate: number
-        avgReturn: number
-        medianReturn: number
-        horizon: number
-        similarSetups: array
+      confidence: string
+      winRate: number
+      medianReturn: number
+      similarSetups: "array<{date:string, outcome:string, return:number}>"
 data_guarantees:
-  - "Indicator arrays have matching length equal to the close series length."
+  - "All indicator arrays have matching length equal to the close series length."
   - "Unavailable indicator values are null rather than estimated."
-  - "Supported ranges follow the active finance or strategy analysis contract."
-  - "Historical validation uses a consistent horizon for comparable setups."
+  - "Supported ranges follow CONR-finance-service-api-001 (1w, 1mo, 3mo, 6mo, 1y, 2y, 5y)."
+  - "Recommendation data sourced directly from finance-data-service analysis endpoint."
+  - "Similar setups limited to top 10 most recent matches with forward returns."
+source_of_truth:
+  - CONR-finance-service-api-001 (finance-data-service `/api/finance/analysis/{symbol}`)
+  - FEAT-finance-technical-indicators-001
+  - FEAT-finance-pattern-matching-001
 references:
   - FEAT-shared-finance-service-001
-  - FEAT-technical-indicators-001
   - INV-indicator-accuracy-001
   - INV-strategy-validation-001
 related_primitives:
@@ -61,3 +63,7 @@ change_log:
     date: 2026-06-07
     status: draft
     notes: "Converted historical markdown-style contract into KFS YAML."
+  - revision: "0.2"
+    date: 2026-06-09
+    status: draft
+    notes: "Refactored to consumer contract: IDP displays finance-data-service technical analysis. Removed backend implementation scope."

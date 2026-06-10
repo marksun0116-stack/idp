@@ -2279,6 +2279,19 @@ function StrategyForm({ strategyForm, setStrategyForm, createStrategy }) {
 
 function ExpandedAnalysisPanel({ symbol, indicator }) {
   const [activeTab, setActiveTab] = useState('chart');
+  const [selectedIndicators, setSelectedIndicators] = useState({
+    sma20: true,
+    sma50: false,
+    rsi: false,
+    macd: false
+  });
+
+  const toggleIndicator = (indicatorName) => {
+    setSelectedIndicators(prev => ({
+      ...prev,
+      [indicatorName]: !prev[indicatorName]
+    }));
+  };
 
   return (
     <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e4e7ec' }}>
@@ -2298,7 +2311,7 @@ function ExpandedAnalysisPanel({ symbol, indicator }) {
             marginBottom: '-1px'
           }}
         >
-          Price Chart & Similar Setups
+          Price Chart & Indicators
         </button>
         <button
           type="button"
@@ -2320,7 +2333,7 @@ function ExpandedAnalysisPanel({ symbol, indicator }) {
       </div>
 
       {activeTab === 'chart' && (
-        <TechnicalChartPanel symbol={symbol} indicator={indicator} />
+        <TechnicalChartPanel symbol={symbol} indicator={indicator} selectedIndicators={selectedIndicators} toggleIndicator={toggleIndicator} />
       )}
 
       {activeTab === 'analysis' && (
@@ -2330,13 +2343,17 @@ function ExpandedAnalysisPanel({ symbol, indicator }) {
   );
 }
 
-function TechnicalChartPanel({ symbol, indicator }) {
+function TechnicalChartPanel({ symbol, indicator, selectedIndicators, toggleIndicator }) {
   if (!indicator || !symbol) return <div style={{ fontSize: '0.85rem', color: '#667085' }}>Loading chart...</div>;
 
   const analysis = indicator.recommendation;
-  const indicators = indicator.indicators;
-  const closes = indicators?.closes || [];
+  const indicatorsData = indicator.indicators;
+  const closes = indicatorsData?.closes || [];
   const similarSetups = analysis?.similarSetups || [];
+  const sma20 = indicatorsData?.sma20 || [];
+  const sma50 = indicatorsData?.sma50 || [];
+  const rsi = indicatorsData?.rsi || [];
+  const macdLine = indicatorsData?.macdLine || [];
 
   if (closes.length === 0) {
     return <div style={{ fontSize: '0.85rem', color: '#667085', padding: '20px', textAlign: 'center' }}>No price data available</div>;
@@ -2345,10 +2362,14 @@ function TechnicalChartPanel({ symbol, indicator }) {
   const chartData = closes.map((close, idx) => {
     const setup = similarSetups.find(s => s.idx === idx);
     const date = new Date(0);
-    date.setUTCSeconds(Math.floor(idx * 86400)); // Approximate date based on index
+    date.setUTCSeconds(Math.floor(idx * 86400));
     return {
       idx,
       price: parseFloat(close),
+      sma20: sma20[idx] ? parseFloat(sma20[idx]) : null,
+      sma50: sma50[idx] ? parseFloat(sma50[idx]) : null,
+      rsi: rsi[idx] ? parseFloat(rsi[idx]) : null,
+      macd: macdLine[idx] ? parseFloat(macdLine[idx]) : null,
       date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       similarSetup: setup ? {
         returnPct: setup.forwardReturn,
@@ -2360,7 +2381,6 @@ function TechnicalChartPanel({ symbol, indicator }) {
   const CustomDot = (props) => {
     const { cx, cy, payload } = props;
     if (!payload.similarSetup) return null;
-
     const returnColor = payload.similarSetup.returnPct > 0 ? '#16a34a' : '#dc2626';
     return (
       <g>
@@ -2375,48 +2395,165 @@ function TechnicalChartPanel({ symbol, indicator }) {
   const priceRange = maxPrice - minPrice || 1;
 
   return (
-    <div style={{ width: '100%', height: '300px', display: 'flex', flexDirection: 'column' }}>
-      <ResponsiveContainer width="100%" height={250}>
-        <RechartsLineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e4e7ec" />
-          <XAxis
-            dataKey="date"
-            tick={{ fontSize: 12, fill: '#9facbd' }}
-            stroke="#9facbd"
-            interval={Math.floor(chartData.length / 8)}
-          />
-          <YAxis
-            stroke="#9facbd"
-            domain={[minPrice - priceRange * 0.05, maxPrice + priceRange * 0.05]}
-            width={50}
-            tickFormatter={(v) => `$${v.toFixed(0)}`}
-          />
-          <Tooltip
-            contentStyle={{ background: '#fff', border: '1px solid #e4e7ec', borderRadius: '4px' }}
-            formatter={(value, name, props) => {
-              if (name === 'price') {
-                const setup = props.payload.similarSetup;
-                if (setup) {
-                  return [
-                    `$${parseFloat(value).toFixed(2)}`,
-                    `Price (Similar Setup +${setup.returnPct > 0 ? '+' : ''}${setup.returnPct.toFixed(2)}%)`
-                  ];
-                }
-                return [`$${parseFloat(value).toFixed(2)}`, 'Price'];
-              }
-              return [value, name];
-            }}
-          />
-          <Line
-            type="monotone"
-            dataKey="price"
-            stroke="#2563eb"
-            dot={<CustomDot />}
-            strokeWidth={2}
-            isAnimationActive={false}
-          />
-        </RechartsLineChart>
-      </ResponsiveContainer>
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <button
+          type="button"
+          onClick={() => toggleIndicator('sma20')}
+          style={{
+            padding: '4px 12px',
+            fontSize: '0.75rem',
+            border: `1px solid ${selectedIndicators.sma20 ? '#2563eb' : '#e4e7ec'}`,
+            background: selectedIndicators.sma20 ? '#2563eb' : '#fff',
+            color: selectedIndicators.sma20 ? '#fff' : '#667085',
+            borderRadius: '3px',
+            cursor: 'pointer',
+            fontWeight: 500
+          }}
+        >
+          SMA20
+        </button>
+        <button
+          type="button"
+          onClick={() => toggleIndicator('sma50')}
+          style={{
+            padding: '4px 12px',
+            fontSize: '0.75rem',
+            border: `1px solid ${selectedIndicators.sma50 ? '#f97316' : '#e4e7ec'}`,
+            background: selectedIndicators.sma50 ? '#f97316' : '#fff',
+            color: selectedIndicators.sma50 ? '#fff' : '#667085',
+            borderRadius: '3px',
+            cursor: 'pointer',
+            fontWeight: 500
+          }}
+        >
+          SMA50
+        </button>
+        <button
+          type="button"
+          onClick={() => toggleIndicator('rsi')}
+          style={{
+            padding: '4px 12px',
+            fontSize: '0.75rem',
+            border: `1px solid ${selectedIndicators.rsi ? '#8b5cf6' : '#e4e7ec'}`,
+            background: selectedIndicators.rsi ? '#8b5cf6' : '#fff',
+            color: selectedIndicators.rsi ? '#fff' : '#667085',
+            borderRadius: '3px',
+            cursor: 'pointer',
+            fontWeight: 500
+          }}
+        >
+          RSI
+        </button>
+        <button
+          type="button"
+          onClick={() => toggleIndicator('macd')}
+          style={{
+            padding: '4px 12px',
+            fontSize: '0.75rem',
+            border: `1px solid ${selectedIndicators.macd ? '#ec4899' : '#e4e7ec'}`,
+            background: selectedIndicators.macd ? '#ec4899' : '#fff',
+            color: selectedIndicators.macd ? '#fff' : '#667085',
+            borderRadius: '3px',
+            cursor: 'pointer',
+            fontWeight: 500
+          }}
+        >
+          MACD
+        </button>
+      </div>
+
+      <div style={{ height: '300px' }}>
+        <ResponsiveContainer width="100%" height={250}>
+          <RechartsLineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e4e7ec" />
+            <XAxis
+              dataKey="date"
+              tick={{ fontSize: 12, fill: '#9facbd' }}
+              stroke="#9facbd"
+              interval={Math.floor(chartData.length / 8)}
+            />
+            <YAxis
+              stroke="#9facbd"
+              domain={[minPrice - priceRange * 0.05, maxPrice + priceRange * 0.05]}
+              width={50}
+              tickFormatter={(v) => `$${v.toFixed(0)}`}
+            />
+            <Tooltip
+              contentStyle={{ background: '#fff', border: '1px solid #e4e7ec', borderRadius: '4px', fontSize: '0.75rem' }}
+              formatter={(value, name) => {
+                if (!value) return '';
+                if (name === 'price') return [`$${parseFloat(value).toFixed(2)}`, 'Close'];
+                if (name === 'sma20') return [`$${parseFloat(value).toFixed(2)}`, 'SMA20'];
+                if (name === 'sma50') return [`$${parseFloat(value).toFixed(2)}`, 'SMA50'];
+                if (name === 'rsi') return [parseFloat(value).toFixed(1), 'RSI'];
+                if (name === 'macd') return [parseFloat(value).toFixed(2), 'MACD'];
+                return [value, name];
+              }}
+            />
+            <Line
+              type="monotone"
+              dataKey="price"
+              stroke="#2563eb"
+              dot={<CustomDot />}
+              strokeWidth={2}
+              isAnimationActive={false}
+            />
+            {selectedIndicators.sma20 && (
+              <Line
+                type="monotone"
+                dataKey="sma20"
+                stroke="#2563eb"
+                strokeWidth={1.5}
+                strokeDasharray="5 5"
+                dot={false}
+                isAnimationActive={false}
+              />
+            )}
+            {selectedIndicators.sma50 && (
+              <Line
+                type="monotone"
+                dataKey="sma50"
+                stroke="#f97316"
+                strokeWidth={1.5}
+                strokeDasharray="5 5"
+                dot={false}
+                isAnimationActive={false}
+              />
+            )}
+            {selectedIndicators.rsi && (
+              <Line
+                type="monotone"
+                dataKey="rsi"
+                stroke="#8b5cf6"
+                strokeWidth={1.5}
+                strokeDasharray="5 5"
+                dot={false}
+                isAnimationActive={false}
+                yAxisId="rsiAxis"
+              />
+            )}
+            {selectedIndicators.macd && (
+              <Line
+                type="monotone"
+                dataKey="macd"
+                stroke="#ec4899"
+                strokeWidth={1.5}
+                strokeDasharray="5 5"
+                dot={false}
+                isAnimationActive={false}
+                yAxisId="macdAxis"
+              />
+            )}
+            {(selectedIndicators.rsi || selectedIndicators.macd) && (
+              <>
+                {selectedIndicators.rsi && <YAxis yAxisId="rsiAxis" orientation="right" stroke="#8b5cf6" width={40} domain={[0, 100]} />}
+                {selectedIndicators.macd && <YAxis yAxisId="macdAxis" orientation="right" stroke="#ec4899" width={40} />}
+              </>
+            )}
+          </RechartsLineChart>
+        </ResponsiveContainer>
+      </div>
 
       {similarSetups.length > 0 && (
         <div style={{ padding: '8px 0', borderTop: '1px solid #e4e7ec', fontSize: '0.75rem', color: '#667085' }}>

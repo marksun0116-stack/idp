@@ -1,12 +1,12 @@
 ---
 title: "Phase 10 Advanced Technical Analysis Requirements Review"
 status: in_progress
-reviewed_on: 2026-06-07
+reviewed_on: 2026-06-09
 phase: 10
 linked_plan: PLAN-investor-development-platform-001
 linked_features:
-  - FEAT-technical-analysis-001
-  - FEAT-indicator-validation-001
+  - FEAT-finance-technical-indicators-001
+  - FEAT-finance-pattern-matching-001
 linked_constraints:
   - CON-strategy-analysis-scope-001
 linked_invariants:
@@ -14,89 +14,113 @@ linked_invariants:
   - INV-indicator-accuracy-001
 related_contracts:
   - CONR-technical-analysis-api-001
+  - CONR-finance-service-api-001
 ---
 
 # Phase 10 Advanced Technical Analysis Requirements Review
 
 ## 1. Scope
 
-Phase 10 enriches IDP's strategy technical signals by porting stock-monitor's multi-indicator analysis system with historical backtesting and pattern validation.
+Phase 10 integrates finance-data-service technical analysis into IDP strategy research UI. The shared finance service provides all indicator calculations and recommendation engine; IDP Phase 10 focuses on **frontend display and strategy-scoped integration**.
 
 **Included:**
-- Technical indicators: SMA20/50, Bollinger Bands, RSI, MACD, Stochastic (%K/%D), OBV, MFI
-- Pattern detection and strategy classification (trending-up, trending-down, compressed, range-bound, conflicted)
-- Historical setup matching and win-rate validation
-- Confidence scoring based on sample size and historical edge
-- Similar historical setups display with forward returns
-- Scorecard showing signal alignment and regime compatibility
+- Consume finance-data-service `/api/finance/analysis/{symbol}` endpoint
+- Display technical indicators (SMA20/50, EMA12/26, RSI, MACD, Stochastic, Bollinger, OBV, MFI) in strategy symbol charts
+- Display recommendation (regime, strategy pattern, confidence) in strategy expand panel
+- Show similar historical setups with win rates and forward returns
+- Add technical analysis widgets to strategy dashboard
+- Handle unavailable/fallback scenarios gracefully
 
 **Deferred:**
-- Advanced pattern recognition (advanced chart patterns beyond current detections)
-- Multi-timeframe analysis
-- ML-based pattern classification
+- Backend technical indicator implementation (owned by finance-data-service)
+- Backend pattern matching (owned by finance-data-service)
+- Change detection / alert notifications (post-Phase 10)
 - Custom indicator creation
 
-## 2. Implementation Approach
+## 2. Architecture & Dependencies
 
-Phase 10 will be split into **5 sprints**:
+**Data Flow:**
+```
+IDP Strategy UI
+  ↓ (GET /api/strategies/{id}/analysis/{symbol}?range=1y)
+IDP Backend Proxy (optional passthrough or lightweight transform)
+  ↓
+finance-data-service (CONR-finance-service-api-001)
+  ↓ (GET /api/finance/analysis/{symbol}?range=1y)
+Yahoo Finance (OHLCV data + indicators + analysis)
+```
 
-### Sprint 1: Technical Indicator Contracts & Backend Foundation
-- Define CONR-technical-analysis-api-001 with all indicator data requirements
-- Implement backend indicator calculation endpoints (SMA, Bollinger, RSI, MACD, Stochastic, OBV, MFI)
-- Store indicator time-series in accessible format
-- Test accuracy against known reference values
+**Key Dependencies:**
+- finance-data-service must be running (localhost:8082 by default)
+- `/api/finance/analysis/{symbol}` endpoint available and responsive
+- CONR-finance-service-api-001 contract stability (version 1.0, final)
 
-### Sprint 2: Backend Recommendation Engine
-- Port stock-monitor's `buildTechnicalRecommendation` logic to backend service
-- Implement pattern detection (regime classification, strategy scoring)
-- Implement historical setup matching and backtesting
-- Calculate win rates, confidence levels, validation scores
+## 3. Implementation Approach
 
-### Sprint 3: Frontend Integration & Expand Panel
-- Update tracked symbols to fetch recommendation data on strategy load
-- Enhance expand panel to display detailed recommendation (strategy, confidence, validation)
-- Show scorecard with signal alignment
-- Display similar historical setups with forward returns
+Phase 10 will be split into **4 sprints** (frontend-focused):
 
-### Sprint 4: Dashboard & Alerts
-- Add technical analysis widgets to strategy dashboard
-- Implement change detection (alert when recommendation changes)
-- Add historical performance comparison charts
+### Sprint 1: Requirements Review & UI Contract Definition
+- Document expected UI display layout (expand panel mockup)
+- Define error/fallback UX (network errors, unavailable symbols, insufficient data)
+- Map finance-data-service response to strategy UI state shape
+- Test API connectivity and response format
 
-### Sprint 5: Polish & Optimization
-- Performance optimization for large historical datasets
-- Error handling and graceful degradation
-- Visual polish and consistency with stock-monitor style
+### Sprint 2: Expand Panel Enhancement
+- Add indicator chart selector (SMA20, RSI, MACD, etc.)
+- Display recommendation card (regime, confidence, win rate)
+- Show scorecard with signal alignment per regime
+- Display similar historical setups table (top 10, date/outcome/return)
 
-## 3. Acceptance Criteria
+### Sprint 3: Dashboard Integration
+- Add "Technical Outlook" widget to strategy dashboard
+- Show current regime and confidence for top 3 strategies
+- Add quick recommendation summary (bullish/bearish/neutral)
+- Link to full expand panel for details
+
+### Sprint 4: Polish & Edge Cases
+- Performance optimization for large indicator datasets
+- Graceful degradation when analysis unavailable
+- Consistent styling with stock-monitor / existing IDP UI
+- Error messaging and retry logic
+
+## 4. Acceptance Criteria
 
 | Area | Acceptance Criteria | Trace |
 | --- | --- | --- |
-| Indicator accuracy | SMA20/50, Bollinger, RSI match stock-monitor calculations within 0.01% | CONR-technical-analysis-api-001, INV-indicator-accuracy-001 |
-| Pattern detection | Strategy classification matches stock-monitor's regime detection | FEAT-technical-analysis-001 |
-| Win rate calculation | Historical validation matches stock-monitor's backtesting results | INV-strategy-validation-001 |
-| Confidence scoring | Confidence levels assigned per stock-monitor rules (Low/Medium/High) | FEAT-indicator-validation-001 |
-| UI consistency | Expand panel displays same information style as stock-monitor's indicator panel | CONR-technical-analysis-api-001 |
-| Data freshness | Indicators update when quote data refreshes | CON-strategy-analysis-scope-001 |
-| Fallback behavior | UI gracefully handles missing indicator data | CON-strategy-analysis-scope-001 |
+| API integration | IDP can successfully fetch and parse `/api/finance/analysis/{symbol}` responses | CONR-finance-service-api-001 |
+| Indicator display | Selected indicators render in symbol chart (SMA20, RSI, MACD, Bollinger) | FEAT-finance-technical-indicators-001, INV-indicator-accuracy-001 |
+| Recommendation display | Expand panel shows regime, confidence, win rate, and similar setups clearly | CONR-technical-analysis-api-001 |
+| Fallback behavior | UI gracefully handles network errors, unavailable data, insufficient history | CON-strategy-analysis-scope-001 |
+| Data freshness | Indicators refresh when strategy quote data is refreshed | CON-strategy-analysis-scope-001 |
+| Dashboard widget | Strategy dashboard shows technical outlook (regime + top 3 strategies) | FEAT-investor-development-platform-001 |
+| Error messages | Users understand why analysis is unavailable (insufficient data, network, symbol) | CON-investment-non-advice-001 |
 
-## 4. Implementation Notes
+## 5. Implementation Notes
 
-- Port `buildTechnicalRecommendation.js` logic from stock-monitor as backend service (Java)
-- Reuse existing MarketDataService for quote data
-- Store historical indicator values in-memory during load (cache per strategy)
-- Expand panel layout should match stock-monitor's indicator recommendation display
-- Similar setups table shows top 5-10 most similar historical patterns
+- **No backend implementation**: All technical analysis is in finance-data-service (FEAT-finance-technical-indicators-001, FEAT-finance-pattern-matching-001)
+- **IDP responsibilities**: Fetch from finance-data-service, transform/adapt for strategy UI, display in expand panel + dashboard
+- Expand panel should use side-by-side layout: chart on left, recommendation/similar setups on right (consistent with stock-monitor)
+- Similar setups table limited to top 10 most recent matches (ranked by date, most recent first)
+- Network timeouts handled gracefully: show "Loading analysis..." then "Analysis unavailable" after 10s timeout
+- Finance-data-service handles insufficient historical data (returns 422 Unprocessable Entity); IDP shows helpful message
 
-## 5. Test Plan
+## 6. Test Plan
 
-- **Unit tests**: Indicator calculation accuracy against test data
-- **Integration tests**: End-to-end recommendation generation
-- **Accuracy tests**: Compare backend recommendation with stock-monitor frontend output
-- **Performance tests**: Backtest performance on 5-year datasets
+- **Integration tests**: Verify IDP can fetch and parse finance-data-service responses for multiple symbols and ranges
+- **UI tests**: Expand panel renders correctly with indicators, recommendation, and similar setups
+- **Fallback tests**: Network errors, timeouts, missing symbols, insufficient history all handled gracefully
+- **Performance tests**: Dashboard with 5+ strategies loads in under 2s
+
+## 7. Cross-Repo Dependencies
+
+- **Dependency**: finance-data-service `CONR-finance-service-api-001` v1.0 (stable, final)
+- **Owned by**: finance-data-service (`FEAT-finance-technical-indicators-001`, `FEAT-finance-pattern-matching-001`)
+- **IDP contributes**: Strategy UI integration, expand panel display, dashboard widget
+- Synchronization: IDP and finance-data-service share `FEAT-shared-finance-service-001` from IDP workspace
 
 ## Change log
 
 | Revision | Date | Status | Supersedes | Notes |
 | --- | --- | --- | --- | --- |
 | 0.1 | 2026-06-07 | in_progress | - | Initial Phase 10 requirements review. Defined 5-sprint approach to port stock-monitor technical analysis. |
+| 0.2 | 2026-06-09 | in_progress | 0.1 | Refactored to consumer contract: IDP integrates (not implements) finance-data-service technical analysis. Changed from 5 backend sprints to 4 frontend sprints. |
