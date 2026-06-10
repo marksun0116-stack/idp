@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/decision-records")
+@RequestMapping({"/api/decision-records", "/api/decisions"})
 public class DecisionRecordController {
     private final DecisionRecordService decisionRecordService;
 

@@ -21,9 +21,9 @@ description: |
   3. Optional prompt: "Log decision details for learning?" (user can skip)
   4. If user chooses to log:
      - Title: Auto-populated from action (read-only or editable)
-     - Thesis: Pick from 5 suggested options or add custom
-     - Evidence: Pick from 5 suggested options or add custom
-     - Risks: Pick from 5 suggested options or add custom
+     - Thesis: Pick one suggested thesis or add custom
+     - Evidence: Pick from suggested options or add custom
+     - Risks: Pick from suggested options or add custom
      - Comments: Optional free-text area
      - Exit Criteria: Define as alert conditions (price targets, P/L ratios, etc.)
   5. System auto-creates alerts from exit criteria
@@ -63,7 +63,8 @@ acceptance_criteria:
   - Watchlist add/remove → NO decision capture
   - Strategy add/remove from strategy → NO decision capture
   - Title auto-generated from transaction (e.g., "Buy 200 shares of AAPL at $150")
-  - Thesis, Evidence, Risks each have 5 pre-populated suggestions with option to add custom
+  - Thesis, Evidence, Risks have pre-populated suggestions with option to add custom
+  - Thesis suggestions are single-select to keep the original decision rationale clear
   - Exit criteria defined as alert conditions and auto-created as alerts
   - Decision journal displays all buy/sell decisions in chronological order
   - Per-transaction (each buy/sell separate decision)
@@ -85,6 +86,10 @@ suggested_thesis_options:
   - "Momentum play (trend continuation)"
   - "Mean reversion (oversold indicator like RSI < 30)"
   - "Matches my investment strategy or watchlist criteria"
+  - "Business quality or durable competitive advantage"
+  - "Turnaround or margin improvement thesis"
+  - "Dividend or income-focused position"
+  - "Portfolio hedge or diversification role"
 
 suggested_evidence_options:
   - "P/E ratio below sector average"
@@ -92,6 +97,10 @@ suggested_evidence_options:
   - "Price above 50-day moving average"
   - "Recent earnings beat or positive catalyst"
   - "Sector/industry showing relative strength"
+  - "Revenue or free cash flow growth improving"
+  - "Margin expansion or cost discipline visible"
+  - "Balance sheet strength supports downside risk"
+  - "Management guidance or analyst estimates improving"
 
 suggested_risks_options:
   - "Market downturn or sector correction"
@@ -99,6 +108,10 @@ suggested_risks_options:
   - "Sector rotation or fund flows shifting"
   - "Valuation multiple compression"
   - "Geopolitical or macro risk event"
+  - "Execution risk or catalyst delay"
+  - "Debt, refinancing, or liquidity risk"
+  - "Regulatory or legal risk"
+  - "Position sizing or concentration risk"
 
 linked_constraints:
   - CON-decision-review-cadence-001

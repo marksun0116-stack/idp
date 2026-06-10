@@ -24,7 +24,7 @@ import java.time.LocalDate;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/decisions")
+@RequestMapping("/api/investment-decisions")
 public class InvestmentDecisionController {
 
     private final InvestmentDecisionService decisionService;
@@ -38,23 +38,36 @@ public class InvestmentDecisionController {
      * User specifies price; can be added anytime
      */
     @PostMapping("/manual")
-    public ResponseEntity<InvestmentDecision> createManualDecision(
+    public ResponseEntity<?> createManualDecision(
             Authentication auth,
             @RequestBody Map<String, Object> request) {
 
         String userId = auth.getName();
         String symbol = (String) request.get("symbol");
         String actionStr = (String) request.get("action");
-        BigDecimal quantity = new BigDecimal(request.get("quantity").toString());
-        BigDecimal price = new BigDecimal(request.get("price").toString());
-        LocalDate transactionDate = LocalDate.parse((String) request.get("transaction_date"));
+        Object quantityObj = request.get("quantity");
+        Object priceObj = request.get("price");
+        String transactionDateStr = (String) request.get("transaction_date");
 
-        DecisionType action = DecisionType.fromValue(actionStr);
+        if (symbol == null || actionStr == null || quantityObj == null || priceObj == null || transactionDateStr == null) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "Missing required fields: symbol, action, quantity, price, transaction_date"));
+        }
 
-        InvestmentDecision decision = decisionService.createManualDecision(
-            userId, symbol, action, quantity, price, transactionDate);
+        try {
+            BigDecimal quantity = new BigDecimal(quantityObj.toString());
+            BigDecimal price = new BigDecimal(priceObj.toString());
+            LocalDate transactionDate = LocalDate.parse(transactionDateStr);
+            DecisionType action = DecisionType.fromValue(actionStr);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(decision);
+            InvestmentDecision decision = decisionService.createManualDecision(
+                userId, symbol, action, quantity, price, transactionDate);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(decision);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "Invalid request format: " + e.getMessage()));
+        }
     }
 
     /**
@@ -62,30 +75,43 @@ public class InvestmentDecisionController {
      * System uses latest market price; user cannot override
      */
     @PostMapping("/auto")
-    public ResponseEntity<InvestmentDecision> createAutoDecision(
+    public ResponseEntity<?> createAutoDecision(
             Authentication auth,
             @RequestBody Map<String, Object> request) {
 
         String userId = auth.getName();
         String symbol = (String) request.get("symbol");
         String actionStr = (String) request.get("action");
-        BigDecimal quantity = new BigDecimal(request.get("quantity").toString());
-        BigDecimal latestPrice = new BigDecimal(request.get("latest_price").toString());
-        LocalDate transactionDate = LocalDate.parse((String) request.get("transaction_date"));
+        Object quantityObj = request.get("quantity");
+        Object latestPriceObj = request.get("latest_price");
+        String transactionDateStr = (String) request.get("transaction_date");
 
-        DecisionType action = DecisionType.fromValue(actionStr);
+        if (symbol == null || actionStr == null || quantityObj == null || latestPriceObj == null || transactionDateStr == null) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "Missing required fields: symbol, action, quantity, latest_price, transaction_date"));
+        }
 
-        InvestmentDecision decision = decisionService.createAutoDecision(
-            userId, symbol, action, quantity, latestPrice, transactionDate);
+        try {
+            BigDecimal quantity = new BigDecimal(quantityObj.toString());
+            BigDecimal latestPrice = new BigDecimal(latestPriceObj.toString());
+            LocalDate transactionDate = LocalDate.parse(transactionDateStr);
+            DecisionType action = DecisionType.fromValue(actionStr);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(decision);
+            InvestmentDecision decision = decisionService.createAutoDecision(
+                userId, symbol, action, quantity, latestPrice, transactionDate);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(decision);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "Invalid request format: " + e.getMessage()));
+        }
     }
 
     /**
      * POST /api/decisions — Create decision (legacy endpoint, defaults to manual)
      */
     @PostMapping
-    public ResponseEntity<InvestmentDecision> createDecision(
+    public ResponseEntity<?> createDecision(
             Authentication auth,
             @RequestBody Map<String, Object> request) {
 

@@ -896,21 +896,21 @@ function App() {
             });
 
             // Log thesis/evidence/risks details
-            if (decisionResponse?.id && (thesis || evidence || risks)) {
+            if (decisionResponse?.id && (decision.thesis || decision.evidence || decision.risks)) {
               await api(`/api/decisions/${decisionResponse.id}/log-details`, {
                 method: 'POST',
                 body: JSON.stringify({
-                  thesis,
-                  evidence,
-                  risks,
-                  comments
+                  thesis: decision.thesis,
+                  evidence: decision.evidence,
+                  risks: decision.risks,
+                  comments: decision.comments
                 })
               });
             }
 
             // Add exit criteria alerts if provided
-            if (decisionResponse?.id && (formData.exitCriteria || []).length > 0) {
-              for (const criteria of formData.exitCriteria) {
+            if (decisionResponse?.id && (decision.exitCriteria || []).length > 0) {
+              for (const criteria of decision.exitCriteria) {
                 await api(`/api/decisions/${decisionResponse.id}/exit-criteria`, {
                   method: 'POST',
                   body: JSON.stringify({
@@ -4039,9 +4039,14 @@ function DecisionDetailModal({ decision, onClose, editForm, setEditForm, api, on
                   <div style={{ marginBottom: '10px' }}>
                     <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#0c4a6e', display: 'block', marginBottom: '4px' }}>Condition Type</label>
                     <select value={newAlert.conditionType} onChange={(e) => setNewAlert({ ...newAlert, conditionType: e.target.value })} style={{ width: '100%', padding: '6px', fontSize: '0.85rem', border: '1px solid #bfdbfe', borderRadius: '3px' }}>
-                      <option value="PRICE_ABOVE">Price ≥ (take profit)</option>
-                      <option value="PRICE_BELOW">Price ≤ (stop loss)</option>
+                      <option value="PRICE_ABOVE">Price at/above (take profit)</option>
+                      <option value="PRICE_BELOW">Price at/below (stop loss)</option>
                       <option value="PRICE_AT">Price = (exact target)</option>
+                      <option value="PNL_ABOVE">P/L at/above (profit target)</option>
+                      <option value="PNL_BELOW">P/L at/below (loss limit)</option>
+                      <option value="REVIEW_AFTER_DAYS">Review after N days</option>
+                      <option value="VALUATION_ABOVE">Valuation multiple at/above</option>
+                      <option value="VALUATION_BELOW">Valuation multiple at/below</option>
                     </select>
                   </div>
 
@@ -4560,21 +4565,33 @@ function DecisionCaptureModal({
           'Technical breakout signal (price breaks resistance)',
           'Momentum play (trend continuation)',
           'Mean reversion (oversold indicator like RSI < 30)',
-          'Matches my investment strategy or watchlist criteria'
+          'Matches my investment strategy or watchlist criteria',
+          'Business quality or durable competitive advantage',
+          'Turnaround or margin improvement thesis',
+          'Dividend or income-focused position',
+          'Portfolio hedge or diversification role'
         ]);
         setEvidenceSuggestions([
           'P/E ratio below sector average',
           'RSI shows oversold conditions (< 30)',
           'Price above 50-day moving average',
           'Recent earnings beat or positive catalyst',
-          'Sector/industry showing relative strength'
+          'Sector/industry showing relative strength',
+          'Revenue or free cash flow growth improving',
+          'Margin expansion or cost discipline visible',
+          'Balance sheet strength supports downside risk',
+          'Management guidance or analyst estimates improving'
         ]);
         setRisksSuggestions([
           'Market downturn or sector correction',
           'Company earnings miss or guidance cut',
           'Sector rotation or fund flows shifting',
           'Valuation multiple compression',
-          'Geopolitical or macro risk event'
+          'Geopolitical or macro risk event',
+          'Execution risk or catalyst delay',
+          'Debt, refinancing, or liquidity risk',
+          'Regulatory or legal risk',
+          'Position sizing or concentration risk'
         ]);
       }
     };
@@ -4588,6 +4605,16 @@ function DecisionCaptureModal({
 
   const transactionTitle = `${pendingDecision.action} ${pendingDecision.shares} shares of ${pendingDecision.symbol} at $${pendingDecision.price?.toFixed(2) || '—'}`;
   const isAutoDecision = pendingDecision.isAuto;
+  const exitCriteriaLabels = {
+    price_above: 'Price >=',
+    price_below: 'Price <=',
+    price_at: 'Price =',
+    pnl_above: 'P/L >=',
+    pnl_below: 'P/L <=',
+    review_after_days: 'Review after days',
+    valuation_above: 'Valuation multiple >=',
+    valuation_below: 'Valuation multiple <='
+  };
 
   const handleCheckChange = (category, index) => {
     const key = `${category}Checked`;
@@ -4596,6 +4623,10 @@ function DecisionCaptureModal({
       ? current.filter(i => i !== index)
       : [...current, index];
     onFormChange({ ...formData, [key]: updated });
+  };
+
+  const handleThesisChange = (index) => {
+    onFormChange({ ...formData, thesisChecked: [index] });
   };
 
   const getSelectedSuggestions = (category, suggestions) => {
@@ -4622,7 +4653,8 @@ function DecisionCaptureModal({
       thesis,
       evidence,
       risks,
-      comments
+      comments,
+      exitCriteria: formData.exitCriteria || []
     };
 
     // Clear draft on successful submit
@@ -4711,9 +4743,10 @@ function DecisionCaptureModal({
                 {thesisSuggestions.map((suggestion, idx) => (
                   <label key={idx} className="checkbox-label">
                     <input
-                      type="checkbox"
-                      checked={(formData.thesisChecked || []).includes(idx)}
-                      onChange={() => handleCheckChange('thesis', idx)}
+                      type="radio"
+                      name="decision-thesis-suggestion"
+                      checked={(formData.thesisChecked || [])[0] === idx}
+                      onChange={() => handleThesisChange(idx)}
                     />
                     {suggestion}
                   </label>
@@ -4787,8 +4820,8 @@ function DecisionCaptureModal({
                 {(formData.exitCriteria || []).map((criteria, idx) => (
                   <div key={idx} className="exit-criteria-item">
                     <span className="exit-criteria-text">
-                      {criteria.type === 'price_above' ? '↑ Price ≥' : criteria.type === 'price_below' ? '↓ Price ≤' : criteria.type === 'pnl_above' ? '↑ P/L ≥' : '↓ P/L ≤'}
-                      {' '}${criteria.value} {criteria.description && `(${criteria.description})`}
+                      {exitCriteriaLabels[criteria.type] || criteria.type}
+                      {' '}{criteria.value} {criteria.description && `(${criteria.description})`}
                     </span>
                     <button
                       type="button"
@@ -4809,10 +4842,14 @@ function DecisionCaptureModal({
                   className="form-select"
                   defaultValue="price_above"
                 >
-                  <option value="price_above">Price ≥ (Take Profit)</option>
-                  <option value="price_below">Price ≤ (Stop Loss)</option>
-                  <option value="pnl_above">P/L ≥ (Profit Target)</option>
-                  <option value="pnl_below">P/L ≤ (Loss Limit)</option>
+                  <option value="price_above">Price at/above (take profit)</option>
+                  <option value="price_below">Price at/below (stop loss)</option>
+                  <option value="price_at">Price = (exact target)</option>
+                  <option value="pnl_above">P/L at/above (profit target)</option>
+                  <option value="pnl_below">P/L at/below (loss limit)</option>
+                  <option value="review_after_days">Review after N days</option>
+                  <option value="valuation_above">Valuation multiple at/above</option>
+                  <option value="valuation_below">Valuation multiple at/below</option>
                 </select>
                 <input
                   type="number"

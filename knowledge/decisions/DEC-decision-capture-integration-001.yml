@@ -15,7 +15,9 @@ decision: >
   Embed decision capture at the moment of action (buy/sell/adjust holdings or execute
   strategy) rather than as a separate workflow. Prompt users optionally to log thesis,
   evidence, risks, and exit criteria when they take an action. Make entry easy with
-  auto-populated titles, suggested answers (5 per category), and optional fields.
+  auto-populated titles, curated suggested answers, and optional fields. Thesis uses
+  a single-select suggestion so the primary rationale remains clear, while evidence
+  and risks allow multiple selections.
   Move decision journal to read-only timeline view for review and learning.
 
 rationale: |
@@ -54,6 +56,8 @@ alternatives_considered: |
 
 evolution: |
   2026-06-07: Decided. Integration planned for Investment and Strategy sections.
+  2026-06-10: Rebalanced suggestion presets across fundamental, technical, portfolio,
+  and risk-process rationales; kept suggestions user-selected to avoid advice framing.
   Future: Could add AI-assisted thesis suggestions based on market fundamentals.
 
 linked_primitives:

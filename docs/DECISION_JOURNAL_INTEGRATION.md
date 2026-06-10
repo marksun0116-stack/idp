@@ -1,7 +1,7 @@
 # Decision Journal Integration - Strategy & Investment Workflows
 
 **Status**: ✅ Complete  
-**Last Updated**: 2026-06-09  
+**Last Updated**: 2026-06-10  
 **KFS Compliance**: Full compliance with FEAT-decision-journal-001
 
 ---
@@ -88,16 +88,16 @@ When the modal opens (for either MANUAL or AUTO), it includes:
 
 **Location**: `DecisionCaptureModal` (line 4160)
 
-**Feature**: API-driven suggestions with checkbox selection
+**Feature**: API-driven suggestions with single-select thesis and checkbox evidence/risk selection
 
 ```javascript
 // On mount, fetch from backend
 useEffect(() => {
   fetch('/api/public/suggestions/all')
     .then(data => {
-      setThesisSuggestions(data.thesis)    // 5 suggestions
-      setEvidenceSuggestions(data.evidence) // 5 suggestions
-      setRisksSuggestions(data.risks)       // 5 suggestions
+      setThesisSuggestions(data.thesis)
+      setEvidenceSuggestions(data.evidence)
+      setRisksSuggestions(data.risks)
     })
 }, [isOpen])
 
@@ -113,6 +113,7 @@ const combinedText = (category, suggestions) => {
 - Thesis: Radio buttons (pick one or custom)
 - Evidence: Checkboxes (pick multiple or custom)
 - Risks: Checkboxes (pick multiple or custom)
+- Exit Criteria: Numeric alert conditions for price, P/L, review-day, and valuation-multiple criteria
 
 ### 2. Form Submission ✅
 
@@ -219,7 +220,7 @@ const matchesThesisRisk =
 ## API Endpoints Wired
 
 ### Suggestion System
-- `GET /api/public/suggestions/all` → Fetch 15 suggestions (5 per category)
+- `GET /api/public/suggestions/all` → Fetch curated thesis, evidence, and risk suggestions
 
 ### Decision Creation
 - `POST /api/decisions/manual` → Create with user-specified price
@@ -230,6 +231,7 @@ const matchesThesisRisk =
 - `PUT /api/decisions/{id}` → Edit decision fields
 - `POST /api/decisions/{id}/exit-criteria` → Add alert
 - `DELETE /api/decisions/{id}/exit-criteria/{alertId}` → Remove alert
+
 - `POST /api/decisions/{id}/close` → Close decision with exit price
 
 ### Decision Retrieval
@@ -242,7 +244,7 @@ const matchesThesisRisk =
 
 | Criterion | Implementation | Status |
 |-----------|-----------------|--------|
-| Suggestion system (5 per category) | DecisionCaptureModal fetches from `/api/public/suggestions/*` | ✅ |
+| Suggestion system | DecisionCaptureModal fetches curated suggestions from `/api/public/suggestions/*` | ✅ |
 | User can edit exit criteria | DecisionDetailModal has ExitCriteria editor | ✅ |
 | Reviews at 30/90/180 days, 1 year | ReviewScheduler component | ✅ |
 | Filterable by thesis/risk keywords | Thesis/Risk search in DecisionsView | ✅ |
@@ -309,3 +311,10 @@ const matchesThesisRisk =
 ✅ **Implementation**: Backend services + Frontend components complete  
 ✅ **Testing**: Integration tests cover both AUTO/MANUAL paths  
 ✅ **Traceability**: Each feature links to FEAT acceptance criteria
+
+## Change log
+
+| Version | Date | Status | Previous | Notes |
+| --- | --- | --- | --- | --- |
+| 1.1 | 2026-06-10 | complete | 1.0 | Updated decision capture suggestions to use single-select thesis, richer evidence/risk presets, and broader numeric exit-criteria options. |
+| 1.0 | 2026-06-09 | complete | - | Initial integration documentation for strategy and investment decision capture. |

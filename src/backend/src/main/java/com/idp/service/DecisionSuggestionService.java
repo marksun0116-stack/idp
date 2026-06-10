@@ -16,7 +16,11 @@ public class DecisionSuggestionService {
             "Technical breakout signal (price breaks resistance)",
             "Momentum play (trend continuation)",
             "Mean reversion (oversold indicator like RSI < 30)",
-            "Matches my investment strategy or watchlist criteria"
+            "Matches my investment strategy or watchlist criteria",
+            "Business quality or durable competitive advantage",
+            "Turnaround or margin improvement thesis",
+            "Dividend or income-focused position",
+            "Portfolio hedge or diversification role"
         );
     }
 
@@ -26,7 +30,11 @@ public class DecisionSuggestionService {
             "RSI shows oversold conditions (< 30)",
             "Price above 50-day moving average",
             "Recent earnings beat or positive catalyst",
-            "Sector/industry showing relative strength"
+            "Sector/industry showing relative strength",
+            "Revenue or free cash flow growth improving",
+            "Margin expansion or cost discipline visible",
+            "Balance sheet strength supports downside risk",
+            "Management guidance or analyst estimates improving"
         );
     }
 
@@ -36,7 +44,11 @@ public class DecisionSuggestionService {
             "Company earnings miss or guidance cut",
             "Sector rotation or fund flows shifting",
             "Valuation multiple compression",
-            "Geopolitical or macro risk event"
+            "Geopolitical or macro risk event",
+            "Execution risk or catalyst delay",
+            "Debt, refinancing, or liquidity risk",
+            "Regulatory or legal risk",
+            "Position sizing or concentration risk"
         );
     }
 }

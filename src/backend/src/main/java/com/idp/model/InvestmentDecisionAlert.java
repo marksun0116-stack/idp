@@ -32,7 +32,7 @@ public class InvestmentDecisionAlert {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private AlertConditionType conditionType; // PRICE_ABOVE, PRICE_BELOW, PNL_ABOVE, PNL_BELOW
+    private AlertConditionType conditionType;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal conditionValue; // $165 or 10% or 0.10
@@ -130,8 +130,12 @@ public class InvestmentDecisionAlert {
     public enum AlertConditionType {
         PRICE_ABOVE("price_above"),
         PRICE_BELOW("price_below"),
+        PRICE_AT("price_at"),
         PNL_ABOVE("pnl_above"),
-        PNL_BELOW("pnl_below");
+        PNL_BELOW("pnl_below"),
+        REVIEW_AFTER_DAYS("review_after_days"),
+        VALUATION_ABOVE("valuation_above"),
+        VALUATION_BELOW("valuation_below");
 
         private final String value;
 
