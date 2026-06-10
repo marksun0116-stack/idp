@@ -889,7 +889,7 @@ function App() {
             };
 
             // Route to appropriate endpoint based on decision source
-            const endpoint = isAutoDecision ? '/api/decisions/auto' : '/api/decisions/manual';
+            const endpoint = isAutoDecision ? '/api/investment-decisions/auto' : '/api/investment-decisions/manual';
             const decisionResponse = await api(endpoint, {
               method: 'POST',
               body: JSON.stringify(payload)
@@ -897,7 +897,7 @@ function App() {
 
             // Log thesis/evidence/risks details
             if (decisionResponse?.id && (decision.thesis || decision.evidence || decision.risks)) {
-              await api(`/api/decisions/${decisionResponse.id}/log-details`, {
+              await api(`/api/investment-decisions/${decisionResponse.id}/log-details`, {
                 method: 'POST',
                 body: JSON.stringify({
                   thesis: decision.thesis,
@@ -911,7 +911,7 @@ function App() {
             // Add exit criteria alerts if provided
             if (decisionResponse?.id && (decision.exitCriteria || []).length > 0) {
               for (const criteria of decision.exitCriteria) {
-                await api(`/api/decisions/${decisionResponse.id}/exit-criteria`, {
+                await api(`/api/investment-decisions/${decisionResponse.id}/exit-criteria`, {
                   method: 'POST',
                   body: JSON.stringify({
                     condition_type: criteria.type,
