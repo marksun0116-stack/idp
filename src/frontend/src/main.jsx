@@ -294,8 +294,9 @@ function App() {
     setLoading(true);
     setNotice('');
     try {
-      const [decisionData, reviewData, dqsData, behaviorData, strategyData, profileData, portfolioData] = await Promise.all([
+      const [investmentDecisionsData, strategyDecisionsData, reviewData, dqsData, behaviorData, strategyData, profileData, portfolioData] = await Promise.all([
         api('/api/investment-decisions/open'),
+        api('/api/decisions'),
         api('/api/reviews'),
         api('/api/analytics/dqs'),
         api('/api/analytics/behavior'),
@@ -303,7 +304,9 @@ function App() {
         api('/api/profile/public', { allowNotFound: true }),
         api('/api/portfolio/summary')
       ]);
-      setDecisions(Array.isArray(decisionData) ? decisionData : (decisionData?.decisions || []));
+      const investmentDecisions = (Array.isArray(investmentDecisionsData) ? investmentDecisionsData : []).map(d => ({ ...d, decisionType: 'Investment' }));
+      const strategyDecisions = ((strategyDecisionsData?.decisions || []).map(d => ({ ...d, decisionType: 'Strategy' })));
+      setDecisions([...investmentDecisions, ...strategyDecisions]);
       setReviews(reviewData.reviews || []);
       setDqs(dqsData);
       setBehavior(behaviorData);
@@ -4287,12 +4290,13 @@ function DecisionTable({ decisions, showEmpty = true }) {
   return (
     <div className="decisionTable">
       {decisions.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr', gap: '8px', padding: '12px', background: '#f9fbfb', borderRadius: '6px', marginBottom: '8px', fontSize: '0.75rem', fontWeight: 600, color: '#667085', borderBottom: '1px solid #e4e7ec' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr 1fr', gap: '8px', padding: '12px', background: '#f9fbfb', borderRadius: '6px', marginBottom: '8px', fontSize: '0.75rem', fontWeight: 600, color: '#667085', borderBottom: '1px solid #e4e7ec' }}>
           <span>Ticker</span>
+          <span>Category</span>
           <span>Type</span>
-          <span>Confidence</span>
           <span>Status</span>
           <span>Thesis</span>
+          <span>Title</span>
           <span>Date</span>
         </div>
       )}
@@ -4302,7 +4306,7 @@ function DecisionTable({ decisions, showEmpty = true }) {
           key={decision.id}
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr',
+            gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr 1fr',
             gap: '8px',
             alignItems: 'center',
             padding: '12px',
@@ -4310,24 +4314,33 @@ function DecisionTable({ decisions, showEmpty = true }) {
             background: '#fff'
           }}
         >
-          <strong style={{ fontSize: '0.95rem', color: '#20242a' }}>{decision.ticker}</strong>
+          <strong style={{ fontSize: '0.95rem', color: '#20242a' }}>{decision.symbol || decision.ticker || '—'}</strong>
           <span
             style={{
               display: 'inline-block',
               padding: '4px 8px',
               borderRadius: '4px',
-              background: getTypeColor(decision.decisionType) + '20',
-              color: getTypeColor(decision.decisionType),
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              textTransform: 'capitalize'
+              background: decision.decisionType === 'Investment' ? '#3b82f620' : '#8b5cf620',
+              color: decision.decisionType === 'Investment' ? '#1e40af' : '#7c2d12',
+              fontSize: '0.7rem',
+              fontWeight: 600
             }}
           >
             {decision.decisionType}
           </span>
-          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#20242a' }}>
-            {decision.confidence}
-            <span style={{ fontSize: '0.7rem', color: '#9facbd', fontWeight: 400 }}>/10</span>
+          <span
+            style={{
+              display: 'inline-block',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              background: getTypeColor(decision.action || decision.decisionType) + '20',
+              color: getTypeColor(decision.action || decision.decisionType),
+              fontSize: '0.7rem',
+              fontWeight: 600,
+              textTransform: 'capitalize'
+            }}
+          >
+            {decision.action || decision.decisionType || '—'}
           </span>
           <span
             style={{
@@ -4339,7 +4352,10 @@ function DecisionTable({ decisions, showEmpty = true }) {
           >
             {decision.status}
           </span>
-          <span style={{ fontSize: '0.8rem', color: '#667085', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <span style={{ fontSize: '0.75rem', color: '#667085', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {decision.thesis || '—'}
+          </span>
+          <span style={{ fontSize: '0.75rem', color: '#667085', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {decision.title || '—'}
           </span>
           <small style={{ color: '#9facbd', fontSize: '0.75rem' }}>{formatDate(decision.createdAt)}</small>
