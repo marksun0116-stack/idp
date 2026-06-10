@@ -295,7 +295,7 @@ function App() {
     setNotice('');
     try {
       const [decisionData, reviewData, dqsData, behaviorData, strategyData, profileData, portfolioData] = await Promise.all([
-        api('/api/decisions'),
+        api('/api/investment-decisions/open'),
         api('/api/reviews'),
         api('/api/analytics/dqs'),
         api('/api/analytics/behavior'),
@@ -303,7 +303,7 @@ function App() {
         api('/api/profile/public', { allowNotFound: true }),
         api('/api/portfolio/summary')
       ]);
-      setDecisions(decisionData.decisions || []);
+      setDecisions(Array.isArray(decisionData) ? decisionData : (decisionData?.decisions || []));
       setReviews(reviewData.reviews || []);
       setDqs(dqsData);
       setBehavior(behaviorData);
