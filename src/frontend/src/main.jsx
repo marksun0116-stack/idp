@@ -795,6 +795,8 @@ function App() {
               setChartRange={setChartRange}
               setActiveView={setActiveView}
               symbolIndicators={symbolIndicators}
+              analysisLoading={analysisLoading}
+              analysisErrors={analysisErrors}
               selectedStrategyId={selectedStrategyId}
               selectedStrategy={selectedStrategy}
               strategyQuotes={strategyQuotes}
@@ -1004,6 +1006,8 @@ function Dashboard({
   setChartRange,
   setActiveView,
   symbolIndicators = {},
+  analysisLoading = {},
+  analysisErrors = {},
   selectedStrategyId = null,
   selectedStrategy = null,
   strategyQuotes = null
