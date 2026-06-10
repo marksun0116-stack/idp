@@ -740,6 +740,10 @@ function App() {
               chartRange={chartRange}
               setChartRange={setChartRange}
               setActiveView={setActiveView}
+              symbolIndicators={symbolIndicators}
+              selectedStrategyId={selectedStrategyId}
+              selectedStrategy={selectedStrategy}
+              strategyQuotes={strategyQuotes}
             />
           )}
           {activeView === 'decisions' && (
@@ -944,7 +948,11 @@ function Dashboard({
   publicProfile,
   chartRange,
   setChartRange,
-  setActiveView
+  setActiveView,
+  symbolIndicators = {},
+  selectedStrategyId = null,
+  selectedStrategy = null,
+  strategyQuotes = null
 }) {
   return (
     <>
@@ -1014,6 +1022,54 @@ function Dashboard({
             ))}
             {strategies.length === 0 && <Empty text="No strategies yet." />}
           </div>
+        </Panel>
+
+        <Panel title="Technical Outlook" icon={<TrendingUp />} action={selectedStrategy ? 'View full' : undefined} onAction={() => selectedStrategy && setActiveView('portfolios')}>
+          {selectedStrategy && strategyQuotes?.symbols ? (
+            <div style={{ display: 'grid', gap: '10px' }}>
+              {strategyQuotes.symbols.slice(0, 3).map((quote) => {
+                const analysis = symbolIndicators[quote.symbol];
+                const confidence = analysis?.recommendation?.confidence || 'Low';
+                const regime = analysis?.recommendation?.label || 'N/A';
+                const regimeColor = regime.toLowerCase().includes('bearish') ? '#dc2626'
+                                   : regime.toLowerCase().includes('bullish') ? '#16a34a'
+                                   : '#9facbd';
+                const confidenceColor = confidence === 'High' ? '#dcfce7' : confidence === 'Medium' ? '#fef3c7' : '#fee2e2';
+                const confidenceTextColor = confidence === 'High' ? '#166534' : confidence === 'Medium' ? '#92400e' : '#991b1b';
+
+                return (
+                  <article key={quote.symbol} style={{
+                    padding: '8px 10px',
+                    background: '#f9fbfb',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '5px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <div>
+                      <strong style={{ fontSize: '0.9rem', display: 'block' }}>{quote.symbol}</strong>
+                      <small style={{ color: regimeColor, fontWeight: 600 }}>
+                        {regime.substring(0, 12)}
+                      </small>
+                    </div>
+                    <span style={{
+                      background: confidenceColor,
+                      color: confidenceTextColor,
+                      padding: '2px 6px',
+                      borderRadius: '3px',
+                      fontSize: '0.7rem',
+                      fontWeight: 600
+                    }}>
+                      {confidence}
+                    </span>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <Empty text="Select a strategy to view technical outlook." />
+          )}
         </Panel>
 
         <Panel title="Behavior Insights" icon={<Brain />} action="Full report" onAction={() => setActiveView('analytics')}>
