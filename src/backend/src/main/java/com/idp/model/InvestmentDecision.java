@@ -1,5 +1,6 @@
 package com.idp.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -77,9 +78,11 @@ public class InvestmentDecision {
     @Column(nullable = false)
     private DecisionStatus status; // DRAFT, ACTIVE, CLOSED
 
+    @JsonIgnore
     @OneToMany(mappedBy = "decision", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<InvestmentDecisionAlert> alerts = new ArrayList<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "decision", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<InvestmentDecisionEdit> editHistory = new ArrayList<>();
 
