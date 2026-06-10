@@ -869,7 +869,8 @@ function App() {
         isOpen={showDecisionCaptureModal}
         onClose={() => {
           setShowDecisionCaptureModal(false);
-          handleClearDraft();
+          localStorage.removeItem('idp.decisionDraft');
+          setHasSavedDraft(false);
         }}
         pendingDecision={pendingDecisionData}
         formData={decisionCaptureForm}
@@ -4630,7 +4631,10 @@ function DecisionCaptureModal({
   };
 
   const handleThesisChange = (index) => {
-    onFormChange({ ...formData, thesisChecked: [index] });
+    const updated = (formData.thesisChecked || []).includes(index)
+      ? (formData.thesisChecked || []).filter(i => i !== index)
+      : [...(formData.thesisChecked || []), index];
+    onFormChange({ ...formData, thesisChecked: updated });
   };
 
   const getSelectedSuggestions = (category, suggestions) => {
@@ -4747,9 +4751,8 @@ function DecisionCaptureModal({
                 {thesisSuggestions.map((suggestion, idx) => (
                   <label key={idx} className="checkbox-label">
                     <input
-                      type="radio"
-                      name="decision-thesis-suggestion"
-                      checked={(formData.thesisChecked || [])[0] === idx}
+                      type="checkbox"
+                      checked={(formData.thesisChecked || []).includes(idx)}
                       onChange={() => handleThesisChange(idx)}
                     />
                     {suggestion}
