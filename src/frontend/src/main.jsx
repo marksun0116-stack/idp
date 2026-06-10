@@ -828,6 +828,8 @@ function App() {
               expandedIndicatorSymbol={expandedIndicatorSymbol}
               toggleSymbolIndicators={toggleSymbolIndicators}
               symbolIndicators={symbolIndicators}
+              analysisLoading={analysisLoading}
+              analysisErrors={analysisErrors}
               chartRange={chartRange}
               setChartRange={setChartRange}
               showStrategyForm={showStrategyForm}
@@ -1304,12 +1306,6 @@ function DecisionsView({ decisions, decisionForm, setDecisionForm, createDecisio
 
   return (
     <>
-      <section className="workspaceGrid">
-        <Panel title="Create Decision" icon={<Plus />}>
-          <DecisionForm decisionForm={decisionForm} setDecisionForm={setDecisionForm} createDecision={createDecision} />
-        </Panel>
-      </section>
-
       <section style={{ padding: '0 clamp(12px, 2vw, 28px) 28px' }}>
         <Panel title="Decision Journal" icon={<BookOpen />}>
           <div style={{ marginBottom: '16px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
@@ -1784,6 +1780,8 @@ function PortfolioView({
   expandedIndicatorSymbol,
   toggleSymbolIndicators,
   symbolIndicators,
+  analysisLoading = {},
+  analysisErrors = {},
   chartRange,
   setChartRange,
   showStrategyForm,
