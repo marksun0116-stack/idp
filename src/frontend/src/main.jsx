@@ -200,7 +200,8 @@ function App() {
   }, [strategyHistory, selectedHistorySymbol]);
 
   async function api(path, options = {}) {
-    const response = await fetch(path, {
+    const backendUrl = `http://127.0.0.1:8081${path}`;
+    const response = await fetch(backendUrl, {
       ...options,
       headers: {
         ...authHeaders,
