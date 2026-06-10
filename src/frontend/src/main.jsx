@@ -2726,6 +2726,48 @@ function IndicatorPanel({ symbol, indicator, compact = false }) {
         </div>
       )}
 
+      {analysis?.similarSetups && analysis.similarSetups.length > 0 && (
+        <div style={{ marginBottom: '10px' }}>
+          <strong style={{ display: 'block', marginBottom: '6px', color: '#20242a' }}>Similar Historical Setups</strong>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', fontSize: '0.75rem', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #e4e7ec', background: '#f9fbfb' }}>
+                  <th style={{ textAlign: 'left', padding: '4px 0', paddingRight: '8px', fontWeight: 600, color: '#667085' }}>Date</th>
+                  <th style={{ textAlign: 'left', padding: '4px 0', paddingRight: '8px', fontWeight: 600, color: '#667085' }}>Outcome</th>
+                  <th style={{ textAlign: 'right', padding: '4px 0', fontWeight: 600, color: '#667085' }}>20-Day Return</th>
+                </tr>
+              </thead>
+              <tbody>
+                {analysis.similarSetups.slice(0, 10).map((setup, idx) => {
+                  const outcomeColor = setup.forwardReturn > 0 ? '#16a34a' : setup.forwardReturn < 0 ? '#dc2626' : '#9facbd';
+                  const outcomeLabel = setup.forwardReturn > 0 ? 'Win' : setup.forwardReturn < 0 ? 'Loss' : 'Flat';
+                  const setupDate = setup.date ? new Date(setup.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }) : 'N/A';
+                  return (
+                    <tr key={idx} style={{ borderBottom: '1px solid #f0f1f3' }}>
+                      <td style={{ padding: '4px 0', paddingRight: '8px', color: '#667085' }}>
+                        {setupDate}
+                      </td>
+                      <td style={{ padding: '4px 0', paddingRight: '8px' }}>
+                        <span style={{ color: outcomeColor, fontWeight: 600 }}>{outcomeLabel}</span>
+                      </td>
+                      <td style={{ padding: '4px 0', textAlign: 'right', color: outcomeColor, fontWeight: 600 }}>
+                        {setup.forwardReturn > 0 ? '+' : ''}{setup.forwardReturn.toFixed(2)}%
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {analysis.similarSetups.length > 10 && (
+            <small style={{ color: '#9facbd', marginTop: '4px', display: 'block' }}>
+              ... and {analysis.similarSetups.length - 10} more setups
+            </small>
+          )}
+        </div>
+      )}
+
       {analysis?.invalidation && analysis.invalidation !== 'N/A' && (
         <div style={{ padding: '8px', background: '#fef2f2', borderLeft: '3px solid #fca5a5', borderRadius: '3px' }}>
           <small style={{ color: '#7f1d1d', display: 'block' }}>
