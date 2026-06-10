@@ -939,7 +939,8 @@ function App() {
               risksChecked: [],
               exitCriteria: []
             });
-            setNotice('Decision captured with exit criteria.');
+            const hasExitCriteria = (decision.exitCriteria || []).length > 0;
+            setNotice(hasExitCriteria ? 'Decision captured with exit criteria.' : 'Decision captured successfully.');
           } catch (error) {
             setNotice(error.message);
           } finally {
