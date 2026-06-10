@@ -1468,3 +1468,9 @@ textarea {
   background: white;
   cursor: pointer;
 }
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

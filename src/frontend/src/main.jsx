@@ -97,6 +97,8 @@ function App() {
   const [indicator, setIndicator] = useState(null);
   const [expandedIndicatorSymbol, setExpandedIndicatorSymbol] = useState(null);
   const [symbolIndicators, setSymbolIndicators] = useState({});
+  const [analysisLoading, setAnalysisLoading] = useState({});
+  const [analysisErrors, setAnalysisErrors] = useState({});
   const [publicProfile, setPublicProfile] = useState(null);
   const [portfolioSummary, setPortfolioSummary] = useState(null);
   const [decisionForm, setDecisionForm] = useState(emptyDecision);
@@ -338,22 +340,51 @@ function App() {
       // Pre-load technical analysis for all symbols
       const allSymbols = quotes.symbols || [];
       const newSymbolIndicators = { ...symbolIndicators };
+      const newAnalysisLoading = { ...analysisLoading };
+      const newAnalysisErrors = { ...analysisErrors };
+
       for (const symbol of allSymbols) {
         if (!newSymbolIndicators[symbol.symbol]) {
+          newAnalysisLoading[symbol.symbol] = true;
           try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
             const analysis = await api(`/api/strategies/${strategyId}/analysis/${encodeURIComponent(symbol.symbol)}?range=1y`);
+            clearTimeout(timeout);
             newSymbolIndicators[symbol.symbol] = analysis;
+            newAnalysisLoading[symbol.symbol] = false;
+            delete newAnalysisErrors[symbol.symbol];
           } catch (e) {
-            // Skip if analysis fetch fails for a symbol
+            newAnalysisLoading[symbol.symbol] = false;
+            let errorMsg = 'Analysis unavailable';
+            if (e.name === 'AbortError') {
+              errorMsg = 'Request timeout';
+            } else if (e.message.includes('404')) {
+              errorMsg = 'Symbol not found';
+            } else if (e.message.includes('422')) {
+              errorMsg = 'Insufficient historical data';
+            } else if (e.message.includes('500') || e.message.includes('503')) {
+              errorMsg = 'Service temporarily unavailable';
+            }
+            newAnalysisErrors[symbol.symbol] = errorMsg;
           }
         }
       }
       setSymbolIndicators(newSymbolIndicators);
+      setAnalysisLoading(newAnalysisLoading);
+      setAnalysisErrors(newAnalysisErrors);
 
       const firstSymbol = detail.trackedSymbols?.[0]?.symbol || quotes.symbols?.[0]?.symbol;
-      setIndicator(firstSymbol
-        ? await api(`/api/strategies/${strategyId}/analysis/${encodeURIComponent(firstSymbol)}?range=1y`)
-        : null);
+      if (firstSymbol) {
+        try {
+          const analysis = await api(`/api/strategies/${strategyId}/analysis/${encodeURIComponent(firstSymbol)}?range=1y`);
+          setIndicator(analysis);
+        } catch (e) {
+          setIndicator(null);
+        }
+      } else {
+        setIndicator(null);
+      }
     } catch (error) {
       setNotice(error.message);
     }
@@ -366,9 +397,32 @@ function App() {
       return;
     }
     try {
-      if (selectedStrategyId && !symbolIndicators[symbol]) {
-        const analysis = await api(`/api/strategies/${selectedStrategyId}/analysis/${encodeURIComponent(symbol)}?range=1y`);
-        setSymbolIndicators({ ...symbolIndicators, [symbol]: analysis });
+      if (selectedStrategyId && !symbolIndicators[symbol] && !analysisLoading[symbol]) {
+        setAnalysisLoading({ ...analysisLoading, [symbol]: true });
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+          const analysis = await api(`/api/strategies/${selectedStrategyId}/analysis/${encodeURIComponent(symbol)}?range=1y`);
+          clearTimeout(timeout);
+          setSymbolIndicators({ ...symbolIndicators, [symbol]: analysis });
+          setAnalysisLoading({ ...analysisLoading, [symbol]: false });
+          delete analysisErrors[symbol];
+          setAnalysisErrors({ ...analysisErrors });
+        } catch (e) {
+          setAnalysisLoading({ ...analysisLoading, [symbol]: false });
+          let errorMsg = 'Analysis unavailable';
+          if (e.name === 'AbortError') {
+            errorMsg = 'Request timeout - check your connection';
+          } else if (e.message.includes('404')) {
+            errorMsg = 'Symbol not found in market data';
+          } else if (e.message.includes('422')) {
+            errorMsg = 'Insufficient historical data for analysis';
+          } else if (e.message.includes('500') || e.message.includes('503')) {
+            errorMsg = 'Market analysis service temporarily unavailable';
+          }
+          setAnalysisErrors({ ...analysisErrors, [symbol]: errorMsg });
+          setNotice(errorMsg);
+        }
       }
       setExpandedIndicatorSymbol(symbol);
     } catch (error) {
@@ -1029,6 +1083,61 @@ function Dashboard({
             <div style={{ display: 'grid', gap: '10px' }}>
               {strategyQuotes.symbols.slice(0, 3).map((quote) => {
                 const analysis = symbolIndicators[quote.symbol];
+                const isLoading = analysisLoading[quote.symbol];
+                const error = analysisErrors[quote.symbol];
+
+                if (isLoading) {
+                  return (
+                    <article key={quote.symbol} style={{
+                      padding: '8px 10px',
+                      background: '#f9fbfb',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '5px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <div>
+                        <strong style={{ fontSize: '0.9rem', display: 'block' }}>{quote.symbol}</strong>
+                        <small style={{ color: '#9facbd', fontSize: '0.75rem' }}>Loading...</small>
+                      </div>
+                    </article>
+                  );
+                }
+
+                if (error) {
+                  return (
+                    <article key={quote.symbol} style={{
+                      padding: '8px 10px',
+                      background: '#fee2e2',
+                      border: '1px solid #fca5a5',
+                      borderRadius: '5px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <div>
+                        <strong style={{ fontSize: '0.9rem', display: 'block', color: '#991b1b' }}>{quote.symbol}</strong>
+                        <small style={{ color: '#7f1d1d', fontSize: '0.7rem' }}>{error}</small>
+                      </div>
+                    </article>
+                  );
+                }
+
+                if (!analysis) {
+                  return (
+                    <article key={quote.symbol} style={{
+                      padding: '8px 10px',
+                      background: '#f9fbfb',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '5px'
+                    }}>
+                      <strong style={{ fontSize: '0.9rem', display: 'block' }}>{quote.symbol}</strong>
+                      <small style={{ color: '#9facbd', fontSize: '0.75rem' }}>No data</small>
+                    </article>
+                  );
+                }
+
                 const confidence = analysis?.recommendation?.confidence || 'Low';
                 const regime = analysis?.recommendation?.label || 'N/A';
                 const regimeColor = regime.toLowerCase().includes('bearish') ? '#dc2626'
@@ -1844,8 +1953,13 @@ function PortfolioView({
                       </button>
                     </div>
                   </small>
-                  {isExpanded && analysis && (
-                    <ExpandedAnalysisPanel symbol={quote.symbol} indicator={analysis} />
+                  {isExpanded && (
+                    <ExpandedAnalysisPanel
+                      symbol={quote.symbol}
+                      indicator={analysis}
+                      isLoading={analysisLoading[quote.symbol]}
+                      error={analysisErrors[quote.symbol]}
+                    />
                   )}
                 </article>
               );
@@ -2333,7 +2447,7 @@ function StrategyForm({ strategyForm, setStrategyForm, createStrategy }) {
   );
 }
 
-function ExpandedAnalysisPanel({ symbol, indicator }) {
+function ExpandedAnalysisPanel({ symbol, indicator, isLoading = false, error = null }) {
   const [activeTab, setActiveTab] = useState('chart');
   const [selectedIndicators, setSelectedIndicators] = useState({
     sma20: true,
@@ -2348,6 +2462,38 @@ function ExpandedAnalysisPanel({ symbol, indicator }) {
       [indicatorName]: !prev[indicatorName]
     }));
   };
+
+  if (isLoading) {
+    return (
+      <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e4e7ec', textAlign: 'center', color: '#667085', fontSize: '0.85rem', padding: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          <div style={{ width: '16px', height: '16px', border: '2px solid #e4e7ec', borderTop: '2px solid #2563eb', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+          Loading technical analysis...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e4e7ec', padding: '16px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '4px' }}>
+        <strong style={{ color: '#991b1b', display: 'block', marginBottom: '4px' }}>Analysis Unavailable</strong>
+        <small style={{ color: '#7f1d1d', display: 'block' }}>
+          {error}. Try expanding again or check the settings tab to verify your connection.
+        </small>
+      </div>
+    );
+  }
+
+  if (!indicator) {
+    return (
+      <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e4e7ec', padding: '16px', background: '#fef3c7', border: '1px solid #fde047', borderRadius: '4px' }}>
+        <small style={{ color: '#92400e' }}>
+          No recommendation data available. Technical analysis requires at least 50 days of historical data.
+        </small>
+      </div>
+    );
+  }
 
   return (
     <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e4e7ec' }}>
