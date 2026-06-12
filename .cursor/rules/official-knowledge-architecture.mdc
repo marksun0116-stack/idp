@@ -1,0 +1,17 @@
+---
+description: RULE-011 — official knowledge model in .kfs/specs (agent core)
+alwaysApply: false
+---
+
+# Official knowledge model specification (RULE-011)
+
+The **artifact layers**, **primitive concepts**, **knowledge graph vocabulary**, **validation expectations**, and **official flow** (intent → knowledge → design → code → tests) are defined in **`.kfs/specs/knowledge_model_spec.md`**.
+
+- Align **Cursor rules**, **skills**, **CI**, and reviews with that guide.
+- **Enforceable** changes belong in **`knowledge/`** (Knowledge PR) and, when the **knowledge model** itself changes, update **`.kfs/specs/knowledge_model_spec.md`** in the same PR.
+
+**Architecture intent** documents (conventional **`docs/architecture/`**) are guided by **`.kfs/specs/architecture_intent_spec.md`**.
+
+Do not treat informal chat or ad-hoc markdown outside **`.kfs/specs/`** and **`knowledge/`** as the authoritative schema.
+
+Quick card: **`.kfs/spec-summaries/knowledge-model.md`**.

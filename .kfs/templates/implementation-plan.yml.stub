@@ -1,0 +1,104 @@
+# PLAN-{SLICE}-001 — implementation plan stub
+# Copy to knowledge/plans/ and customize. Spec: .kfs/specs/implementation_plan_spec.md
+
+id: PLAN-{SLICE}-001
+kind: implementation_plan
+title: "{Slice} — implementation plan"
+status: draft          # draft | active | closed
+cycle_feat: FEAT-{SLICE}-001
+plan_format_version: "1"
+last_updated: 2026-05-22
+owner: TBD
+
+readiness:
+  knowledge_merged: false
+  docs_aligned: false
+  hld_ready: false
+  feat_depth_l2: false
+
+concurrency:
+  max_parallel_in_progress: 2
+  policy: >
+    parallel_ok stories require non-overlapping touch_paths;
+    catalog.yml changes only in knowledge-phase stories.
+
+phases:
+  - id: PH-001
+    title: Knowledge wave
+    status: open       # open | in_progress | closed
+    depends_on: []
+    default_execution: sequential
+  - id: PH-002
+    title: Implement wave 1
+    status: open
+    depends_on: [PH-001]
+    default_execution: parallel_ok
+  - id: PH-003
+    title: Integrate and verify
+    status: open
+    depends_on: [PH-002]
+    default_execution: sequential
+
+stories:
+  - id: ST-001
+    phase_id: PH-001
+    title: Knowledge PR — FEAT bindings and shared CON/INV/CONR
+    status: not_started   # not_started | in_progress | blocked | done | dropped
+    depends_on: []
+    execution: sequential
+    parallel_group: null
+    isolation:
+      touch_paths: [knowledge/, docs/]
+      conr_boundary: null
+      branch: plan/knowledge-wave
+    links:
+      feat: FEAT-{SLICE}-001
+      primitives: []
+    owner: TBD
+
+  - id: ST-002
+    phase_id: PH-002
+    title: Implement boundary A behind CONR-{SLICE}-API-001
+    status: not_started
+    depends_on: [ST-001]
+    execution: parallel_ok
+    parallel_group: impl-wave-1
+    isolation:
+      touch_paths: [src/boundary-a/, tests/boundary-a/]
+      conr_boundary: CONR-{SLICE}-API-001
+      branch: impl/ST-002-boundary-a
+    links:
+      primitives:
+        - "CONR-{SLICE}-API-001"
+    owner: TBD
+
+  - id: ST-003
+    phase_id: PH-002
+    title: Implement boundary B behind CONR-{SLICE}-EVENT-001
+    status: not_started
+    depends_on: [ST-001]
+    execution: parallel_ok
+    parallel_group: impl-wave-1
+    isolation:
+      touch_paths: [src/boundary-b/, tests/boundary-b/]
+      conr_boundary: CONR-{SLICE}-EVENT-001
+      branch: impl/ST-003-boundary-b
+    links:
+      primitives:
+        - "CONR-{SLICE}-EVENT-001"
+    owner: TBD
+
+  - id: ST-004
+    phase_id: PH-003
+    title: Integrate impl-wave-1 — merge story branches into feature/* and run slice tests
+    status: not_started
+    depends_on: [ST-002, ST-003]
+    execution: sequential
+    parallel_group: null
+    isolation:
+      touch_paths: [src/, tests/]
+      conr_boundary: null
+      branch: impl/ST-004-integrate
+    links:
+      feat: FEAT-{SLICE}-001
+    owner: TBD

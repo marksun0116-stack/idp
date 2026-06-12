@@ -1,0 +1,64 @@
+---
+description: AI-native knowledge-first system — enforcement philosophy, sources of truth, PR flow, conflicts
+alwaysApply: false
+---
+
+# AI-native knowledge-first (core)
+
+> Knowledge defines, rules enforce, AI executes, humans approve.
+
+**Human-directed agents:** People **author or update** artifacts by directing a Cursor agent (**.cursor/rules/** + **.cursor/skills/**) so edits land in git across **`knowledge/`**, **`docs/`**, **`src/`**, and **`tests/`** — humans approve; agents improve throughput.
+
+**Official KFS (agent core):** **`.kfs/INDEX.md`** · scenarios **`.kfs/agent/START.md`** · runbooks **`.kfs/agent/runbooks/`** · specs **`.kfs/specs/`** (knowledge model, architecture intent, HLD, test strategy, CI/CD).
+
+### Document and artifact layout
+
+| Layer | Location |
+| --- | --- |
+| Architecture intent | **`docs/architecture/`** — how to write: **`.kfs/specs/architecture_intent_spec.md`** |
+| HLD | **`docs/design/`** — **`.kfs/specs/design_spec.md`** |
+| Test plan | **`docs/test/`** — strategy: **`.kfs/specs/test_strategy_spec.md`** |
+| PRD | **`docs/prd/`** |
+| KFS package | **`.kfs/`** (index **`INDEX.md`**) |
+| Primitives | **`knowledge/`** + **`catalog.yml`** |
+
+## Enforcement properties
+
+1. **Completeness** — required fields and links exist
+2. **Consistency** — no contradictions across docs, `knowledge/`, code
+3. **Traceability** — upstream links; trace to CON/INV/DEC/CONR/FEAT
+4. **Architecture compliance** — code follows DEC and HLD
+5. **Knowledge-derived validation** — tests trace to primitives
+
+## Sources of truth
+
+- **`src/`** = behavior
+- **`knowledge/`** = enforceable intent (CON, INV, DEC, CONR, FEAT)
+- **`docs/`** = narrative; **references** primitives — does not replace YAML
+
+## Principles (summary)
+
+Knowledge before code · merge knowledge first · **developer PRs target `feature/*` (never `main`)** · typed rules in primitives · minimal validated YAML · defects upgrade knowledge · slice-first legacy adoption · test-driven change · traceable releases (FEAT status, CONR versions, doc metadata per **`.kfs/specs/prd_spec.md`** / **`.kfs/specs/design_spec.md`**).
+
+**Branch promotion:** cut **`feature/*` from `dev`** → PR into **`feature/*`** → tested **`feature/*` → `main`** → **tag `main`** → **`release/*` from tag** — **`.kfs/specs/cicd_spec.md`** §2.1.
+
+**Workflows:** **`.cursor/skills/`** → **`.kfs/agent/runbooks/`** (merge-knowledge-first, validate-knowledge-graph, implement-with-primitives, reverse-engineer-baseline, discover-tech-debt, manage-implementation-plan).
+
+## Conflicts
+
+Stop and resolve in **`knowledge/`** — never only in code or chat.
+
+## Rule ID map
+
+| ID | Rules | Skills |
+| --- | --- | --- |
+| RULE-001 | `implementation-constrain-validate-test.mdc` | `implement-with-primitives` |
+| RULE-002–006 | `knowledge-primitives.mdc` | `validate-knowledge-graph` |
+| RULE-007 | this + `traceability-enforcement.mdc` | `merge-knowledge-first`, `implement-with-primitives` |
+| RULE-008 | `traceability-enforcement.mdc` | `validate-knowledge-graph` |
+| RULE-009 | `architecture-compliance.mdc` | — |
+| RULE-010 | `implementation-constrain-validate-test.mdc` | `implement-with-primitives` |
+| RULE-011 | `official-knowledge-architecture.mdc` | — |
+| RULE-012 | `docs-knowledge-boundary.mdc` | `validate-knowledge-graph` |
+| RULE-013 | `new-project-intent-gate.mdc` | `merge-knowledge-first`, `reverse-engineer-baseline` |
+| LEGACY-001 | `legacy-modernization-slices.mdc` | `modernize-legacy-with-knowledge` |

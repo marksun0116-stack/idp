@@ -1,0 +1,16 @@
+---
+description: KFS bootstrap — route agents to .kfs agent core (always on)
+alwaysApply: true
+---
+
+# KFS bootstrap
+
+This repo uses **`.kfs/`** as the agent core.
+
+1. Read **`.kfs/INDEX.md`** when doing knowledge-first work.
+2. Follow **`.kfs/agent/runbooks/`** for procedures (skills are thin wrappers).
+3. Standing constraints: **`.kfs/constraints/`** (+ existing **`.cursor/rules/`** globs).
+4. **Do not** bulk-load human onboarding prose **outside `.kfs/`** unless the user asks.
+5. Product truth: **`knowledge/`** + **`catalog.yml`**. Conflicts → resolve in **`knowledge/`**.
+
+Install/upgrade: `./.kfs/install.sh`

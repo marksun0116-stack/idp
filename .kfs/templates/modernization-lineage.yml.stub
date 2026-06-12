@@ -1,0 +1,31 @@
+# Modernization lineage — stub
+# Copy to docs/modernization/lineage.yml in the NEW repository.
+# Spec: .kfs/specs/modernization_new_repo_spec.md
+
+legacy:
+  repository: "https://github.com/org/legacy-application"
+  ref: "v0.0.0"                    # pin: tag or full commit SHA
+  baseline_date: 2026-05-22
+  docs_paths:
+    prd: "docs/prd/"
+    architecture: "docs/architecture/"
+    design: "docs/design/"
+  knowledge_catalog: "knowledge/catalog.yml"
+  optional_snapshot: "references/legacy/"   # read-only copy if used
+
+modernization:
+  program_id: MOD-{PROGRAM}-001
+  title: "{Program} — modernization"
+  new_repository: "https://github.com/org/{new-application}"
+  owner: TBD
+  last_updated: 2026-05-22
+
+notes: >
+  Legacy repo holds as-is baseline only (documentation trace). New app must NOT
+  call or depend on legacy at runtime. Production cutover: blue/green only.
+  Re-pin legacy.ref when the reviewed baseline moves.
+
+deployment:
+  cutover_strategy: blue_green
+  legacy_runtime_dependency: forbidden   # dev, test, and steady-state prod
+  strangler_pattern: forbidden

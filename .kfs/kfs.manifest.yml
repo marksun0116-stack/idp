@@ -1,0 +1,36 @@
+# KFS adoption declaration — semver package version (see kfs_package_version)
+kfs_package_version: "1.0.0-beta"
+kfs_package_id: knowledge-first-system
+layout: agent-first-v1
+knowledge_model_schema: "1.0.0"
+last_updated: "2026-05-22"
+
+paths:
+  agent_core: .kfs
+  agent_specs: .kfs/specs
+  agent_spec_summaries: .kfs/spec-summaries
+  product_knowledge: knowledge
+  product_docs: docs
+
+capabilities:
+  agents:
+    multi_tool_adapters: [cursor, claude, codex, copilot, antigravity]
+  adoption:
+    existing_repo_baseline: true
+    modernization_new_repo: true
+  validation:
+    catalog_graph: true
+    implementation_plan: true
+    scripts:
+      knowledge: .kfs/validate/validate-knowledge.py
+      implementation_plan: .kfs/validate/validate-implementation-plan.py
+      shell:
+        knowledge: .kfs/validate/validate-knowledge-graph.sh
+        implementation_plan: .kfs/validate/validate-implementation-plan.sh
+
+agent_index: .kfs/INDEX.md
+
+adapters:
+  installed:
+    - cursor
+    - codex

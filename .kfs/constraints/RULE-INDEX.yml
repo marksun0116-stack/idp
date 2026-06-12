@@ -1,0 +1,50 @@
+# RULE index — load constraint files by glob (Cursor: .kfs/adapters/cursor/rules/)
+rules:
+  - id: RULE-001
+    file: knowledge-first.md
+    globs: ["knowledge/**", "src/**", "tests/**"]
+    always: false
+  - id: RULE-002-006
+    file: primitives.md
+    globs: ["knowledge/**"]
+    always: false
+  - id: RULE-007-008
+    file: traceability.md
+    globs: ["knowledge/**", "docs/**"]
+    always: false
+  - id: RULE-009
+    file: architecture-compliance.md
+    globs: ["src/**", "docs/architecture/**", "docs/design/**"]
+    always: false
+  - id: RULE-010
+    file: implement-test.md
+    globs: ["src/**", "tests/**"]
+    always: false
+  - id: RULE-011
+    file: knowledge-model-official.md
+    globs: ["knowledge/**", ".kfs/**"]
+    always: false
+  - id: RULE-012
+    file: docs-boundary.md
+    globs: ["docs/**", "knowledge/**"]
+    always: false
+  - id: RULE-013
+    file: new-project-gate.md
+    globs: ["knowledge/**", "src/**", "docs/**"]
+    always: false
+  - id: ADOPT-001
+    file: adopt-existing.md
+    globs: ["src/**", "tests/**", "docs/**", "knowledge/**", "references/**"]
+    always: false
+  - id: MOD-001
+    file: modernization-new-repo.md
+    globs: ["docs/modernization/**", "docs/prd/**", "docs/architecture/**", "knowledge/**", "references/legacy/**"]
+    always: false
+  - id: LEGACY-001
+    file: legacy-slices.md
+    globs: ["src/**", "docs/**", "knowledge/**"]
+    always: false
+  - id: PM-001
+    file: implementation-plan.md
+    globs: ["knowledge/plans/**", "docs/plans/**"]
+    always: false

@@ -1,0 +1,28 @@
+---
+description: KFS validation — catalog, links, primitive shape, implementation plans
+globs: .kfs/validate/**/*
+alwaysApply: false
+---
+
+# KFS validation (`.kfs/validate/`)
+
+Aligned with **`.kfs/specs/cicd_spec.md`** and **`.kfs/specs/knowledge_model_spec.md`** §9.
+
+## Goals
+
+- **Fail** on `catalog.yml` drift, duplicate IDs, broken bindings
+- Validate YAML **shape** per primitive **kind** and **PLAN-*** DAG
+- Run on PRs touching **`knowledge/`** or **`knowledge/plans/`**
+
+## Entrypoints
+
+| Check | Command |
+| --- | --- |
+| Knowledge / catalog | `.kfs/validate/validate-knowledge-graph.sh` |
+| Implementation plans | `.kfs/validate/validate-implementation-plan.sh` |
+
+Python (direct): `.kfs/validate/validate-knowledge.py`, `.kfs/validate/validate-implementation-plan.py`
+
+**Requires:** Python 3 + `pip install pyyaml`
+
+**Procedure:** **`.kfs/agent/runbooks/validate-knowledge-graph.md`**

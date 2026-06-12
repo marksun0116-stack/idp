@@ -1,0 +1,18 @@
+---
+description: RULE-001, RULE-010 — src/ must follow knowledge-first and invariant-led testing (constraints only)
+globs: src/**/*
+alwaysApply: false
+---
+
+# Implementation — RULE-001 & RULE-010 (constraints)
+
+When editing **`src/`** (see **`.kfs/agent/START.md`** and **`.kfs/specs/test_strategy_spec.md`** for testing and traceability; trace model in **`.kfs/specs/knowledge_model_spec.md`** §8 — knowledge → code → tests):
+
+- **Greenfield (RULE-013):** Before **net-new** product behavior in **`src/`**, ensure conventional **`docs/prd/`** and **`docs/architecture/`** each exist with at least one captured intent document, or follow the user’s explicit slice-first legacy path — see **`new-project-intent-gate.mdc`**.
+- Do not ship net-new behavior without a driving **FEAT-*** and linked **CON / INV / DEC / CONR** in **`knowledge/`** (merged or in an explicit Knowledge PR).
+- Treat **CON**, **INV**, and **CONR** as hard requirements, not background reading.
+- Tests that encode product rules must trace to **INV / CON / CONR / FEAT**; avoid orphan tests.
+- **Test-driven change:** Prefer **tests before or with** production edits. For **new** behavior, add a **failing** test (or minimal spec) from the **FEAT / INV / CONR** acceptance shape, then implement until green (**red → green → refactor**). For **existing** codebases, when behavior must change, **add or extend tests first** (regression or **characterization** as appropriate) so the change is observable and locked before or in lockstep with implementation—do not treat tests as an afterthought.
+- **Code generation (including agent output):** When generating implementation, generate or update the **knowledge-backed tests first** when a behavior change is required, then the **src/** change, unless the user explicitly requests a different order for exploration (then still converge to tests + implementation before merge).
+
+**Procedure** (numbered steps, static/dynamic validation, escalation): **`.cursor/skills/implement-with-primitives/SKILL.md`**.

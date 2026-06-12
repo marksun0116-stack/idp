@@ -1,0 +1,39 @@
+installer_version: "1.0.0"
+kfs_package_version: "1.0.0-beta"
+installed_at: "2026-06-12T05:36:17Z"
+mode: copy
+adapters:
+  cursor:
+    files:
+      - .cursor/rules/architecture-compliance.mdc
+      - .cursor/rules/knowledge-primitives.mdc
+      - .cursor/rules/official-knowledge-architecture.mdc
+      - .cursor/rules/knowledge-validation-scripts.mdc
+      - .cursor/rules/traceability-enforcement.mdc
+      - .cursor/rules/new-project-intent-gate.mdc
+      - .cursor/rules/ai-native-knowledge-core.mdc
+      - .cursor/rules/kfs-bootstrap.mdc
+      - .cursor/rules/implementation-constrain-validate-test.mdc
+      - .cursor/rules/docs-knowledge-boundary.mdc
+      - .cursor/rules/legacy-modernization-slices.mdc
+      - .cursor/skills/validate-knowledge-graph/SKILL.md
+      - .cursor/skills/reverse-engineer-baseline/SKILL.md
+      - .cursor/skills/discover-tech-debt/SKILL.md
+      - .cursor/skills/implement-with-primitives/SKILL.md
+      - .cursor/skills/merge-knowledge-first/SKILL.md
+      - .cursor/skills/modernize-legacy-with-knowledge/SKILL.md
+      - .cursor/skills/manage-implementation-plan/SKILL.md
+      - .cursor/skills/bootstrap-modernization-repo/SKILL.md
+      - .cursor/README.md
+  claude:
+    files:
+      - CLAUDE.md
+  codex:
+    files:
+      - AGENTS.md
+  copilot:
+    files:
+      - .github/copilot-instructions.md
+  antigravity:
+    files:
+      - .antigravity/project-rules.md

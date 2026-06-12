@@ -1,0 +1,77 @@
+---
+description: Knowledge layout, primitive kinds (.yml), catalog, and schema completeness (RULE-002–006)
+globs: knowledge/**/*
+alwaysApply: false
+---
+
+# Knowledge primitives (`knowledge/`)
+
+Primitives are **YAML files** (`*.yml`) under `knowledge/`, indexed in `knowledge/catalog.yml`. Match the **shape of existing** files in each directory when adding or editing. For the **conceptual** field sets per kind (constraint, invariant, decision, contract, spec bindings), see **`.kfs/specs/knowledge_model_spec.md`** §4–5 — align this repo’s YAML with that model where it applies; concrete `kind` and sections here win for validation. Example blocks: **`.kfs/specs/knowledge_model_spec.md`** §4–5 examples.
+
+## Layout
+
+- `constraints/` — **CON-*** — enforceable musts (security, tenancy, compliance, architectural).
+- `invariants/` — **INV-*** — properties that must always hold; drive integration or focused tests.
+- `decisions/` — **DEC-*** — ADR-style context, decision, alternatives, consequences.
+- `contracts/` — **CONR-*** — API, DB, event, or payload shapes (versioning explicit when published).
+- `specs/` — **FEAT-*** — feature specs linking scope to CON/INV/DEC/CONR.
+- `docs/` *(optional under `knowledge/`)* — short composed indexes; point to YAML, not a full duplicate of the PRD.
+- `catalog.yml` — authoritative index of IDs → paths.
+
+## Kind and completeness (RULE-002–006)
+
+Every file MUST include at minimum: **`id`**, **`kind`**, **`title`**, **`status`**.
+
+**Lifecycle `status` (YAML — authoritative):** governance and delivery state, not manual “implemented in code” flags. Prefer **`proposed` → `accepted`** on **`FEAT-*`** when shipping a slice; **`accepted`** on shared **`CON-*` / `INV-*` / `DEC-*`** when the rule is in force; **`draft` / `accepted`** on published **`CONR-*`** with accurate **`version`**. See **`knowledge_model_spec.md`** §4.1.
+
+**Derived `trace_coverage` (tooling — read-only):** Observe/graph UIs may compute **`verified` | `partial` | `specified` | `unknown`** from test plans, YAML enforcement/evidence, and test-source mentions — see **`knowledge_model_spec.md`** §4.2. Do not author **`trace_coverage`** in primitive YAML.
+
+Use these as checklists; extend with the same sections sibling primitives use.
+
+### `kind: constraint` (RULE-002)
+
+- **summary** (or equivalent scope statement) and **rules** (enforceable bullets).
+- **enforcement** — how this is enforced (code, review, tests).
+- **references** — trace to PRD/HLD (`prd` / `hld` / `nfr` as used elsewhere).
+- **related_primitives** when there are obvious CONR/INV/DEC links.
+
+### `kind: invariant` (RULE-003)
+
+- **statement** — precise property that must hold.
+- **scope** (e.g. domain: security, data, workflow).
+- **evidence** — tests, audits, or artifacts that justify the invariant.
+- **references** and **related_primitives**.
+
+### `kind: decision` (RULE-004)
+
+- **context**, **decision**, **alternatives_considered**, **consequences**.
+- **references** and **related_primitives**.
+
+### `kind: contract` (RULE-005)
+
+- **summary** and machine-checkable **schema** (or equivalent) for the boundary.
+- **interface_type** when the repo uses it (`rest`, `event`, `webhook`, `payload`, …) per **`knowledge_model_spec.md`** §5.4.
+- **version** / **owner** (or team) when the contract is published or shared.
+- **REST (published HTTP):** **`service_name`** (logical application/module), **`base_path`**, and **`endpoints[]`** (`method`, `path`, `id`, optional `description`) in addition to any nested **schema** block—see §5.4.1 in the knowledge model spec.
+- **Event / payload:** schema or shape for the boundary; no HTTP **endpoints** (§5.4.2).
+- **references** / **related_primitives** as appropriate.
+
+### `kind: feature_spec` (RULE-006 — bindings)
+
+- Traceability sections that resolve to **existing** catalog IDs (constraints, invariants, contracts, decisions).
+- Do **not** introduce new normative “must” rules only inside the spec that belong in CON/INV; lift them to primitives and link.
+- **Granularity:** Prefer **capability-level** **`FEAT-*`** (release slice or user-visible capability) over monolithic phase specs. Use optional **`parent_feature`** on children and **`child_features`** on umbrella specs — see **`knowledge_model_spec.md`** §5.5.
+- **Minimal bindings:** Each **`FEAT-*`** should list only **`CON-*` / `INV-*` / `DEC-*` / `CONR-*`** ids the capability actually needs—not every platform rule in the product.
+- **Product rules in PRD:** When **`FR-*`** encodes must/must-not or always-true behavior, add **`CON-*`** or **`INV-*`** in the same Knowledge PR, then bind from **`FEAT-*`**.
+
+## Editing rules
+
+- Update **`catalog.yml`** whenever you add or rename a primitive file.
+- Keep **`related_primitives`** and trace sections coherent (no dangling IDs).
+- For net-new features: cut **`feature/*`** from **`dev`**; open a **Knowledge PR** targeting that **`feature/*`** (never **`main`**) that lists touched primitive IDs in the description.
+
+## Spec binding validation (conceptual)
+
+When a FEAT references CON/INV/DEC/CONR IDs, each ID MUST exist under `knowledge/` and in **`catalog.yml`**. If bindings are wrong, fix YAML or catalog — do not “fix” only in prose under `docs/`.
+
+**Validation workflow**: **`.cursor/skills/validate-knowledge-graph/SKILL.md`**.

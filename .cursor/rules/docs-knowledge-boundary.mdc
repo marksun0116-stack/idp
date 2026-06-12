@@ -1,0 +1,23 @@
+---
+description: RULE-012 — docs explain and link; authoritative rules live in knowledge primitives
+globs: ["docs/**/*", ".kfs/**/*"]
+alwaysApply: false
+---
+
+# Docs vs knowledge separation (RULE-012)
+
+**`docs/`** (conventional **`docs/prd/`**, **`docs/architecture/`**, **`docs/design/`**, **`docs/test/`**) is **human-readable** product narrative and **pointers** to `knowledge/catalog.yml` and primitive IDs. A repo may ship **without** `docs/` until product work begins — see **`.kfs/INDEX.md`**.
+
+**Official KFS specs and agent procedures** live in **`.kfs/`** (`specs/`, `agent/runbooks/`). Enforceable must/must-not rules belong in **`knowledge/`** (CON/INV/CONR), not prose-only — see **`.kfs/specs/knowledge_model_spec.md`**.
+
+## Do not in product `docs/`
+
+- New authoritative constraints/invariants not reflected as **CON-*** / **INV-*** in `knowledge/`.
+- Shadow API contracts — use **CONR-*** in `knowledge/contracts/`.
+
+## Do in product `docs/`
+
+- Summarize intent; link **FEAT-***, **CON-***, **INV-***, **DEC-***, **CONR-*** by ID.
+- Keep PRD/HLD aligned with merged knowledge; fix doc drift after Knowledge PRs.
+
+New “must” from review → **primitive** + **catalog** (Knowledge PR), then reference from the doc.
