@@ -1,8 +1,10 @@
 id: CON-finance-cache-001
 kind: constraint
 title: "Finance cache freshness and table ownership"
-status: pending
+status: delegated
 date: 2026-06-07
+updated: 2026-06-12
+note: "Authoritative implementation is CON-finance-cache-001 in finance-data-service project"
 statement: |
   The shared finance data service owns all three cache tables (`stock_price_history`, `stock_intraday_cache`, `stock_metadata`). Cache freshness rules are:
 
